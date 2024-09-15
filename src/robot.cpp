@@ -8,6 +8,8 @@ double theta = 0, angular_velocity = 0, angular_acceleration = 0;
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
+bool braking = false;
+
 pros::Imu inertial(20);
 pros::Rotation side_encoder(-12);
 pros::Rotation back_encoder(3);
@@ -29,13 +31,16 @@ void init(void) {
     right_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_BRAKE);
 }
 
-void velo(int left, int right) {
+inline void velo(int left, int right) {
+    braking = false;
     left_motors.move(left);
-    left_motors.get_voltage_all();
     right_motors.move(right);
 }
 
-void brake() {
+inline void brake() {
+    braking = true;
+    left_motors.move(0);
+    right_motors.move(0);
     left_motors.brake();
     right_motors.brake();
 }

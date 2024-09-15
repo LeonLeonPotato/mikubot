@@ -11,6 +11,8 @@ extern double x, velocity_x, acceleration_x;
 extern double y, velocity_y, acceleration_y;
 extern double theta, angular_velocity, angular_acceleration;
 
+extern bool braking;
+
 extern pros::Controller master;
 extern pros::IMU inertial;
 extern pros::Rotation side_encoder;
@@ -26,8 +28,8 @@ extern pros::ADIPneumatics excluder;
 extern pros::Optical classifier;
 
 void init(void);
-void velo(double left, double right);
-void brake();
+inline void velo(double left, double right);
+inline void brake();
 }
 
 #endif

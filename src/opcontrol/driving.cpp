@@ -6,43 +6,37 @@
 #include <math.h>
 
 namespace driving {
-pros::task_t driving_task;
-const int driving_mode = 1;
+pros::Task driving_task;
 
-void leon_mode(float right_x, float right_y, float left_x, float left_y) {
-	if (fabsf(right_x) > 10 && fabsf(left_y) > 10) { // driving with turning
-		float left = left_y + right_x;
-		float right = left_y - right_x;
+inline void leon_mode(int right_x, int right_y, int left_x, int left_y) {
+	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
+		int left = left_y + right_x;
+		int right = left_y - right_x;
 		robot::velo(left, right);
 	} else if (fabsf(right_x) > 10 && fabsf(left_y) < 10) { // turning
 		robot::velo(right_x, -right_x);
 	} else if (fabsf(right_x) < 10 && fabs(left_y) > 10) { // driving
 		robot::velo(left_y, left_y);
 	} else { // stop
-		robot::braking
-		robot::left_motors.brake();
-		right_wheels.stop(vex::brakeType::brake);
+		robot::brake();
 	}
 }
 
 void run(void* args) {
-	void (*driving_modes[])(float, float, float, float) = {
-		leon_mode
-	};
-
 	while (true) {
 		int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
         int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
         int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
         int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 
-		driving_modes[driving_mode - 1](right_x, right_y, left_x, left_y);
+		// swap out for other modes
+		leon_mode(right_x, right_y, left_x, left_y);
 		
 		pros::delay(20);
 	}
 }
 
 void init(void) {
-    driving_task = pros::Task::create(run);
+    driving_task = pros::Task(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT);
 }
 }

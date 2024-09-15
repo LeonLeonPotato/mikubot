@@ -10,31 +10,36 @@
 #include <vector>
 
 namespace spline {
-extern Eigen::Matrix<double, 6, 6> differential_matrix_1;
-extern Eigen::Matrix<double, 6, 6> differential_matrix_0;
+extern Eigen::Matrix<float, 6, 6> differential_matrix_1;
+extern Eigen::Matrix<float, 6, 6> differential_matrix_0;
+
+template <int N>
+class Polynomial {
+    public:
+        Eigen::Vector<float, N> coeffs;
+        Polynomial(void);
+        double operator()(float t);
+        Polynomial<N-1> derivative(void);
+};
 
 class QuinticSpline {
-    class Quintic {
-        public:
-            double a, b, c, d, e, f;
-            double eval(double t);
-            double eval_derivative(double t);
-    };
-
     private:
-        double total_length;
-        std::vector<Quintic> spline_x;
-        std::vector<Quintic> spline_y;
+        float total_length;
+        std::vector<Polynomial<6>> x_polys;
+        std::vector<Polynomial<6>> y_polys;
 
-        void solve_quintic(std::vector<Quintic>& result, std::vector<double>& Y, 
-            double ic_0, double ic_1, double bc_0, double bc_1);
-        void solve_length(void);
+        void solve_spline(std::vector<Polynomial<6>>& result, std::vector<float>& Y, 
+            float ic_0, float ic_1, float bc_0, float bc_1);
+        void solve_length(std::vector<Polynomial<6>>& polys);
         
     public:
         std::vector<Eigen::Vector2d> points;
-        void solve_coeffs(double ic_theta_0, double ic_theta_1, double bc_theta_0, double bc_theta_1);
+        void solve_coeffs(float ic_theta_0, float ic_theta_1, float bc_theta_0, float bc_theta_1);
         void debug_output(void);
+        Eigen::Vector2d operator()(float t);
 };
+
+void init(void);
 } // namespace spline
 
 #endif
