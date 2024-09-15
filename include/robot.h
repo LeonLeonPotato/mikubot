@@ -7,12 +7,27 @@
 #include "api.h"
 
 namespace robot {
-    double x, velocity_x, acceleration_x;
-    double y, velocity_y, acceleration_y;
-    double theta, angular_velocity, angular_acceleration;
-    
-    double left_set_velocity;
-    double right_set_velocity;
+extern double x, velocity_x, acceleration_x;
+extern double y, velocity_y, acceleration_y;
+extern double theta, angular_velocity, angular_acceleration;
+
+extern pros::Controller master;
+extern pros::IMU inertial;
+extern pros::Rotation side_encoder;
+extern pros::Rotation back_encoder;
+
+extern pros::MotorGroup left_motors;
+extern pros::MotorGroup right_motors;
+
+extern pros::MotorGroup intake;
+extern pros::Motor conveyor;
+
+extern pros::ADIPneumatics excluder;
+extern pros::Optical classifier;
+
+void init(void);
+void velo(double left, double right);
+void brake();
 }
 
 #endif

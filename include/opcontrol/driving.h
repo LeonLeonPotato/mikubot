@@ -5,7 +5,7 @@
 #define PROS_USE_LITERALS 
 
 namespace driving {
-    
+void init(void);
 }
 
 #endif
