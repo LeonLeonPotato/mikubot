@@ -6,16 +6,16 @@
 #include <math.h>
 
 namespace driving {
-pros::Task driving_task;
+pros::Task task = NULL;
 
 inline void leon_mode(int right_x, int right_y, int left_x, int left_y) {
 	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
 		int left = left_y + right_x;
 		int right = left_y - right_x;
 		robot::velo(left, right);
-	} else if (fabsf(right_x) > 10 && fabsf(left_y) < 10) { // turning
+	} else if (abs(right_x) > 10 && abs(left_y) < 10) { // turning
 		robot::velo(right_x, -right_x);
-	} else if (fabsf(right_x) < 10 && fabs(left_y) > 10) { // driving
+	} else if (abs(right_x) < 10 && abs(left_y) > 10) { // driving
 		robot::velo(left_y, left_y);
 	} else { // stop
 		robot::brake();
@@ -37,6 +37,14 @@ void run(void* args) {
 }
 
 void init(void) {
-    driving_task = pros::Task(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT);
+	task = pros::Task(run);
+}
+
+void start(void) {
+	task.resume();
+}
+
+void stop(void) {
+	task.suspend();
 }
 }

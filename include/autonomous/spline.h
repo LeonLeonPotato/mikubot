@@ -6,7 +6,7 @@
 
 #undef __ARM_NEON__
 #undef __ARM_NEON
-#include <Eigen/Dense>
+#include "Eigen/Dense"
 #include <vector>
 
 namespace spline {
@@ -16,27 +16,76 @@ extern Eigen::Matrix<float, 6, 6> differential_matrix_0;
 template <int N>
 class Polynomial {
     public:
-        Eigen::Vector<float, N> coeffs;
-        Polynomial(void);
-        double operator()(float t);
-        Polynomial<N-1> derivative(void);
+        Eigen::VectorXf coeffs;
+
+        Polynomial(void) { }
+        Polynomial(Eigen::VectorXf& coeffs) : coeffs(coeffs) { }
+
+        float compute(float t);
+        float derivative(float t);
+        inline float operator()(float t) { return compute(t); }
+
+        std::string debug_out();
+};
+
+template <int N>
+class Polynomial2D {
+    public:
+        Polynomial<N> x_poly;
+        Polynomial<N> y_poly;
+
+        Polynomial2D(void) {}
+        Polynomial2D(Polynomial<N>& x_poly, Polynomial<N>& y_poly) : x_poly(x_poly), y_poly(y_poly) {}
+
+        inline Eigen::Vector2f compute(float t) {
+            return Eigen::Vector2f(x_poly(t), y_poly(t));
+        }
+        inline Eigen::Vector2f derivative(float t) {
+            return Eigen::Vector2f(x_poly.derivative(t), y_poly.derivative(t));
+        }
+        inline Eigen::Vector2f normal(float t) {
+            Eigen::Vector2f d = derivative(t);
+            return Eigen::Vector2f(-d(1), d(0));
+        }
+        inline float angle(float t) {
+            return atan2(derivative(t)(1), derivative(t)(0));
+        }
+        float length(int resolution = 50);
+
+        inline Eigen::Vector2f operator()(float t) { return compute(t); }
 };
 
 class QuinticSpline {
     private:
         float total_length;
-        std::vector<Polynomial<6>> x_polys;
-        std::vector<Polynomial<6>> y_polys;
+        std::vector<Polynomial2D<6>> segments;
 
-        void solve_spline(std::vector<Polynomial<6>>& result, std::vector<float>& Y, 
-            float ic_0, float ic_1, float bc_0, float bc_1);
-        void solve_length(std::vector<Polynomial<6>>& polys);
+        void solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1);
         
     public:
-        std::vector<Eigen::Vector2d> points;
+        std::vector<Eigen::Vector2f> points;
+    
+        QuinticSpline(void) {}
+        QuinticSpline(int n) { segments.resize(n); }
+        QuinticSpline(std::vector<Eigen::Vector2f>& points) : points(points) { }
+
         void solve_coeffs(float ic_theta_0, float ic_theta_1, float bc_theta_0, float bc_theta_1);
-        void debug_output(void);
-        Eigen::Vector2d operator()(float t);
+        void solve_length(void);
+        
+        inline Eigen::Vector2f compute(float t) {
+            int i = floor(t);
+            t -= i;
+            return segments[i](t);
+        }
+        inline Eigen::Vector2f derivative(float t) {
+            int i = floor(t);
+            t -= i;
+            return segments[i].derivative(t);
+        }
+
+        std::string debug_out(void);
+
+        inline Eigen::Vector2f operator()(float t) { return compute(t); }
 };
 
 void init(void);

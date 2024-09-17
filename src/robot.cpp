@@ -30,18 +30,4 @@ void init(void) {
     left_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_BRAKE);
     right_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_BRAKE);
 }
-
-inline void velo(int left, int right) {
-    braking = false;
-    left_motors.move(left);
-    right_motors.move(right);
-}
-
-inline void brake() {
-    braking = true;
-    left_motors.move(0);
-    right_motors.move(0);
-    left_motors.brake();
-    right_motors.brake();
-}
 } // namespace robot

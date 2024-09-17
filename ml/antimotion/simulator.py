@@ -66,6 +66,18 @@ class Robot:
         self.accel_x = (dx / dt - prev_x_vel) / dt
         self.accel_y = (dy / dt - prev_y_vel) / dt
 
+    def angle_to(self, x, y):
+        norm_angle = self.theta % (2 * np.pi)
+        dx = x - self.x
+        dy = y - self.y
+        return (np.arctan2(dx, dy) - norm_angle + np.pi) % (2 * np.pi) - np.pi
+
+    def dist_to(self, x, y):
+        return np.sqrt((self.x - x)**2 + (self.y - y)**2)
+
+    def speed(self):
+        return np.sqrt(self.velocity_x ** 2 + self.velocity_y ** 2)
+
     def draw(self, screen):
         rotation_matrix = np.array([
             [np.cos(self.theta), -np.sin(self.theta)],
@@ -83,9 +95,9 @@ class Robot:
 
 class RobotEnvironment(gymnasium.Env):
     def __init__(self, robot_width=40, render_mode=None, 
-                 wp_radius=20, robot_radius=100, pts=50, num_targets=3):
+                 wp_radius=5, robot_radius=30, pts=50, num_targets=5):
         super().__init__()
-        self.observation_space = gymnasium.spaces.Box(low=0, high=1, shape=(8,), dtype=np.float32)
+        self.observation_space = gymnasium.spaces.Box(low=0, high=1, shape=(10,), dtype=np.float32)
         self.action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
         self.render_mode = render_mode
 
@@ -123,7 +135,7 @@ class RobotEnvironment(gymnasium.Env):
         self.Xpoints = [qs.compute(self.Xpoly, i) for i in np.linspace(0, len(self.targets), len(self.targets) * self.pts)]
         self.Ypoints = [qs.compute(self.Ypoly, i) for i in np.linspace(0, len(self.targets), len(self.targets) * self.pts)]
 
-    def _compute_intersection(self, guesses, iterations=5, tolerance=1e-2):
+    def _compute_intersection(self, guesses, iterations=10, tolerance=1e-2):
         X = self.Xpoly[0]
         Y = self.Ypoly[0]
 
@@ -176,8 +188,7 @@ class RobotEnvironment(gymnasium.Env):
 
         self.stx = self.Xpoly[0](t_surrogate)
         self.sty = self.Ypoly[0](t_surrogate)
-        rtx = self.targets[0][0]
-        rty = self.targets[0][1]
+        rtx, rty = self.targets[0]
         sdx = self.stx - self.robot.x
         sdy = self.sty - self.robot.y
         rdx = rtx - self.robot.x
@@ -205,6 +216,10 @@ class RobotEnvironment(gymnasium.Env):
         self.last_error = self.error
         self.total_rwd += rwd
 
+        s_dxdt = self.Xpoly[0].deriv()(t_surrogate)
+        s_dydt = self.Ypoly[0].deriv()(t_surrogate)
+        dangle_at_target = (np.arctan2(s_dxdt, s_dydt) - norm_angle + np.pi) % (2 * np.pi) - np.pi
+
         obs = []
         obs.append(dist_surrogate / 1000)
         obs.append(dist_target / 1000)
@@ -212,6 +227,8 @@ class RobotEnvironment(gymnasium.Env):
         obs.append(dangle_target / np.pi)
         obs.append(self.robot.angular_velo / 100)
         obs.append(self.robot.angular_accel / 100)
+        obs.append(dangle_at_target / np.pi)
+        obs.append((self.robot.theta / (2 * np.pi)) % 1)
         obs.append(speed / 100)
         obs.append(rwd)
         obs = np.array(obs, dtype=np.float32)
@@ -221,11 +238,11 @@ class RobotEnvironment(gymnasium.Env):
         
         if np.sqrt((self.targets[0][0] - self.robot.x) ** 2 + (self.targets[0][1] - self.robot.y) ** 2) < self.wp_radius:
             self.targets.pop(0)
-            self.targets.append((random.randint(0, 800), random.randint(0, 600)))
             info['newtarg'] = True
-            done = not self.render_mode
+            # done = not self.render_mode
+            done = len(self.targets) == 0
             if not done:
-                self._compute_spline(speed)
+                self._compute_spline(np.sqrt(s_dxdt ** 2 + s_dydt ** 2))
         
         if done:
             info['episode'] = {'r': self.total_rwd, 'l': self.steps}
@@ -252,11 +269,12 @@ class RobotEnvironment(gymnasium.Env):
     
         self.robot.draw(screen=self.screen)
 
-        renderstr = f"""
-Left: {self.robot.left_velo:.2f}
-Right: {self.robot.right_velo:.2f}
-Action: {self.last_action:.2f}
-Speed: {np.sqrt(self.robot.velocity_x ** 2 + self.robot.velocity_y ** 2):.2f}"""
+        renderstr = ", ".join([
+            f"Left: {self.robot.left_velo:.2f}",
+            f"Right: {self.robot.right_velo:.2f}",
+            f"Action: {self.last_action:.2f}",
+            f"Speed: {np.sqrt(self.robot.velocity_x ** 2 + self.robot.velocity_y ** 2):.2f}"
+        ])
         surf = self.font.render(renderstr, True, (255, 255, 255))
         self.screen.blit(surf, (10, 10))
 
