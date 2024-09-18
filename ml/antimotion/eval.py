@@ -17,7 +17,7 @@ model.load_state_dict(torch.load("runs/" + name + "/trainer.pt")[0])
 model.eval()
 model = model.cuda()
 
-env = RobotEnvironment(render_mode='human')
+env = RobotEnvironment(render_mode='human', num_targets=5)
 obs, info = env.reset()
 done = False
 

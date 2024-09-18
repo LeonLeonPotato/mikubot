@@ -73,13 +73,13 @@ class QuinticSpline {
         void solve_length(void);
         
         inline Eigen::Vector2f compute(float t) {
-            int i = floor(t);
-            t -= i;
+            int i = (int) t;
+            t = t - i + (int)(t == points.size() - 1);
             return segments[i](t);
         }
         inline Eigen::Vector2f derivative(float t) {
-            int i = floor(t);
-            t -= i;
+            int i = (int) t;
+            t = t - i + (int)(t == points.size() - 1);
             return segments[i].derivative(t);
         }
 

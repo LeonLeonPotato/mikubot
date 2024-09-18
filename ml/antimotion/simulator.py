@@ -9,14 +9,27 @@ import pygame.gfxdraw
 import quintic_spline as qs
 import matplotlib.pyplot as plt
 
+class Args:
+    screen_space = [500, 500]
+    robot_spawn_x = [25, 475]
+    robot_spawn_y = [25, 475]
+    robot_spawn_angle = [-np.pi, np.pi]
+    robot_width = 40
+    wp_radius = 15
+    robot_radius = 35
+    pts = 20
+    num_targets = 5
+    dt = [1/20, 1/40]
+
 class Robot:
-    def __init__(self, width, x, y, theta, accel_factor=0.8):
+    def __init__(self, width, x, y, theta, accel_factor=0.8, accel_noise=0.02):
         self.width = width
         self.x = x; self.velocity_x = 0; self.accel_x = 0
         self.y = y; self.velocity_y = 0; self.accel_y = 0
         self.theta = theta; self.angular_velo = 0; self.angular_accel = 0
 
         self.accel_factor = accel_factor
+        self.accel_noise = accel_noise
         self.set_left_velo = 0
         self.set_right_velo = 0
         self.left_velo = 0; self.left_accel = 0
@@ -32,8 +45,8 @@ class Robot:
     def update(self, dt):
         dleft = self.set_left_velo - self.left_velo
         dright = self.set_right_velo - self.right_velo
-        self.left_accel = dleft * random.gauss(1, 0.02) * self.accel_factor
-        self.right_accel = dright * random.gauss(1, 0.02) * self.accel_factor
+        self.left_accel = dleft * random.gauss(1, self.accel_noise) * self.accel_factor
+        self.right_accel = dright * random.gauss(1, self.accel_noise) * self.accel_factor
         self.left_velo += self.left_accel * dt
         self.right_velo += self.right_accel * dt
 
@@ -94,10 +107,9 @@ class Robot:
         pygame.draw.line(screen, (255, 0, 0), (self.x, self.y), (self.x + 20 * np.sin(self.theta), self.y + 20 * np.cos(self.theta)))
 
 class RobotEnvironment(gymnasium.Env):
-    def __init__(self, robot_width=40, render_mode=None, 
-                 wp_radius=5, robot_radius=30, pts=50, num_targets=5):
+    def __init__(self, render_mode=None):
         super().__init__()
-        self.observation_space = gymnasium.spaces.Box(low=0, high=1, shape=(10,), dtype=np.float32)
+        self.observation_space = gymnasium.spaces.Box(low=0, high=1, shape=(27,), dtype=np.float32)
         self.action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
         self.render_mode = render_mode
 
@@ -105,156 +117,64 @@ class RobotEnvironment(gymnasium.Env):
             pygame.init()
             pygame.font.init()
             self.font = pygame.font.SysFont('Arial', 20)
-            self.screen = None
+            self.screen = pygame.display.set_mode((800, 600))
         elif render_mode is not None:
             print(f"Warning: Rendering mode {render_mode} is not supported")
 
-        self.robot_width = robot_width
-        self.wp_radius = wp_radius
-        self.robot_radius = robot_radius
-        self.pts = pts
-        self.num_targets = num_targets
+    def _generate_obs(self):
+        obs = np.zeros(9)
+        obs[0] = self.robot.x / Args.screen_space[0]
+        obs[1] = self.robot.y / Args.screen_space[1]
+        obs[2] = self.robot.velocity_x / 100
+        obs[3] = self.robot.velocity_y / 100
+        obs[4] = self.robot.accel_x / 100
+        obs[5] = self.robot.accel_y / 100
+        obs[6] = self.robot.theta / (2 * np.pi)
+        obs[7] = self.robot.angular_velo / 100
+        obs[8] = self.robot.angular_accel / 100
+        return obs
 
-    def reset(self, seed=0):
-        self.robot = Robot(self.robot_width, random.randint(0, 800), random.randint(0, 600), random.random() * 2 * np.pi)
-        self.last_update = -1
-        self.last_error = -1
-        self.steps = 0
-        self.total_rwd = 0
-        self.targets = []
-        self.Xpoly = None
-        for i in range(self.num_targets):
-            self.targets.append((random.randint(0, 800), random.randint(0, 600)))
-        return self.step([0])[0], {"newtarg": True}
-    
-    def _compute_spline(self, speed):
-        Xwaypoints = [self.robot.x] + [x for x, y in self.targets]
-        Ywaypoints = [self.robot.y] + [y for x, y in self.targets]
-        self.Xpoly = qs.compute_spline(Xwaypoints, np.sin(self.robot.theta) * speed, 0, 0, 0)
-        self.Ypoly = qs.compute_spline(Ywaypoints, np.cos(self.robot.theta) * speed, 0, 0, 0)
-        self.Xpoints = [qs.compute(self.Xpoly, i) for i in np.linspace(0, len(self.targets), len(self.targets) * self.pts)]
-        self.Ypoints = [qs.compute(self.Ypoly, i) for i in np.linspace(0, len(self.targets), len(self.targets) * self.pts)]
-
-    def _compute_intersection(self, guesses, iterations=10, tolerance=1e-2):
-        X = self.Xpoly[0]
-        Y = self.Ypoly[0]
-
-        if (self.targets[0][0] - self.robot.x) ** 2 + (self.targets[0][1] - self.robot.y) ** 2 < self.robot_radius ** 2:
-            return 1.0
-
-        dXdt = X.deriv()
-        dYdt = Y.deriv()
-
+    def _intersection(self, guess, iterations=7, threshold=1e-1):
         for i in range(iterations):
-            f_guesses = (X(guesses) - self.robot.x) ** 2 + (Y(guesses) - self.robot.y) ** 2 - self.robot_radius ** 2
-            dfdt_guesses = 2*(X(guesses) - self.robot.x)*dXdt(guesses) + 2*(Y(guesses) - self.robot.y)*dYdt(guesses)
+            f_guesses = self.spline(guess) - Args.robot_radius
+            dfdt_guesses = self.spline.derivative(guess)
             guesses -= f_guesses / (dfdt_guesses + 1e-6)
-            guesses = np.clip(guesses, 0, 1)
+            guesses = np.clip(guesses, 0, len(self.spline))
 
         guesses = np.sort(guesses)
+
         for i in range(len(guesses)-1, -1, -1):
-            if abs((X(guesses[i]) - self.robot.x) ** 2 + (Y(guesses[i]) - self.robot.y) ** 2 - self.robot_radius ** 2) < tolerance:
-                return np.clip(guesses[i], 0, 1)
+            if self.spline(guess) - self.robot_radius < threshold:
+                return guesses[i]
             
         return None
 
+    def reset(self, seed=0):
+        rx = np.random.random() * (Args.robot_spawn_x[1] - Args.robot_spawn_x[0]) + Args.robot_spawn_x[0]
+        ry = np.random.random() * (Args.robot_spawn_y[1] - Args.robot_spawn_y[0]) + Args.robot_spawn_y[0]
+        rt = np.random.random() * (Args.robot_spawn_angle[1] - Args.robot_spawn_angle[0]) + Args.robot_spawn_angle[0]
+        self.robot = Robot(Args.robot_width, rx, ry, rt)
+        self.targets = [
+            np.random.random(2) * Args.screen_space
+            for _ in range(Args.num_targets)
+        ]
+
+        self.spline = qs.QuinticSpline([[self.robot.x, self.robot.y]] + self.targets)
+        self.spline.solve_coeffs(np.cos(self.robot.theta), np.sin(self.robot.theta), 0, 0)
+        self.points = self.spline(np.linspace(0, len(self.spline), self.pts * len(self.spline)))
+
+        self.intersections = [self._intersection(np.array([0, 0.1, 0.2])), 0, 0]
+        self.last_obs = [self._generate_obs(), np.zeros(9), np.zeros(9)]
+
+        return self.last_obs, {}
+    
     def step(self, action):
-        action = action[0] * 200
-        self.last_action = action
-        self.steps += 1
-        if self.render_mode == 'human':
-            if self.last_update == -1:
-                self.last_update = time.time()
-                dt = 1 / 50
-            else:
-                dt = time.time() - self.last_update
-                self.last_update = time.time()
-        else:
-            dt = 1 / 50
-
-        speed = np.sqrt(self.robot.velocity_x ** 2 + self.robot.velocity_y ** 2)
-
-        if self.Xpoly is None:
-            self._compute_spline(speed)
-
-        t_surrogate = self._compute_intersection(np.linspace(0, 1, 10))
-        recomputed = False
-        if t_surrogate is None:
-            self._compute_spline(speed)
-            recomputed = True
-            t_surrogate = self._compute_intersection(np.linspace(0, 1, 10))
-
-        assert t_surrogate is not None, "Robot is stuck"
-
-        self.stx = self.Xpoly[0](t_surrogate)
-        self.sty = self.Ypoly[0](t_surrogate)
-        rtx, rty = self.targets[0]
-        sdx = self.stx - self.robot.x
-        sdy = self.sty - self.robot.y
-        rdx = rtx - self.robot.x
-        rdy = rty - self.robot.y
-        
-        norm_angle = self.robot.theta % (2 * np.pi)
-        dangle_surrogate = (np.arctan2(sdx, sdy) - norm_angle + np.pi) % (2 * np.pi) - np.pi
-        dangle_target = (np.arctan2(rdx, rdy) - norm_angle + np.pi) % (2 * np.pi) - np.pi
-
-        self.robot.set_velo(100 - action, 100 + action)
-        self.robot.update(dt)
-
-        dist_surrogate = np.sqrt(sdx ** 2 + sdy ** 2)
-        dist_target = np.sqrt((self.targets[0][0] - self.robot.x) ** 2 + (self.targets[0][1] - self.robot.y) ** 2)
-
-        self.error = abs(dangle_surrogate)
-        if self.last_error == -1:
-            self.last_error = self.error
-        rwd = self.last_error - self.error
-        if recomputed:
-            rwd -= 0.1
-        if speed < 50:
-            rwd -= 0.01
-
-        self.last_error = self.error
-        self.total_rwd += rwd
-
-        s_dxdt = self.Xpoly[0].deriv()(t_surrogate)
-        s_dydt = self.Ypoly[0].deriv()(t_surrogate)
-        dangle_at_target = (np.arctan2(s_dxdt, s_dydt) - norm_angle + np.pi) % (2 * np.pi) - np.pi
-
-        obs = []
-        obs.append(dist_surrogate / 1000)
-        obs.append(dist_target / 1000)
-        obs.append(dangle_surrogate / np.pi)
-        obs.append(dangle_target / np.pi)
-        obs.append(self.robot.angular_velo / 100)
-        obs.append(self.robot.angular_accel / 100)
-        obs.append(dangle_at_target / np.pi)
-        obs.append((self.robot.theta / (2 * np.pi)) % 1)
-        obs.append(speed / 100)
-        obs.append(rwd)
-        obs = np.array(obs, dtype=np.float32)
-
-        done = self.steps > 5000
-        info = {'newtarg': False}
-        
-        if np.sqrt((self.targets[0][0] - self.robot.x) ** 2 + (self.targets[0][1] - self.robot.y) ** 2) < self.wp_radius:
-            self.targets.pop(0)
-            info['newtarg'] = True
-            # done = not self.render_mode
-            done = len(self.targets) == 0
-            if not done:
-                self._compute_spline(np.sqrt(s_dxdt ** 2 + s_dydt ** 2))
-        
-        if done:
-            info['episode'] = {'r': self.total_rwd, 'l': self.steps}
-
-        return obs, rwd, done, False, info
+        obs = np.concatenate(self.last_obs)
+        return obs, 0, False, False, {}
 
     def render(self):
         if self.render_mode is None:
             return
-
-        if self.screen == None:
-            self.screen = pygame.display.set_mode((800, 600))
 
         self.screen.fill((0, 0, 0))
 
@@ -282,9 +202,6 @@ class RobotEnvironment(gymnasium.Env):
         pygame.draw.circle(self.screen, (255, 0, 0), (self.robot.x, self.robot.y), self.robot_radius, 1)
 
         pygame.display.flip()
-
-
-
 
 if __name__ == "__main__":
     env = RobotEnvironment(render_mode='human')

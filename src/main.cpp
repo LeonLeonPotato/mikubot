@@ -29,7 +29,6 @@ void opcontrol(void) {
 
 	for (int i = 0; i < 1000; i++) {
 		std::cout << "Hello World " << i << std::endl;
-		pros::delay(1);
-		std::cout << "Bye World " << i << std::endl;
+		for (int j = 0; j < 100; j++) asm ("nop");
 	}
 }
