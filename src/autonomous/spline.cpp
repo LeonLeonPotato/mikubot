@@ -50,37 +50,37 @@ float Polynomial2D<N>::length(int resolution) {
 }
 
 void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1) {
-    int n = 6 * (points.size() - 1);
+    int n = 6 * segments.size();
     std::vector<Eigen::Triplet<float>> triplets;
     triplets.reserve(n);
     Eigen::VectorXf B(n);
 
-    for (int i = 0; i < points.size() - 1; i++) {
+    for (int i = 0; i < segments.size(); i++) {
         int r = 6 * i;
         triplets.emplace_back(r, r, 1);
         B(r) = points[i](axis);
 
         for (int k = 0; k < 6; k++) {
-            triplets.emplace_back(r+1, k+r, differential_matrix_1(0, k));
+            triplets.emplace_back(k+r, r+1, differential_matrix_1(0, k));
         }
         B(r+1) = points[i+1](axis);
 
-        if (i == points.size() - 2) continue;
+        if (i == segments.size() - 1) continue;
 
         for (int j = 2; j <= 5; j += 1) {
             for (int k = 0; k < 6; k++) {
-                triplets.emplace_back(r+j, k+r, differential_matrix_0(j-1, k));
-                triplets.emplace_back(r+j, k+r+6, -differential_matrix_0(j-1, k));
+                triplets.emplace_back(k+r, r+j, differential_matrix_1(j-1, k));
+                triplets.emplace_back(k+r+6, r+j, -differential_matrix_0(j-1, k));
             }
             B(r+j) = 0;
         }
     }
 
     for (int i = 0; i < 6; i++) {
-        triplets.emplace_back(n-4, i, differential_matrix_0(1, i));
-        triplets.emplace_back(n-3, i, differential_matrix_0(2, i));
-        triplets.emplace_back(n-2, i+n-6, differential_matrix_1(1, i));
-        triplets.emplace_back(n-1, i+n-6, differential_matrix_1(2, i));
+        triplets.emplace_back(i, n-4, differential_matrix_0(1, i));
+        triplets.emplace_back(i, n-3, differential_matrix_0(2, i));
+        triplets.emplace_back(i+n-6, n-2, differential_matrix_1(1, i));
+        triplets.emplace_back(i+n-6, n-1, differential_matrix_1(2, i));
     }
 
     B(n-4) = ic_0;
@@ -91,16 +91,13 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     Eigen::SparseMatrix<float> A(n, n);
     A.setFromTriplets(triplets.begin(), triplets.end());
 
-    std::cout << "Computing solver 1" << std::endl;
     Eigen::SimplicialLDLT<Eigen::SparseMatrix<float>> solver;
-    std::cout << "Computing solver 2" << std::endl;
     solver.compute(A);
 
     if (solver.info() != Eigen::Success) {
         std::cerr << "Decomposition failed!" << std::endl;
     }
     
-    std::cout << "Solver created" << std::endl;
     Eigen::VectorXf X = solver.solve(B);
     if (axis == 0) {
         for (int i = 0; i < points.size() - 1; i += 1) {

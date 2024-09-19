@@ -132,6 +132,10 @@ class QuinticSpline:
         yi.extend([num_vars-6, num_vars-5, num_vars-4, num_vars-3, num_vars-2, num_vars-1])
         B[-1] = bc_1
 
+        for x, y, z in zip(xi, yi, data):
+            print(x, y, z)
+        
+        print("===========================")
         A = sparse.csc_matrix((data, (xi, yi)), shape=(num_vars, num_vars))
         X = spsolve(A, B)
         
@@ -193,10 +197,10 @@ class QuinticSpline:
 
 def __test():
     import matplotlib.pyplot as plt
-    spline = QuinticSpline([(0, 0), (0, 1), (1, 1), (1, 0)])
+    spline = QuinticSpline([(0, 0), (1, 0), (1, 1)])
     spline.solve_coeffs(0, 0, 0, 0)
     spline.solve_length()
-    points = spline.derivative(np.linspace(0, len(spline), 100))
+    points = spline(np.linspace(0, len(spline), 100))
     plt.plot(points[:, 0], points[:, 1])
     plt.show()
     
