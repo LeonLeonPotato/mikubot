@@ -38,7 +38,10 @@ class Polynomial:
         return self.compute(t)
 
     def debug_out(self):
-        return str(self.coeffs)
+        st = ""
+        for i, c in enumerate(self.coeffs):
+            st += f"{c}t^{i} + "
+        return st[:-3]
 
 
 class Polynomial2D:
@@ -132,11 +135,8 @@ class QuinticSpline:
         yi.extend([num_vars-6, num_vars-5, num_vars-4, num_vars-3, num_vars-2, num_vars-1])
         B[-1] = bc_1
 
-        for x, y, z in zip(xi, yi, data):
-            print(x, y, z)
-        
-        print("===========================")
         A = sparse.csc_matrix((data, (xi, yi)), shape=(num_vars, num_vars))
+        print(A.todense())
         X = spsolve(A, B)
         
         if axis == 0:
@@ -197,12 +197,12 @@ class QuinticSpline:
 
 def __test():
     import matplotlib.pyplot as plt
-    spline = QuinticSpline([(0, 0), (1, 0), (1, 1)])
+    spline = QuinticSpline([(0, 0), (0, 1), (1, 1), (1, 0)])
     spline.solve_coeffs(0, 0, 0, 0)
-    spline.solve_length()
-    points = spline(np.linspace(0, len(spline), 100))
-    plt.plot(points[:, 0], points[:, 1])
-    plt.show()
+
+    for sp in spline.segments:
+        print(sp.x_poly.debug_out())
+        print(sp.y_poly.debug_out())
     
 
 if __name__ == "__main__":

@@ -61,26 +61,26 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
         B(r) = points[i](axis);
 
         for (int k = 0; k < 6; k++) {
-            triplets.emplace_back(k+r, r+1, differential_matrix_1(0, k));
+            triplets.emplace_back(r+1, k+r, differential_matrix_1(0, k));
         }
         B(r+1) = points[i+1](axis);
 
         if (i == segments.size() - 1) continue;
 
-        for (int j = 2; j <= 5; j += 1) {
+        for (int j = 2; j < 6; j++) {
             for (int k = 0; k < 6; k++) {
-                triplets.emplace_back(k+r, r+j, differential_matrix_1(j-1, k));
-                triplets.emplace_back(k+r+6, r+j, -differential_matrix_0(j-1, k));
+                triplets.emplace_back(r+j, k+r, differential_matrix_1(j-1, k));
+                triplets.emplace_back(r+j, k+r+6, -differential_matrix_0(j-1, k));
             }
             B(r+j) = 0;
         }
     }
 
     for (int i = 0; i < 6; i++) {
-        triplets.emplace_back(i, n-4, differential_matrix_0(1, i));
-        triplets.emplace_back(i, n-3, differential_matrix_0(2, i));
-        triplets.emplace_back(i+n-6, n-2, differential_matrix_1(1, i));
-        triplets.emplace_back(i+n-6, n-1, differential_matrix_1(2, i));
+        triplets.emplace_back(n-4, i, differential_matrix_0(1, i));
+        triplets.emplace_back(n-3, i, differential_matrix_0(2, i));
+        triplets.emplace_back(n-2, i+n-6, differential_matrix_1(1, i));
+        triplets.emplace_back(n-1, i+n-6, differential_matrix_1(2, i));
     }
 
     B(n-4) = ic_0;
@@ -91,7 +91,7 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     Eigen::SparseMatrix<float> A(n, n);
     A.setFromTriplets(triplets.begin(), triplets.end());
 
-    Eigen::SimplicialLDLT<Eigen::SparseMatrix<float>> solver;
+    Eigen::SparseLU<Eigen::SparseMatrix<float>> solver;
     solver.compute(A);
 
     if (solver.info() != Eigen::Success) {
@@ -99,12 +99,16 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     }
     
     Eigen::VectorXf X = solver.solve(B);
+    if ((A * X - B).norm() > 1e-3) {
+        std::cerr << "Solver failed!" << std::endl;
+    }
+
     if (axis == 0) {
-        for (int i = 0; i < points.size() - 1; i += 1) {
+        for (int i = 0; i < segments.size(); i++) {
             segments[i].x_poly.coeffs = X.segment(6 * i, 6);
         }
     } else {
-        for (int i = 0; i < points.size() - 1; i += 1) {
+        for (int i = 0; i < segments.size(); i++) {
             segments[i].y_poly.coeffs = X.segment(6 * i, 6);
         }
     }
@@ -120,14 +124,14 @@ void QuinticSpline::solve_coeffs(float ic_theta_0, float ic_theta_1, float bc_th
 
 void QuinticSpline::solve_length(void) {
     total_length = 0;
-    for (int i = 0; i < points.size() - 1; i++) {
+    for (int i = 0; i < segments.size(); i++) {
         total_length += segments[i].length();
     }
 }
 
 std::string QuinticSpline::debug_out(void) {
     std::string result = "";
-    for (int i = 0; i < points.size() - 1; i++) {
+    for (int i = 0; i < segments.size(); i++) {
         result += "Segment " + std::to_string(i) + "\n";
         result += "X: " + segments[i].x_poly.debug_out() + "\n";
         result += "Y: " + segments[i].y_poly.debug_out() + "\n";

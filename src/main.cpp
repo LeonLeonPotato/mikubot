@@ -4,10 +4,7 @@
 #include "robot.h"
 #include "autonomous/spline.h"
 
-#include <chrono>
 #include <iostream>
-
-using namespace std::chrono;
 
 void initialize(void) {
 	spline::init();
@@ -25,6 +22,13 @@ void initialize(void) {
 
     // 	std::cout << "Quintic spline test took " << duration << " millis for size " << size << std::endl;	
 	// }
+	spline::QuinticSpline sp;
+	sp.points.emplace_back(0, 0);
+	sp.points.emplace_back(0, 1);
+	sp.points.emplace_back(1, 1);
+	sp.points.emplace_back(1, 0);
+	sp.solve_coeffs(0, 0, 0, 0);
+	std::cout << sp.debug_out() << std::endl;
 }
 
 void disabled(void) {}
