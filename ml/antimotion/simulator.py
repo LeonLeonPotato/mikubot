@@ -88,6 +88,9 @@ class Robot:
     def dist_to(self, x, y):
         return np.sqrt((self.x - x)**2 + (self.y - y)**2)
 
+    def pos(self):
+        return np.array([self.x, self.y])
+
     def speed(self):
         return np.sqrt(self.velocity_x ** 2 + self.velocity_y ** 2)
 
@@ -117,7 +120,7 @@ class RobotEnvironment(gymnasium.Env):
             pygame.init()
             pygame.font.init()
             self.font = pygame.font.SysFont('Arial', 20)
-            self.screen = pygame.display.set_mode((800, 600))
+            self.screen = pygame.display.set_mode(Args.screen_space)
         elif render_mode is not None:
             print(f"Warning: Rendering mode {render_mode} is not supported")
 
@@ -136,16 +139,18 @@ class RobotEnvironment(gymnasium.Env):
 
     def _intersection(self, guess, iterations=7, threshold=1e-1):
         for i in range(iterations):
-            f_guesses = self.spline(guess) - Args.robot_radius
-            dfdt_guesses = self.spline.derivative(guess)
-            guesses -= f_guesses / (dfdt_guesses + 1e-6)
-            guesses = np.clip(guesses, 0, len(self.spline))
+            f_guess = self.spline(guess) - self.robot.pos()
+            numerator = np.einsum("ij,ij->i", f_guess, f_guess) - Args.robot_radius ** 2
+            denom = 2 * np.einsum("ij,ij->i", f_guess, self.spline.derivative(guess))
+            guess -= numerator / (denom + 1e-6)
+            guess = np.clip(guess, 0, len(self.spline))
 
-        guesses = np.sort(guesses)
+        guess = np.sort(guess)
+        guess = np.linalg.norm(self.spline(guess), axis=1) - Args.robot_radius
 
-        for i in range(len(guesses)-1, -1, -1):
-            if self.spline(guess) - self.robot_radius < threshold:
-                return guesses[i]
+        for i in range(len(guess)-1, -1, -1):
+            if guess[i] < threshold:
+                return guess[i]
             
         return None
 
@@ -161,7 +166,12 @@ class RobotEnvironment(gymnasium.Env):
 
         self.spline = qs.QuinticSpline([[self.robot.x, self.robot.y]] + self.targets)
         self.spline.solve_coeffs(np.cos(self.robot.theta), np.sin(self.robot.theta), 0, 0)
-        self.points = self.spline(np.linspace(0, len(self.spline), self.pts * len(self.spline)))
+        self.points = self.spline(np.linspace(0, len(self.spline), Args.pts * len(self.spline)))
+
+        self.steps = 0
+        self.total_rwd = 0
+        self.last_actton = 0
+        self.last_rwd = np.zeros(3)
 
         self.intersections = [self._intersection(np.array([0, 0.1, 0.2])), 0, 0]
         self.last_obs = [self._generate_obs(), np.zeros(9), np.zeros(9)]
@@ -170,6 +180,7 @@ class RobotEnvironment(gymnasium.Env):
     
     def step(self, action):
         obs = np.concatenate(self.last_obs)
+        self.last_action = 0
         return obs, 0, False, False, {}
 
     def render(self):
@@ -179,13 +190,9 @@ class RobotEnvironment(gymnasium.Env):
         self.screen.fill((0, 0, 0))
 
         for p in self.targets:
-            pygame.draw.circle(self.screen, (255, 0, 0), p, self.wp_radius, 1)
-        
-        for i in range(len(self.Xpoints) - 1):
-            pygame.draw.line(self.screen, (150, 150, 150), 
-                             (self.Xpoints[i], self.Ypoints[i]), 
-                             (self.Xpoints[i + 1], self.Ypoints[i + 1])
-                             )
+            pygame.draw.circle(self.screen, (255, 0, 0), p, Args.wp_radius, 1)
+        for p in self.points:
+            pygame.draw.circle(self.screen, (0, 150, 0), p, 1)
     
         self.robot.draw(screen=self.screen)
 
@@ -198,8 +205,10 @@ class RobotEnvironment(gymnasium.Env):
         surf = self.font.render(renderstr, True, (255, 255, 255))
         self.screen.blit(surf, (10, 10))
 
-        pygame.draw.circle(self.screen, (0, 0, 255), (self.stx, self.sty), 5)
-        pygame.draw.circle(self.screen, (255, 0, 0), (self.robot.x, self.robot.y), self.robot_radius, 1)
+        print(self.intersections[0])
+        stx, sty = self.spline(self.intersections[0])
+        pygame.draw.circle(self.screen, (0, 0, 255), (stx, sty), 5)
+        pygame.draw.circle(self.screen, (255, 0, 0), (self.robot.x, self.robot.y), Args.robot_radius, 1)
 
         pygame.display.flip()
 
@@ -209,9 +218,6 @@ if __name__ == "__main__":
 
     dangles = []
     while True:
-        if env.screen is not None:
-            env.screen.fill((0, 0, 0))
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
