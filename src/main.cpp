@@ -1,26 +1,33 @@
 #include "main.h"
 #include "api.h"
+#include "pros/apix.h"
+#include "liblvgl/lvgl.h"
+#include "liblvgl/lv_conf.h"
 
 #include "robot.h"
 #include "autonomous/spline.h"
 
 #include <iostream>
 
-void on_center_button() {
-std::cout << "Button started" << std::endl;
-  static bool pressed = false;
-  pressed = !pressed;
-  if (pressed) {
-    pros::lcd::set_text(2, "I was pressed!");
-  } else {
-    pros::lcd::clear_line(2);
-  }
+lv_obj_t *label;
+
+void lv_example_get_started_1(void)
+{
+    /*Create a white label, set its text and align it to the center*/
+	std::cout << lv_scr_act() << std::endl;
+    label = lv_label_create(lv_scr_act());
+	std::cout << "1" << std::endl;
+    lv_label_set_text(label, "Hello world");
+	std::cout << "2" << std::endl;
+    lv_obj_set_style_text_color(lv_scr_act(), lv_color_hex(0xffffff), LV_PART_MAIN);
+	std::cout << "3" << std::endl;
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+	std::cout << "4" << std::endl;
 }
+
 
 void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
-	pros::lcd::initialize();
-	pros::lcd::register_btn1_cb(on_center_button);
 	spline::init();
 	// for (int size = 5; size < 100; size += 10) {
 	// 	spline::QuinticSpline sp;
@@ -36,6 +43,7 @@ void initialize(void) {
 
     // 	std::cout << "Quintic spline test took " << duration << " millis for size " << size << std::endl;	
 	// }
+	pros::delay(50);
 	spline::QuinticSpline sp;
 	sp.points.emplace_back(0, 0);
 	sp.points.emplace_back(0, 1);
@@ -59,8 +67,5 @@ void autonomous(void) {
 
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
-  while (true) {
-    pros::lcd::print(0, "Buttons Bitmap: %d\n", pros::lcd::read_buttons());
-    pros::delay(20);
-  }
+	lv_example_get_started_1();
 }
