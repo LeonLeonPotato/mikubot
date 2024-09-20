@@ -6,7 +6,21 @@
 
 #include <iostream>
 
+void on_center_button() {
+std::cout << "Button started" << std::endl;
+  static bool pressed = false;
+  pressed = !pressed;
+  if (pressed) {
+    pros::lcd::set_text(2, "I was pressed!");
+  } else {
+    pros::lcd::clear_line(2);
+  }
+}
+
 void initialize(void) {
+	std::cout << "Initialize started" << std::endl;
+	pros::lcd::initialize();
+	pros::lcd::register_btn1_cb(on_center_button);
 	spline::init();
 	// for (int size = 5; size < 100; size += 10) {
 	// 	spline::QuinticSpline sp;
@@ -31,12 +45,22 @@ void initialize(void) {
 	std::cout << sp.debug_out() << std::endl;
 }
 
-void disabled(void) {}
+void disabled(void) {
+	std::cout << "Disabled started" << std::endl;
+}
 
-void competition_initialize(void) {}
+void competition_initialize(void) {
+	std::cout << "Comp init started" << std::endl;
+}
 
-void autonomous(void) {}
+void autonomous(void) {
+	std::cout << "Auton started" << std::endl;
+}
 
 void opcontrol(void) {
-
+	std::cout << "Opcontrol started" << std::endl;
+  while (true) {
+    pros::lcd::print(0, "Buttons Bitmap: %d\n", pros::lcd::read_buttons());
+    pros::delay(20);
+  }
 }

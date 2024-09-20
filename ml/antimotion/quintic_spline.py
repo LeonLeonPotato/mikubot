@@ -136,7 +136,6 @@ class QuinticSpline:
         B[-1] = bc_1
 
         A = sparse.csc_matrix((data, (xi, yi)), shape=(num_vars, num_vars))
-        print(A.todense())
         X = spsolve(A, B)
         
         if axis == 0:

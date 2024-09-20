@@ -14,12 +14,15 @@ class Args:
     robot_spawn_x = [25, 475]
     robot_spawn_y = [25, 475]
     robot_spawn_angle = [-np.pi, np.pi]
-    robot_width = 40
+    robot_width = 50
     wp_radius = 15
     robot_radius = 35
     pts = 20
     num_targets = 5
     dt = [1/20, 1/40]
+
+    def getrand(x):
+        return np.random.random() * (x[1] - x[0]) + x[0]
 
 class Robot:
     def __init__(self, width, x, y, theta, accel_factor=0.8, accel_noise=0.02):
@@ -137,28 +140,28 @@ class RobotEnvironment(gymnasium.Env):
         obs[8] = self.robot.angular_accel / 100
         return obs
 
-    def _intersection(self, guess, iterations=7, threshold=1e-1):
+    def _intersection(self, guess, iterations=5, threshold=1e-1):
         for i in range(iterations):
             f_guess = self.spline(guess) - self.robot.pos()
-            numerator = np.einsum("ij,ij->i", f_guess, f_guess) - Args.robot_radius ** 2
-            denom = 2 * np.einsum("ij,ij->i", f_guess, self.spline.derivative(guess))
+            numerator = np.sum(f_guess * f_guess, axis=1) - Args.robot_radius ** 2
+            denom = 2 * np.sum(f_guess * self.spline.derivative(guess), axis=1)
             guess -= numerator / (denom + 1e-6)
             guess = np.clip(guess, 0, len(self.spline))
 
         guess = np.sort(guess)
-        guess = np.linalg.norm(self.spline(guess), axis=1) - Args.robot_radius
+        f_guess = np.linalg.norm(self.spline(guess) - self.robot.pos(), axis=1) - Args.robot_radius
 
         for i in range(len(guess)-1, -1, -1):
-            if guess[i] < threshold:
+            if f_guess[i] < threshold:
                 return guess[i]
             
         return None
 
     def reset(self, seed=0):
-        rx = np.random.random() * (Args.robot_spawn_x[1] - Args.robot_spawn_x[0]) + Args.robot_spawn_x[0]
-        ry = np.random.random() * (Args.robot_spawn_y[1] - Args.robot_spawn_y[0]) + Args.robot_spawn_y[0]
-        rt = np.random.random() * (Args.robot_spawn_angle[1] - Args.robot_spawn_angle[0]) + Args.robot_spawn_angle[0]
-        self.robot = Robot(Args.robot_width, rx, ry, rt)
+        self.robot = Robot(Args.robot_width, 
+                           Args.getrand(Args.robot_spawn_x), 
+                           Args.getrand(Args.robot_spawn_y), 
+                           Args.getrand(Args.robot_spawn_angle))
         self.targets = [
             np.random.random(2) * Args.screen_space
             for _ in range(Args.num_targets)
@@ -173,15 +176,26 @@ class RobotEnvironment(gymnasium.Env):
         self.last_actton = 0
         self.last_rwd = np.zeros(3)
 
-        self.intersections = [self._intersection(np.array([0, 0.1, 0.2])), 0, 0]
+        self.last_intersection = self._intersection(np.linspace(0.1, len(self.spline), 10))
         self.last_obs = [self._generate_obs(), np.zeros(9), np.zeros(9)]
 
         return self.last_obs, {}
     
     def step(self, action):
+        self.last_action = action[0] * 100
+        dt = Args.getrand(Args.dt)
+        self.robot.set_velo(100 - self.last_action, 100 + self.last_action)
+        self.robot.update(dt)
+        self.last_intersection = self._intersection(np.array([self.last_intersection]))
+        if self.last_intersection is None:
+            self.spline = qs.QuinticSpline([[self.robot.x, self.robot.y]] + self.targets)
+            self.spline.solve_coeffs(np.cos(self.robot.theta), np.sin(self.robot.theta), 0, 0)
+            self.points = self.spline(np.linspace(0, len(self.spline), Args.pts * len(self.spline)))
+            self.last_intersection = self._intersection(np.linspace(0.1, len(self.spline), 10))
+            print(self.last_intersection)
+            
         obs = np.concatenate(self.last_obs)
-        self.last_action = 0
-        return obs, 0, False, False, {}
+        return obs, 0, False, False, {"dt": dt}
 
     def render(self):
         if self.render_mode is None:
@@ -205,36 +219,95 @@ class RobotEnvironment(gymnasium.Env):
         surf = self.font.render(renderstr, True, (255, 255, 255))
         self.screen.blit(surf, (10, 10))
 
-        print(self.intersections[0])
-        stx, sty = self.spline(self.intersections[0])
+        stx, sty = self.spline(self.last_intersection)
         pygame.draw.circle(self.screen, (0, 0, 255), (stx, sty), 5)
         pygame.draw.circle(self.screen, (255, 0, 0), (self.robot.x, self.robot.y), Args.robot_radius, 1)
 
         pygame.display.flip()
 
 if __name__ == "__main__":
-    env = RobotEnvironment(render_mode='human')
-    obs, info = env.reset()
+    # 17668.1092365258, 13.0, 0.2, 0.9333333333333333
+    # 8527.547100731887, 10.0, 0.225, 1.0
+    # 9369.687273226324, 10.0, 0.175, 0.8
+    with open("run3.txt") as f:
+        log = np.array(eval(f.read()))[:800]
 
-    dangles = []
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                break
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                env.target.append(event.pos)
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    env.robot.set_velo(0, 0)
-                if event.key == pygame.K_BACKSPACE:
-                    env.target.clear()
-                if event.key == pygame.K_r:
-                    plt.plot(dangles)
-                    plt.show()
-                    dangles = []
+    def sim(accel_factor, accel_noise, max_speed):
+        score = 0
+        last_error = 0
+        robot = Robot(Args.robot_width, 
+                        log[0, 0], 
+                        log[0, 1], 
+                        log[0, 2] + np.pi/2,
+                        accel_factor=accel_factor,
+                        accel_noise=accel_noise)
+        
+        for i in range(log.shape[0]):
+            x, y, theta, left, right, braking = log[i]
+            if braking == 1.0:
+                left = 0
+                right = 0
+            left *= max_speed
+            right *= max_speed
+            robot.set_velo(left, right)
+            robot.theta = theta + np.pi/2
+            robot.update(dt)
 
-        obs, rwd, done, truncated, info = env.step([0.5])
-        dangles.append(rwd)
+            error = robot.dist_to(x, y)
+            score += max(0, error - last_error)
+            last_error = error
 
-        env.render()
+        return score
+    
+    dt = 0.020
+    # scores = []
+    # for accel_factor in np.linspace(8, 11, 5):
+    #     for accel_noise in np.linspace(0.05, 0.2, 5):
+    #         for max_speed in np.linspace(1.0, 1.3, 10):
+    #             score = 0
+    #             for trial in range(100):
+    #                 score += sim()
+
+    #             score /= 100
+    #             scores.append((score, accel_factor, accel_noise, max_speed))
+    #             print(score, accel_factor, accel_noise, max_speed)
+    
+    # scores = sorted(scores, key=lambda x: x[0])
+    # print(scores)
+    scores = [[0, 5, 0, 1.23]]
+    
+    try:
+        plt.ion()
+        fig, ax = plt.subplots()
+        robot = Robot(Args.robot_width, 
+                    log[0, 0], 
+                    log[0, 1], 
+                    log[0, 2] + np.pi/2,
+                    accel_factor=scores[0][1],
+                    accel_noise=scores[0][2])
+
+        for i in range(log.shape[0]):
+            x, y, theta, left, right, braking = log[i]
+            if braking == 1.0:
+                left = 0
+                right = 0
+            left *= scores[0][3]
+            right *= scores[0][3]
+            print(left, right)
+            robot.set_velo(left, right)
+            robot.theta = theta + np.pi/2
+            robot.update(dt)
+
+            ax.clear()
+            ax.set_xlim(-500, 500)
+            ax.set_ylim(-500, 500)
+            ax.plot(log[:i, 0], log[:i, 1])
+            ax.scatter(robot.x, robot.y)
+            px, py = np.sin(robot.theta) * 50 + robot.x, np.cos(robot.theta) * 50 + robot.y
+            ax.plot([robot.x, px], [robot.y, py])
+            plt.pause(dt)
+    except KeyboardInterrupt:
+        plt.ioff()
+        exit()
+
+    

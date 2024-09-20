@@ -91,18 +91,18 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     Eigen::SparseMatrix<float> A(n, n);
     A.setFromTriplets(triplets.begin(), triplets.end());
 
-    Eigen::SparseLU<Eigen::SparseMatrix<float>> solver;
+    int solve_start = pros::millis();
+    Eigen::SparseQR<Eigen::SparseMatrix<float>, Eigen::COLAMDOrdering<int>> solver;
     solver.compute(A);
+    int solve_end = pros::millis();
+    std::cout << "Solve took " << (solve_end - solve_start) << " millis" << std::endl;
 
     if (solver.info() != Eigen::Success) {
         std::cerr << "Decomposition failed!" << std::endl;
     }
     
     Eigen::VectorXf X = solver.solve(B);
-    if ((A * X - B).norm() > 1e-3) {
-        std::cerr << "Solver failed!" << std::endl;
-    }
-
+    
     if (axis == 0) {
         for (int i = 0; i < segments.size(); i++) {
             segments[i].x_poly.coeffs = X.segment(6 * i, 6);
