@@ -112,7 +112,7 @@ class Robot:
         pygame.draw.polygon(screen, (0, 255, 0), rect + (self.x, self.y))
         pygame.draw.line(screen, (255, 0, 0), (self.x, self.y), (self.x + 20 * np.sin(self.theta), self.y + 20 * np.cos(self.theta)))
 
-class RobotEnvironment(gymnasium.Env):
+class PurePursuitEnv(gymnasium.Env):
     def __init__(self, render_mode=None):
         super().__init__()
         self.observation_space = gymnasium.spaces.Box(low=0, high=1, shape=(24,), dtype=np.float32)
@@ -128,7 +128,7 @@ class RobotEnvironment(gymnasium.Env):
             print(f"Warning: Rendering mode {render_mode} is not supported")
 
     def _generate_obs(self):
-        obs = np.zeros(9)
+        obs = np.zeros(8)
         obs[0] = self.stx / Args.screen_space[0]
         obs[1] = self.sty / Args.screen_space[1]
         obs[2] = self.robot.x / Args.screen_space[0]
@@ -158,6 +158,120 @@ class RobotEnvironment(gymnasium.Env):
                 return guess[i]
             
         return None
+
+    def reset(self, seed=0):
+        self.robot = Robot(Args.robot_width, 
+                           Args.getrand(Args.robot_spawn_x), 
+                           Args.getrand(Args.robot_spawn_y), 
+                           Args.getrand(Args.robot_spawn_angle))
+        self.targets = [
+            np.random.random(2) * Args.screen_space
+            for _ in range(Args.num_targets)
+        ]
+
+        self.spline = qs.QuinticSpline([[self.robot.x, self.robot.y]] + self.targets)
+        self.spline.solve_coeffs(np.cos(self.robot.theta), np.sin(self.robot.theta), 0, 0)
+        self.points = self.spline(np.linspace(0, len(self.spline), Args.pts * len(self.spline)))
+
+        self.steps = 0
+        self.total_rwd = 0
+        self.last_rwd = np.zeros(3)
+
+        self.last_intersection = self._intersection(np.linspace(0.1, len(self.spline), 10))
+        self.stx, self.sty = self.spline(self.last_intersection)
+        self.last_obs = [self._generate_obs(), np.zeros(9), np.zeros(9)]
+        obs = np.concatenate(self.last_obs)
+
+        return obs, {}
+    
+    def step(self, action):
+        dt = Args.getrand(Args.dt)
+        self.robot.set_velo(action[0], action[1])
+        self.robot.update(dt)
+
+        self.last_intersection = self._intersection(
+            np.array([self.last_intersection]), iterations=2,
+            bounds=[self.last_intersection, len(self.spline)]
+        )
+        if self.last_intersection is None:
+            self.spline = qs.QuinticSpline([[self.robot.x, self.robot.y]] + self.targets)
+            self.spline.solve_coeffs(np.cos(self.robot.theta), np.sin(self.robot.theta), 0, 0)
+            self.points = self.spline(np.linspace(0, len(self.spline), Args.pts * len(self.spline)))
+            self.last_intersection = self._intersection(np.linspace(0.1, len(self.spline), 15))
+
+        self.stx, self.sty = self.spline(self.last_intersection)
+        
+        self.last_obs = [self._generate_obs(), self.last_obs[0], self.last_obs[1]]
+        obs = np.concatenate(self.last_obs)
+        return obs, 0, False, False, {"dt": dt}
+
+    def render(self):
+        if self.render_mode is None:
+            return
+
+        self.screen.fill((0, 0, 0))
+
+        for p in self.targets:
+            pygame.draw.circle(self.screen, (255, 0, 0), p, Args.wp_radius, 1)
+        for p in self.points:
+            pygame.draw.circle(self.screen, (0, 150, 0), p, 1)
+    
+        self.robot.draw(screen=self.screen)
+
+        renderstr = ", ".join([
+            f"Left: {self.robot.left_velo:.2f}",
+            f"Right: {self.robot.right_velo:.2f}",
+            f"Speed: {np.sqrt(self.robot.velocity_x ** 2 + self.robot.velocity_y ** 2):.2f}"
+        ])
+        surf = self.font.render(renderstr, True, (255, 255, 255))
+        self.screen.blit(surf, (10, 10))
+
+        stx, sty = self.spline(self.last_intersection)
+        pygame.draw.circle(self.screen, (0, 0, 255), (stx, sty), 5)
+        pygame.draw.circle(self.screen, (255, 0, 0), (self.robot.x, self.robot.y), Args.robot_radius, 1)
+
+        pygame.display.flip()
+
+class AnySplineEnv(gymnasium.Env):
+    def __init__(self, render_mode=None):
+        super().__init__()
+        self.observation_space = gymnasium.spaces.Box(low=0, high=1, shape=(24,), dtype=np.float32)
+        self.action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        self.render_mode = render_mode
+
+        if render_mode == 'human':
+            pygame.init()
+            pygame.font.init()
+            self.font = pygame.font.SysFont('Arial', 20)
+            self.screen = pygame.display.set_mode(Args.screen_space)
+        elif render_mode is not None:
+            print(f"Warning: Rendering mode {render_mode} is not supported")
+
+    def _generate_obs(self):
+        obs = np.zeros(8)
+        obs[0] = self.stx / Args.screen_space[0]
+        obs[1] = self.sty / Args.screen_space[1]
+        obs[2] = self.robot.x / Args.screen_space[0]
+        obs[3] = self.robot.y / Args.screen_space[1]
+        obs[4] = self.robot.velocity_x / 100
+        obs[5] = self.robot.velocity_y / 100
+        obs[6] = self.robot.theta / (2 * np.pi)
+        obs[7] = self.robot.angular_velo / 100
+        return obs
+
+    def _closest(self, guess, iterations=10, threshold=1e-1, bounds=None):
+        if bounds is None:
+            bounds = [0, len(self.spline)]
+
+        for i in range(iterations):
+            f_guess = self.spline(guess) - self.robot.pos()
+            numerator = f_guess ** 2
+            denom = 2 * np.sum(f_guess * self.spline.derivative(guess), axis=1)
+            guess -= numerator / (denom + 1e-6)
+            guess = np.clip(guess, bounds[0], bounds[1])
+
+        dist = np.linalg.norm(self.spline(guess) - self.robot.pos(), axis=1)
+        return guess, dist
 
     def reset(self, seed=0):
         self.robot = Robot(Args.robot_width, 
