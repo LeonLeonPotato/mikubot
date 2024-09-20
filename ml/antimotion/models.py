@@ -29,7 +29,7 @@ class Actor(nn.Module):
     def forward(self, x):
         x = F.leaky_relu(self.fc1(x))
         x = F.leaky_relu(self.fc2(x))
-        x = torch.tanh(self.fc3(x))
+        x = torch.tanh(self.fc3(x)) * 100
         return x * self.action_scale + self.action_bias
     
 class Critic(nn.Module):

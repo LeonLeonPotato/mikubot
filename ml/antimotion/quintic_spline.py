@@ -33,6 +33,10 @@ class Polynomial:
     def derivative(self, t):
         der_coeffs = np.polyder(self.coeffs[::-1])
         return np.polyval(der_coeffs, t)
+    
+    def scnd_deriv(self, t):
+        der_coeffs = np.polyder(self.coeffs[::-1], m=2)
+        return np.polyval(der_coeffs, t)
 
     def __call__(self, t):
         return self.compute(t)
@@ -54,6 +58,9 @@ class Polynomial2D:
 
     def derivative(self, t):
         return np.array([self.x_poly.derivative(t), self.y_poly.derivative(t)])
+    
+    def scnd_deriv(self, t):
+        return np.array([self.x_poly.scnd_deriv(t), self.y_poly.scnd_deriv(t)])
 
     def normal(self, t):
         d = self.derivative(t)
@@ -145,14 +152,11 @@ class QuinticSpline:
             for i in range(0, len(X), 6):
                 self.segments[i//6].y_poly = Polynomial(X[i:i+6])
 
-    def solve_coeffs(self, ic_theta_0, ic_theta_1, bc_theta_0, bc_theta_1):
+    def solve_coeffs(self, icx_0, icx_1, bcx_0, bcx_1,
+                     icy_0, icy_1, bcy_0, bcy_1):
         self.segments = [Polynomial2D() for _ in range(len(self.points) - 1)]
-        self.solve_spline(0, 
-                          np.cos(ic_theta_0), np.cos(ic_theta_1), 
-                          np.cos(bc_theta_0), np.cos(bc_theta_1))
-        self.solve_spline(1, 
-                          np.sin(ic_theta_0), np.sin(ic_theta_1), 
-                          np.sin(bc_theta_0), np.sin(bc_theta_1))
+        self.solve_spline(0, icx_0, icx_1, bcx_0, bcx_1)
+        self.solve_spline(1, icy_0, icy_1, bcy_0, bcy_1)
 
     def solve_length(self):
         self.total_length = 0
@@ -184,6 +188,19 @@ class QuinticSpline:
             i = np.minimum(np.floor(t), len(self.segments)-1)
             t = t - i
             return self.segments[int(i)].derivative(t)
+        
+    def scnd_deriv(self, t):
+        if isinstance(t, np.ndarray):
+            i = np.minimum(np.floor(t), len(self.segments)-1).astype(int)
+            t = t - i
+            ret = np.zeros((len(t), 2))
+            for j in range(len(t)):
+                ret[j, :] = self.segments[i[j]].scnd_deriv(t[j])
+            return ret
+        else:
+            i = np.minimum(np.floor(t), len(self.segments)-1)
+            t = t - i
+            return self.segments[int(i)].scnd_deriv(t)
 
     def debug_out(self):
         return str(self.points)

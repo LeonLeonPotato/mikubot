@@ -236,7 +236,7 @@ class AnySplineEnv(gymnasium.Env):
     def __init__(self, render_mode=None):
         super().__init__()
         self.observation_space = gymnasium.spaces.Box(low=0, high=1, shape=(24,), dtype=np.float32)
-        self.action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        self.action_space = gymnasium.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.render_mode = render_mode
 
         if render_mode == 'human':
@@ -249,29 +249,42 @@ class AnySplineEnv(gymnasium.Env):
 
     def _generate_obs(self):
         obs = np.zeros(8)
-        obs[0] = self.stx / Args.screen_space[0]
-        obs[1] = self.sty / Args.screen_space[1]
-        obs[2] = self.robot.x / Args.screen_space[0]
-        obs[3] = self.robot.y / Args.screen_space[1]
-        obs[4] = self.robot.velocity_x / 100
-        obs[5] = self.robot.velocity_y / 100
-        obs[6] = self.robot.theta / (2 * np.pi)
-        obs[7] = self.robot.angular_velo / 100
+        obs[0] = self.closest_dist / 100
+        obs[1] = self.robot.x / Args.screen_space[0]
+        obs[2] = self.robot.y / Args.screen_space[1]
+        obs[3] = self.robot.velocity_x / 100
+        obs[4] = self.robot.velocity_y / 100
+        obs[5] = self.robot.theta / (2 * np.pi)
+        obs[6] = self.robot.angular_velo / 100
+        obs[7] = self._angular_velo(self.closest_t) / 100
         return obs
 
-    def _closest(self, guess, iterations=10, threshold=1e-1, bounds=None):
+    def _closest(self, guess, iterations=10, bounds=None):
+        if not isinstance(guess, np.ndarray):
+            guess = np.array([guess], dtype=float)
+
         if bounds is None:
             bounds = [0, len(self.spline)]
 
         for i in range(iterations):
             f_guess = self.spline(guess) - self.robot.pos()
-            numerator = f_guess ** 2
-            denom = 2 * np.sum(f_guess * self.spline.derivative(guess), axis=1)
+            deriv = self.spline.derivative(guess)
+            numerator = 2 * np.sum(f_guess * deriv, axis=1)
+            denom = 2 * (np.sum(f_guess * self.spline.scnd_deriv(guess), axis=1) + np.sum(deriv * deriv, axis=1))
             guess -= numerator / (denom + 1e-6)
             guess = np.clip(guess, bounds[0], bounds[1])
 
-        dist = np.linalg.norm(self.spline(guess) - self.robot.pos(), axis=1)
-        return guess, dist
+        guess = np.sort(guess)
+        f_guess = self.spline(guess) - self.robot.pos()
+        numerator = np.sum(f_guess * f_guess, axis=1)
+
+        return guess[np.argmin(numerator)], np.sqrt(np.min(numerator))
+    
+    def _angular_velo(self, t):
+        d1 = self.spline.derivative(t)
+        d2 = self.spline.derivative(t + 0.05)
+        d2 = (d2 - d1) / 0.05
+        return np.cross(d1, d2) / np.dot(d1, d1)
 
     def reset(self, seed=0):
         self.robot = Robot(Args.robot_width, 
@@ -284,40 +297,70 @@ class AnySplineEnv(gymnasium.Env):
         ]
 
         self.spline = qs.QuinticSpline([[self.robot.x, self.robot.y]] + self.targets)
-        self.spline.solve_coeffs(np.cos(self.robot.theta), np.sin(self.robot.theta), 0, 0)
+        self.spline.solve_coeffs(
+            np.sin(self.robot.theta) * 100, 0, 0, 0,
+            np.cos(self.robot.theta) * 100, 0, 0, 0
+        )
         self.points = self.spline(np.linspace(0, len(self.spline), Args.pts * len(self.spline)))
 
         self.steps = 0
         self.total_rwd = 0
-        self.last_rwd = np.zeros(3)
+        self.last_rwd = 0
 
-        self.last_intersection = self._intersection(np.linspace(0.1, len(self.spline), 10))
-        self.stx, self.sty = self.spline(self.last_intersection)
-        self.last_obs = [self._generate_obs(), np.zeros(9), np.zeros(9)]
+        self.closest_t = 0
+        self.closest_dist = 0
+        self.stx, self.sty = self.robot.pos()
+        self.last_obs = [self._generate_obs(), np.zeros(8), np.zeros(8)]
         obs = np.concatenate(self.last_obs)
 
         return obs, {}
     
     def step(self, action):
+        self.steps += 1
+        rwd = 0
         dt = Args.getrand(Args.dt)
         self.robot.set_velo(action[0], action[1])
         self.robot.update(dt)
 
-        self.last_intersection = self._intersection(
-            np.array([self.last_intersection]), iterations=2,
-            bounds=[self.last_intersection, len(self.spline)]
+        self.closest_t, self.closest_dist = self._closest(
+            self.closest_t, iterations=10,
+            bounds=[self.closest_t, len(self.spline)]
         )
-        if self.last_intersection is None:
-            self.spline = qs.QuinticSpline([[self.robot.x, self.robot.y]] + self.targets)
-            self.spline.solve_coeffs(np.cos(self.robot.theta), np.sin(self.robot.theta), 0, 0)
-            self.points = self.spline(np.linspace(0, len(self.spline), Args.pts * len(self.spline)))
-            self.last_intersection = self._intersection(np.linspace(0.1, len(self.spline), 15))
 
-        self.stx, self.sty = self.spline(self.last_intersection)
+        if self.closest_dist > 100:
+            self.spline = qs.QuinticSpline([[self.robot.x, self.robot.y]] + self.targets)
+            self.spline.solve_coeffs(
+                np.sin(self.robot.theta) * 100, 0, 0, 0,
+                np.cos(self.robot.theta) * 100, 0, 0, 0
+            )
+            self.points = self.spline(np.linspace(0, len(self.spline), Args.pts * len(self.spline)))
+            self.closest_t = 0
+            self.closest_dist = 0
+            rwd -= 10
+
+        self.stx, self.sty = self.spline(self.closest_t)
         
         self.last_obs = [self._generate_obs(), self.last_obs[0], self.last_obs[1]]
         obs = np.concatenate(self.last_obs)
-        return obs, 0, False, False, {"dt": dt}
+
+        rwd += (10 - self.closest_dist) / 100
+        if self.robot.speed() < 60:
+            rwd -= 1
+        
+        self.last_rwd = rwd
+        self.total_rwd += rwd
+
+        done = self.closest_t == len(self.spline)
+        if self.steps > 5000: done = True
+        info = {
+            "dt": dt, 
+            "episode": {
+                'r': self.total_rwd,
+                'l': self.steps
+            },
+            "total_rwd": self.total_rwd
+        }
+        return obs, rwd, done, False, info
 
     def render(self):
         if self.render_mode is None:
@@ -335,13 +378,12 @@ class AnySplineEnv(gymnasium.Env):
         renderstr = ", ".join([
             f"Left: {self.robot.left_velo:.2f}",
             f"Right: {self.robot.right_velo:.2f}",
-            f"Speed: {np.sqrt(self.robot.velocity_x ** 2 + self.robot.velocity_y ** 2):.2f}"
+            f"Speed: {self.robot.speed():.2f}"
         ])
         surf = self.font.render(renderstr, True, (255, 255, 255))
         self.screen.blit(surf, (10, 10))
 
-        stx, sty = self.spline(self.last_intersection)
-        pygame.draw.circle(self.screen, (0, 0, 255), (stx, sty), 5)
+        pygame.draw.circle(self.screen, (0, 0, 255), (self.stx, self.sty), 5)
         pygame.draw.circle(self.screen, (255, 0, 0), (self.robot.x, self.robot.y), Args.robot_radius, 1)
 
         pygame.display.flip()
@@ -350,23 +392,28 @@ if __name__ == "__main__":
     # 17668.1092365258, 13.0, 0.2, 0.9333333333333333
     # 8527.547100731887, 10.0, 0.225, 1.0
     # 9369.687273226324, 10.0, 0.175, 0.8
-    env = RobotEnvironment(render_mode='human')
+    env = AnySplineEnv(render_mode='human')
     obs, info = env.reset()
 
+    P, I, D = 0, 0, 0
+    kP, kI, kD = 40000, 0, 0
     while True:
         if pygame.event.get(pygame.QUIT):
             break
 
-        stx, sty = obs[:2] * Args.screen_space
-        x, y = obs[2:4] * Args.screen_space
-        angle = env.robot.angle_to(stx, sty)
-        dist = env.robot.dist_to(stx, sty)
-        dist = min(dist ** 2, 100)
-        angle = (angle * (210 / np.pi))
-        left = dist + angle
-        right = dist - angle
+        x, y, da, angle_velo = obs[1], obs[2], obs[-1], obs[-2]
+        da = np.clip(da, -1, 1)
+        weight = (da - angle_velo) * 1000
+        weight = np.clip(weight, -200, 200)
+        left = 100 - weight
+        right = 100 + weight
+        print(left, right)
+        # left = 0
+        # right = 0
+
         obs, rwd, done, truncated, info = env.step([left, right])
         env.render()
+        
         pygame.time.wait(int(info['dt'] * 1000))
         if done:
             break

@@ -14,7 +14,7 @@ import tyro
 from stable_baselines3.common.buffers import ReplayBuffer
 from torch.utils.tensorboard import SummaryWriter
 from models import Actor, Critic
-from simulator import RobotEnvironment
+from simulator import *
 
 
 @dataclass
@@ -70,7 +70,7 @@ class Args:
 def make_env(env_id, seed, idx, capture_video, run_name):
     def thunk():
         render_mode = "human" if capture_video else None
-        return RobotEnvironment(render_mode=render_mode)
+        return AnySplineEnv(render_mode=render_mode)
 
     return thunk
 
