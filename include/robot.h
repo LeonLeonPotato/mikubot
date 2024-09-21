@@ -1,8 +1,11 @@
-#ifndef _PROS_ROBOT_H_
-#define _PROS_ROBOT_H_
+#ifndef _MIKUBOT_ROBOT_H_
+#define _MIKUBOT_ROBOT_H_
 
 #define PROS_USE_SIMPLE_NAMES 
 #define PROS_USE_LITERALS 
+
+#define RED_TEAM 1
+#define BLUE_TEAM -1
 
 #include "api.h"
 
@@ -11,11 +14,12 @@ const float TRACKING_WHEEL_RADIUS = 4.1275f;
 const float BACK_TRACKING_WHEEL_OFFSET = 7.075f;
 const float SIDE_TRACKING_WHEEL_OFFSET = 10.5f;
 
+extern int team;
+
+extern bool braking;
 extern double x, velocity_x, acceleration_x;
 extern double y, velocity_y, acceleration_y;
 extern double theta, angular_velocity, angular_acceleration;
-
-extern bool braking;
 
 extern pros::Controller master;
 extern pros::IMU inertial;

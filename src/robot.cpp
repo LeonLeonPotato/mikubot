@@ -2,13 +2,14 @@
 #include "api.h"
 
 namespace robot {
+int team = 0;
+
+bool braking = false;
 double x = 0, velocity_x = 0, acceleration_x = 0;
 double y = 0, velocity_y = 0, acceleration_y = 0;
 double theta = 0, angular_velocity = 0, angular_acceleration = 0;
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
-
-bool braking = false;
 
 pros::Imu inertial(20);
 pros::Rotation side_encoder(-12);

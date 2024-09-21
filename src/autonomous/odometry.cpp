@@ -1,6 +1,7 @@
 #include "autonomous/odometry.h"
-#include "api.h"
 #include "robot.h"
+
+#include "api.h"
 
 #define rad(x) (x * 0.01745329251f)
 

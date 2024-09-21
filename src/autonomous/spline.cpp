@@ -1,4 +1,5 @@
 #include "autonomous/spline.h"
+
 #include "api.h"
 
 #include "Eigen/Sparse"
@@ -102,7 +103,7 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     }
     
     Eigen::VectorXf X = solver.solve(B);
-    
+
     if (axis == 0) {
         for (int i = 0; i < segments.size(); i++) {
             segments[i].x_poly.coeffs = X.segment(6 * i, 6);

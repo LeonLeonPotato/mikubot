@@ -1,5 +1,5 @@
-#ifndef _PROS_MAIN_H_
-#define _PROS_MAIN_H_
+#ifndef _MIKUBOT_MAIN_H_
+#define _MIKUBOT_MAIN_H_
 
 #define PROS_USE_SIMPLE_NAMES 
 #define PROS_USE_LITERALS 
