@@ -92,11 +92,8 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     Eigen::SparseMatrix<float> A(n, n);
     A.setFromTriplets(triplets.begin(), triplets.end());
 
-    int solve_start = pros::millis();
     Eigen::SparseQR<Eigen::SparseMatrix<float>, Eigen::COLAMDOrdering<int>> solver;
     solver.compute(A);
-    int solve_end = pros::millis();
-    std::cout << "Solve took " << (solve_end - solve_start) << " millis" << std::endl;
 
     if (solver.info() != Eigen::Success) {
         std::cerr << "Decomposition failed!" << std::endl;

@@ -16,10 +16,20 @@ namespace robot {
     extern char team;
     extern strategies::Strategy auton_strategy;
 
-    extern bool braking;
-    extern double x, velocity_x, acceleration_x;
-    extern double y, velocity_y, acceleration_y;
-    extern double theta, angular_velocity, angular_acceleration;
+    inline namespace state {
+        extern bool braking;
+        extern double x, velocity_x, acceleration_x;
+        extern double y, velocity_y, acceleration_y;
+        extern double theta, angular_velocity, angular_acceleration;
+
+        inline float speed() {
+            return sqrtf(velocity_x * velocity_x + velocity_y * velocity_y);
+        }
+
+        inline float accel() {
+            return sqrtf(acceleration_x * acceleration_x + acceleration_y * acceleration_y);
+        }
+    }
 
     extern pros::Controller master;
     extern pros::IMU inertial;
@@ -49,6 +59,11 @@ namespace robot {
         right_motors.move(0);
         left_motors.brake();
         right_motors.brake();
+    }
+
+    inline void set_brake_mode(pros::motor_brake_mode_e_t mode) {
+        left_motors.set_brake_mode_all(mode);
+        right_motors.set_brake_mode_all(mode);
     }
 }
 

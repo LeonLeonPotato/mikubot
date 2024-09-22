@@ -9,10 +9,12 @@ namespace robot {
 char team;
 strategies::Strategy auton_strategy;
 
+inline namespace state {
 bool braking = false;
 double x = 0, velocity_x = 0, acceleration_x = 0;
 double y = 0, velocity_y = 0, acceleration_y = 0;
 double theta = 0, angular_velocity = 0, angular_acceleration = 0;
+}
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 

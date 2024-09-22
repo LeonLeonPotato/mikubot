@@ -22,6 +22,14 @@ inline void leon_mode(int right_x, int right_y, int left_x, int left_y) {
 	}
 }
 
+inline void differential_drive(int right_x, int right_y, int left_x, int left_y) {
+	if (fmin(abs(left_x), abs(left_y)) > 3) {
+		robot::velo(left_x, -left_x);
+	} else {
+		robot::brake();
+	}
+}
+
 void run(void* args) {
 	while (true) {
 		int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);

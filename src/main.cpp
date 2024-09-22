@@ -18,15 +18,15 @@ void initialize(void) {
 		spline::QuinticSpline sp;
 		for (int i = 0; i < size; i++) {
 			float j = (float) i;
-			sp.points.emplace_back(j, j);
+			sp.points.emplace_back(j, cos(j));
 		}
 
-		auto start = pros::millis();
+		auto start = pros::micros();
 		sp.solve_coeffs(1, 0, -1, 0);
-		auto end = pros::millis();
+		auto end = pros::micros();
 		auto duration = (end - start);
 
-    	std::cout << "Quintic spline test took " << duration << " millis for size " << size << std::endl;	
+    	std::cout << "Quintic spline test took " << duration << " microseconds for size " << size << std::endl;	
 	}
 }
 

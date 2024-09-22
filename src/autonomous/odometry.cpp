@@ -12,6 +12,9 @@ void run(void* args) {
     float ls = rad(robot::side_encoder.get_position() / 100);
     float lb = rad(robot::side_encoder.get_position() / 100);
     float ltheta = rad(robot::inertial.get_rotation());
+    auto ltime = pros::micros();
+    float lx = 0, ly = 0;
+    float lvx = 0, lvy = 0;
 
     while (true) {
         float ctheta = rad(robot::inertial.get_rotation());
@@ -37,11 +40,25 @@ void run(void* args) {
             travel_back = ch * (travel_back / dtheta - robot::BACK_TRACKING_WHEEL_OFFSET);
         }
 
-        double av_theta = robot::theta - dtheta / 2;
+        float av_theta = robot::theta - dtheta / 2;
+
+        lx = robot::x;
+        ly = robot::y;
+        lvx = robot::velocity_x;
+        lvy = robot::velocity_y;
         robot::x += travel_side * sin(av_theta) - travel_back * cos(av_theta);
         robot::y += travel_side * cos(av_theta) + travel_back * sin(av_theta);
 
-        pros::delay(10);
+        auto dt = pros::micros() - ltime;
+        ltime = pros::micros();
+
+        robot::velocity_x = (robot::x - lx) / dt;
+        robot::velocity_y = (robot::y - ly) / dt;
+
+        robot::acceleration_x = (robot::velocity_x - lvx) / dt;
+        robot::acceleration_y = (robot::velocity_y - lvy) / dt;
+
+        pros::c::delay(10);
     }
 }
 
