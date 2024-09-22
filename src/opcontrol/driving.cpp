@@ -3,12 +3,19 @@
 #include "api.h"
 
 #include <iostream>
-#include <math.h>
 
 namespace driving {
 pros::task_t task;
 
-inline void leon_mode(int right_x, int right_y, int left_x, int left_y) {
+inline int min(int a, int b) { // WHY IS THIS NOT IN THE STANDARD LIBRARY
+    return (a < b) ? a : b;
+}
+
+inline int max(int a, int b) { // WHY IS THIS NOT IN THE STANDARD LIBRARY
+	return (a > b) ? a : b;
+}
+
+inline void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
 		int left = left_y + right_x;
 		int right = left_y - right_x;
@@ -22,9 +29,9 @@ inline void leon_mode(int right_x, int right_y, int left_x, int left_y) {
 	}
 }
 
-inline void differential_drive(int right_x, int right_y, int left_x, int left_y) {
-	if (fmin(abs(left_x), abs(left_y)) > 3) {
-		robot::velo(left_x, -left_x);
+inline void differential_drive(int left_x, int left_y, int right_x, int right_y) {
+	if (min(abs(left_y), abs(right_y)) > 3) {
+		robot::velo(left_y, right_y);
 	} else {
 		robot::brake();
 	}
@@ -32,13 +39,13 @@ inline void differential_drive(int right_x, int right_y, int left_x, int left_y)
 
 void run(void* args) {
 	while (true) {
+		int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
+        int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 		int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
         int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-        int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
-        int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 
 		// swap out for other modes
-		leon_mode(right_x, right_y, left_x, left_y);
+		leon_mode(left_x, left_y, right_x, right_y);
 		
 		pros::delay(20);
 	}
