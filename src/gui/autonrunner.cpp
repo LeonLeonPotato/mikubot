@@ -6,7 +6,6 @@
 #include "liblvgl/lvgl.h"
 
 namespace autonrunner {
-
 lv_obj_t* text;
 
 void init(void) {

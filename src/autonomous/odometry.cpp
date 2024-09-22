@@ -6,7 +6,7 @@
 #define rad(x) (x * 0.01745329251f)
 
 namespace odometry {
-pros::Task* task;
+pros::task_t task;
 
 void run(void* args) {
     float ls = rad(robot::side_encoder.get_position() / 100);
@@ -46,14 +46,14 @@ void run(void* args) {
 }
 
 void init(void) {
-    task = new pros::Task(run);
+    task = pros::c::task_create(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "odometry");
 }
 
 void start(void) {
-    (*task).resume();
+    pros::c::task_suspend(task);
 }
 
 void stop(void) {
-    (*task).suspend();
+    pros::c::task_resume(task);
 }
 }

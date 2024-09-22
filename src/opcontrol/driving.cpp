@@ -6,7 +6,7 @@
 #include <math.h>
 
 namespace driving {
-pros::Task* task;
+pros::task_t task;
 
 inline void leon_mode(int right_x, int right_y, int left_x, int left_y) {
 	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
@@ -37,14 +37,14 @@ void run(void* args) {
 }
 
 void init(void) {
-    task = new pros::Task(run);
+    task = pros::c::task_create(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "driving");
 }
 
 void start(void) {
-    (*task).resume();
+    pros::c::task_suspend(task);
 }
 
 void stop(void) {
-    (*task).suspend();
+    pros::c::task_resume(task);
 }
 }

@@ -14,20 +14,20 @@ void initialize(void) {
 
 	spline::init();
 	autonselector::init();
-	// for (int size = 5; size < 100; size += 10) {
-	// 	spline::QuinticSpline sp;
-	// 	for (int i = 0; i < size; i++) {
-	// 		float j = (float) i;
-	// 		sp.points.emplace_back(j, j);
-	// 	}
+	for (int size = 5; size < 100; size += 10) {
+		spline::QuinticSpline sp;
+		for (int i = 0; i < size; i++) {
+			float j = (float) i;
+			sp.points.emplace_back(j, j);
+		}
 
-	// 	auto start = pros::millis();
-	// 	sp.solve_coeffs(1, 0, -1, 0);
-	// 	auto end = pros::millis();
-	// 	auto duration = (end - start);
+		auto start = pros::millis();
+		sp.solve_coeffs(1, 0, -1, 0);
+		auto end = pros::millis();
+		auto duration = (end - start);
 
-    // 	std::cout << "Quintic spline test took " << duration << " millis for size " << size << std::endl;	
-	// }
+    	std::cout << "Quintic spline test took " << duration << " millis for size " << size << std::endl;	
+	}
 }
 
 void disabled(void) {
