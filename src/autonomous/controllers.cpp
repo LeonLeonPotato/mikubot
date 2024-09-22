@@ -11,7 +11,6 @@ float PID::get() {
     }
 
     float derivative = 2*last_error - error;
-    last_error = error;
 
     return kp * error + ki * integral + kd * derivative;
 }
