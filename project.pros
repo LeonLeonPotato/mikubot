@@ -256,7 +256,7 @@
     },
     "upload_options": {
       "icon": "pros",
-      "description": "The final controller",
+      "description": "The final controller I will ever make.",
       "after": "run"
     },
     "use_early_access": false

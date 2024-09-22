@@ -5,7 +5,10 @@
 #define PROS_USE_LITERALS 
 
 namespace autonselector {
-void init(void);
+    extern bool finished_selection;
+
+    void init(void);
+    void destroy(void);
 }
 
 #endif

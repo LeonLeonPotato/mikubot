@@ -1,8 +1,11 @@
 #include "robot.h"
+#include "autonomous/strategies.h"
+
 #include "api.h"
 
 namespace robot {
-int team = 0;
+char team;
+strategies::Strategy auton_strategy;
 
 bool braking = false;
 double x = 0, velocity_x = 0, acceleration_x = 0;

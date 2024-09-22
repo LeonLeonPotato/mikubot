@@ -2,6 +2,7 @@
 #include "robot.h"
 #include "autonomous/spline.h"
 #include "gui/autonselector.h"
+#include "gui/autonrunner.h"
 
 #include "api.h"
 
@@ -42,5 +43,15 @@ void autonomous(void) {
 }
 
 void opcontrol(void) {
+	while (autonselector::finished_selection == false) {
+		pros::delay(20);
+	}
+
+	std::cout << "Auton selector finished" << std::endl;
+
+	autonselector::destroy();
+
+	autonrunner::init();
+
 	std::cout << "Opcontrol started" << std::endl;
 }
