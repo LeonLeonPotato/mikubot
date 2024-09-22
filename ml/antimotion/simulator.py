@@ -282,8 +282,7 @@ class AnySplineEnv(gymnasium.Env):
     
     def _angular_velo(self, t):
         d1 = self.spline.derivative(t)
-        d2 = self.spline.derivative(t + 0.05)
-        d2 = (d2 - d1) / 0.05
+        d2 = self.spline.scnd_deriv(t)
         return np.cross(d1, d2) / np.dot(d1, d1)
 
     def reset(self, seed=0):
@@ -395,19 +394,18 @@ if __name__ == "__main__":
     env = AnySplineEnv(render_mode='human')
     obs, info = env.reset()
 
-    P, I, D = 0, 0, 0
-    kP, kI, kD = 40000, 0, 0
+    w = 2300
     while True:
         if pygame.event.get(pygame.QUIT):
             break
 
         x, y, da, angle_velo = obs[1], obs[2], obs[-1], obs[-2]
-        da = np.clip(da, -1, 1)
-        weight = (da - angle_velo) * 1000
-        weight = np.clip(weight, -200, 200)
-        left = 100 - weight
-        right = 100 + weight
-        print(left, right)
+        w *= da / (angle_velo + 1e-6)
+
+        pct_diff = 1 + abs(da - angle_velo) / (angle_velo + 1e-6)
+        left = 50 - da * w
+        right = 50 + da * w
+        print(da, angle_velo, w)
         # left = 0
         # right = 0
 

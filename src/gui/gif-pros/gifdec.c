@@ -1,4 +1,4 @@
-#include "gif-pros/gifdec.h"
+#include "gui/gif-pros/gifdec.h"
 
 #include <stdio.h>
 #include <stdlib.h>

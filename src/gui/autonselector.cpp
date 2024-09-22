@@ -1,6 +1,6 @@
 #include "gui/autonselector.h"
 #include "gui/utils.h"
-#include "gif-pros/gifclass.hpp"
+#include "gui/gif-pros/gifclass.hpp"
 #include "autonomous/strategies.h"
 #include "version.h"
 #include "robot.h"
