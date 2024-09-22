@@ -32,8 +32,23 @@ class PID {
 };
 
 class Ramsete {
-    // stub
+    public:
+        float beta, zeta;
+        float desired_x, desired_y, desired_theta;
+        float desired_v, desired_w;
+    
+        Ramsete(float beta, float zeta):
+            beta(beta), zeta(zeta) {
+            desired_x = 0;
+            desired_y = 0;
+            desired_theta = 0;
+        }
+
+        void get(float &vl, float &vr, bool use_vw = false);
 };
+
+void quick_ramsete(float x, float y, float theta, float v, float w, float &vl, float &vr);
+void quick_ramsete(float x, float y, float theta, float &vl, float &vr);
 } // namespace controllers
 
 #endif

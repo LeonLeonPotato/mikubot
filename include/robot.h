@@ -29,6 +29,18 @@ namespace robot {
         inline float accel() {
             return sqrtf(acceleration_x * acceleration_x + acceleration_y * acceleration_y);
         }
+
+        inline float angular_diff(float desired) {
+            return fmod(desired - fmod(theta, M_TWOPI) + M_PI, M_TWOPI) - M_PI;
+        }
+
+        inline float angular_diff(float desired_x, float desired_y) {
+            return angular_diff(atan2(desired_y - y, desired_x - x));
+        }
+
+        inline float distance(float desired_x, float desired_y) {
+            return sqrtf(powf(desired_x - x, 2) + powf(desired_y - y, 2));
+        }
     }
 
     extern pros::Controller master;
