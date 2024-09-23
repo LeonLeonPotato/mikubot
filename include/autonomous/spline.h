@@ -9,6 +9,8 @@
 #include "Eigen/Dense"
 #include <vector>
 
+#define LOCALIZE_T int i = (int) t; t = t - i + (int)(t == points.size() - 1);
+
 namespace spline {
 extern Eigen::Matrix<float, 6, 6> differential_matrix_1;
 extern Eigen::Matrix<float, 6, 6> differential_matrix_0;
@@ -50,7 +52,7 @@ class Polynomial2D {
         inline float angle(float t) {
             return atan2(derivative(t)(1), derivative(t)(0));
         }
-        inline float angular_velo(float t) {
+        inline float angular_velocity(float t) {
             auto d1 = derivative(t, 1);
             auto d2 = derivative(t, 2);
             return d1.cross(d2) / d1.dot(d1);
@@ -59,14 +61,13 @@ class Polynomial2D {
             float n = derivative(t).norm();
             return derivative(t, 2).norm() / pow(1 + n * n, 1.5);
         }
-        float length(int resolution = 50);
 
         inline Eigen::Vector2f operator()(float t) { return compute(t); }
 };
 
 class QuinticSpline {
     private:
-        float total_length;
+        std::vector<float> lengths;
         std::vector<Polynomial2D<6>> segments;
 
         void solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1);
@@ -78,18 +79,46 @@ class QuinticSpline {
         QuinticSpline(int n) { segments.resize(n); }
         QuinticSpline(std::vector<Eigen::Vector2f>& points) : points(points) { }
 
-        void solve_coeffs(float ic_theta_0, float ic_theta_1, float bc_theta_0, float bc_theta_1);
-        void solve_length(void);
+        inline void solve_coeffs(float icx0, float icx1, float icy0, float icy1,
+                          float bcx0, float bcx1, float bcy0, float bcy1) 
+        {
+            segments.clear(); 
+            segments.resize(points.size() - 1);
+
+            solve_spline(0, icx0, icx1, bcx0, bcx1);
+            solve_spline(1, icy0, icy1, bcy0, bcy1);
+        }
+        
+        void solve_length(int resolution = 50);
+        float time_parameter(float s);
+
+        inline float arc_parameter(float t) {
+            return lengths[(int) (t * lengths.size())];
+        }
         
         inline Eigen::Vector2f compute(float t) {
-            int i = (int) t;
-            t = t - i + (int)(t == points.size() - 1);
+            LOCALIZE_T
             return segments[i](t);
         }
         inline Eigen::Vector2f derivative(float t, int n = 1) {
-            int i = (int) t;
-            t = t - i + (int)(t == points.size() - 1);
+            LOCALIZE_T
             return segments[i].derivative(t, n);
+        }
+        inline Eigen::Vector2f normal(float t) {
+            LOCALIZE_T
+            return segments[i].normal(t);
+        }
+        inline float angle(float t) {
+            LOCALIZE_T
+            return segments[i].angle(t);
+        }
+        inline float angular_velocity(float t) {
+            LOCALIZE_T
+            return segments[i].angular_velocity(t);
+        }
+        inline float curvature(float t) {
+            LOCALIZE_T
+            return segments[i].curvature(t);
         }
 
         std::string debug_out(void);

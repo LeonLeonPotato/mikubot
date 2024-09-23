@@ -40,16 +40,6 @@ std::string Polynomial<N>::debug_out(void) {
     return result;
 }
 
-template <int N>
-float Polynomial2D<N>::length(int resolution) {
-    float result = 0;
-    for (int i = 0; i < resolution; i++) {
-        float t = (float) i / resolution;
-        result += (compute(t) - compute(t + 1 / resolution)).norm();
-    }
-    return result;
-}
-
 void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1) {
     int n = 6 * segments.size();
     std::vector<Eigen::Triplet<float>> triplets;
@@ -112,19 +102,24 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     }
 }
 
-void QuinticSpline::solve_coeffs(float ic_theta_0, float ic_theta_1, float bc_theta_0, float bc_theta_1) {
-    segments.clear(); 
-    segments.resize(points.size() - 1);
-
-    solve_spline(0, cos(ic_theta_0), cos(ic_theta_1), cos(bc_theta_0), cos(bc_theta_1));
-    solve_spline(1, sin(ic_theta_0), sin(ic_theta_1), sin(bc_theta_0), sin(bc_theta_1));
+void QuinticSpline::solve_length(int resolution) {
+    lengths.clear();
+    resolution *= segments.size();
+    lengths.reserve(resolution + 1);
+    auto prev = points[0];
+    float length = 0;
+    for (int i = 1; i <= resolution; i++) {
+        float t = (float) i / resolution * segments.size();
+        auto current = compute(t);
+        length += (current - prev).norm();
+        lengths.push_back(length);
+        prev = current;
+    }
 }
 
-void QuinticSpline::solve_length(void) {
-    total_length = 0;
-    for (int i = 0; i < segments.size(); i++) {
-        total_length += segments[i].length();
-    }
+float QuinticSpline::time_parameter(float s) {
+    int i = std::lower_bound(lengths.begin(), lengths.end(), s) - lengths.begin();
+    return (float) i / lengths.size() * segments.size();
 }
 
 std::string QuinticSpline::debug_out(void) {
