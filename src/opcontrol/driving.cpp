@@ -5,8 +5,6 @@
 #include <iostream>
 
 namespace driving {
-pros::task_t task;
-
 inline int min(int a, int b) { // WHY IS THIS NOT IN THE STANDARD LIBRARY
     return (a < b) ? a : b;
 }
@@ -37,7 +35,7 @@ inline void differential_drive(int left_x, int left_y, int right_x, int right_y)
 	}
 }
 
-void run(void* args) {
+void run() {
 	while (true) {
 		int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
         int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -50,16 +48,4 @@ void run(void* args) {
 		pros::delay(20);
 	}
 }
-
-void init(void) {
-    task = pros::c::task_create(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "driving");
-}
-
-void start(void) {
-    pros::c::task_suspend(task);
-}
-
-void stop(void) {
-    pros::c::task_resume(task);
-}
-}
+} // namespace driving

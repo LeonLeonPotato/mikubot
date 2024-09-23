@@ -10,7 +10,7 @@ Eigen::Matrix<float, 6, 6> differential_matrix_1;
 Eigen::Matrix<float, 6, 6> differential_matrix_0;
 
 template <int N>
-float Polynomial<N>::compute(float t) {
+float Polynomial<N>::compute(float t) const {
     float result = 0;
     float t_pow = 1;
     for (int i = 0; i < N; i++) {
@@ -21,7 +21,7 @@ float Polynomial<N>::compute(float t) {
 }
 
 template <int N>
-float Polynomial<N>::derivative(float t, int n) {
+float Polynomial<N>::derivative(float t, int n) const {
     float result = 0;
     float t_pow = 1;
     for (int i = n; i < N; i++) {
@@ -32,7 +32,7 @@ float Polynomial<N>::derivative(float t, int n) {
 }
 
 template <int N>
-std::string Polynomial<N>::debug_out(void) {
+std::string Polynomial<N>::debug_out(void) const {
     std::string result = "";
     for (int i = 0; i < N; i++) {
         result += std::to_string(coeffs(i)) + "t^" + std::to_string(i) + " + ";
@@ -117,12 +117,7 @@ void QuinticSpline::solve_length(int resolution) {
     }
 }
 
-float QuinticSpline::time_parameter(float s) {
-    int i = std::lower_bound(lengths.begin(), lengths.end(), s) - lengths.begin();
-    return (float) i / lengths.size() * segments.size();
-}
-
-std::string QuinticSpline::debug_out(void) {
+std::string QuinticSpline::debug_out(void) const {
     std::string result = "";
     for (int i = 0; i < segments.size(); i++) {
         result += "Segment " + std::to_string(i) + "\n";

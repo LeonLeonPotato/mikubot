@@ -23,11 +23,11 @@ class Polynomial {
         Polynomial(void) { }
         Polynomial(Eigen::VectorXf& coeffs) : coeffs(coeffs) { }
 
-        float compute(float t);
-        float derivative(float t, int n = 1);
-        inline float operator()(float t) { return compute(t); }
+        float compute(float t) const;
+        float derivative(float t, int n = 1) const;
+        inline float operator()(float t) const { return compute(t); }
 
-        std::string debug_out();
+        std::string debug_out() const;
 };
 
 template <int N>
@@ -39,35 +39,54 @@ class Polynomial2D {
         Polynomial2D(void) {}
         Polynomial2D(Polynomial<N>& x_poly, Polynomial<N>& y_poly) : x_poly(x_poly), y_poly(y_poly) {}
 
-        inline Eigen::Vector2f compute(float t) {
+        inline Eigen::Vector2f compute(float t) const {
             return Eigen::Vector2f(x_poly(t), y_poly(t));
         }
-        inline Eigen::Vector2f derivative(float t, int n = 1) {
+        inline Eigen::Vector2f derivative(float t, int n = 1) const {
             return Eigen::Vector2f(x_poly.derivative(t, n), y_poly.derivative(t, n));
         }
-        inline Eigen::Vector2f normal(float t) {
+        inline Eigen::Vector2f normal(float t) const {
             Eigen::Vector2f d = derivative(t);
             return Eigen::Vector2f(-d(1), d(0));
         }
-        inline float angle(float t) {
+        inline float angle(float t) const {
             return atan2(derivative(t)(1), derivative(t)(0));
         }
-        inline float angular_velocity(float t) {
+        inline float angular_velocity(float t) const {
             auto d1 = derivative(t, 1);
             auto d2 = derivative(t, 2);
-            return d1.cross(d2) / d1.dot(d1);
+            // return d1.cross(d2) / d1.dot(d1);
+            return 0;
         }
-        inline float curvature(float t) {
+        inline float curvature(float t) const {
             float n = derivative(t).norm();
             return derivative(t, 2).norm() / pow(1 + n * n, 1.5);
         }
 
-        inline Eigen::Vector2f operator()(float t) { return compute(t); }
+        inline Eigen::Vector2f operator()(float t) const { return compute(t); }
 };
 
-class QuinticSpline {
-    private:
+class AbstractSpline {
+    protected:
         std::vector<float> lengths;
+
+    public:
+        std::vector<Eigen::Vector2f> points;
+
+        virtual void solve_lengths(int resolution = 50) = 0;
+        virtual float time_parameter(float s) const = 0;
+        virtual float arc_parameter(float t) const = 0;
+
+        virtual inline Eigen::Vector2f compute(float t) const = 0;
+        virtual inline Eigen::Vector2f derivative(float t, int n = 1) const = 0;
+        virtual inline Eigen::Vector2f normal(float t) const = 0;
+        virtual inline float angle(float t) const = 0;
+        virtual inline float angular_velocity(float t) const = 0;
+        virtual inline float curvature(float t) const = 0;
+};
+
+class QuinticSpline : AbstractSpline {
+    private:
         std::vector<Polynomial2D<6>> segments;
 
         void solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1);
@@ -88,42 +107,45 @@ class QuinticSpline {
             solve_spline(0, icx0, icx1, bcx0, bcx1);
             solve_spline(1, icy0, icy1, bcy0, bcy1);
         }
-        
-        void solve_length(int resolution = 50);
-        float time_parameter(float s);
 
-        inline float arc_parameter(float t) {
+        void solve_length(int resolution = 50);
+
+        inline float time_parameter(float s) const override {
+            int i = std::lower_bound(lengths.begin(), lengths.end(), s) - lengths.begin();
+            return (float) i / lengths.size() * segments.size();
+        }
+        inline float arc_parameter(float t) const override {
             return lengths[(int) (t * lengths.size())];
         }
         
-        inline Eigen::Vector2f compute(float t) {
+        inline Eigen::Vector2f compute(float t) const override {
             LOCALIZE_T
-            return segments[i](t);
+            return segments[i].compute(t);
         }
-        inline Eigen::Vector2f derivative(float t, int n = 1) {
+        inline Eigen::Vector2f derivative(float t, int n = 1) const override {
             LOCALIZE_T
             return segments[i].derivative(t, n);
         }
-        inline Eigen::Vector2f normal(float t) {
+        inline Eigen::Vector2f normal(float t) const override {
             LOCALIZE_T
             return segments[i].normal(t);
         }
-        inline float angle(float t) {
+        inline float angle(float t) const override {
             LOCALIZE_T
             return segments[i].angle(t);
         }
-        inline float angular_velocity(float t) {
+        inline float angular_velocity(float t) const override {
             LOCALIZE_T
             return segments[i].angular_velocity(t);
         }
-        inline float curvature(float t) {
+        inline float curvature(float t) const override {
             LOCALIZE_T
             return segments[i].curvature(t);
         }
 
-        std::string debug_out(void);
+        std::string debug_out(void) const;
 
-        inline Eigen::Vector2f operator()(float t) { return compute(t); }
+        inline Eigen::Vector2f operator()(float t) const { return compute(t); }
 };
 
 void init(void);
