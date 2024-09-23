@@ -37,7 +37,7 @@ void Ramsete::get(float &vl, float &vr, bool use_vw) {
     vr = w + k * etheta + beta * v * sin(etheta) * ey / etheta;
 }
 
-void quick_ramsete(float zeta, float beta, float x, float y, float theta, float &vl, float &vr) {
+void Ramsete::quick_ramsete(float beta, float zeta, float x, float y, float theta, float &vl, float &vr) {
     float dx = x - robot::x;
     float dy = y - robot::y;
     float ex = dx * cos(robot::theta) + dy * sin(robot::theta);
@@ -53,7 +53,7 @@ void quick_ramsete(float zeta, float beta, float x, float y, float theta, float 
     vr = w + k * etheta + beta * v * sin(etheta) * ey / etheta;
 }
 
-void quick_ramsete(float zeta, float beta, float x, float y, float theta, float v, float w, float &vl, float &vr) {
+void Ramsete::quick_ramsete(float beta, float zeta, float x, float y, float theta, float v, float w, float &vl, float &vr) {
     float dx = x - robot::x;
     float dy = y - robot::y;
     float ex = dx * cos(robot::theta) + dy * sin(robot::theta);

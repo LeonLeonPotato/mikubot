@@ -45,10 +45,10 @@ class Ramsete {
         }
 
         void get(float &vl, float &vr, bool use_vw = false);
-};
 
-void quick_ramsete(float x, float y, float theta, float v, float w, float &vl, float &vr);
-void quick_ramsete(float x, float y, float theta, float &vl, float &vr);
+    static void quick_ramsete(float beta, float zeta, float x, float y, float theta, float v, float w, float &vl, float &vr);
+    static void quick_ramsete(float beta, float zeta, float x, float y, float theta, float &vl, float &vr);
+};
 } // namespace controllers
 
 #endif

@@ -388,22 +388,13 @@ class AnySplineEnv(gymnasium.Env):
         pygame.display.flip()
 
 if __name__ == "__main__":
-    # 17668.1092365258, 13.0, 0.2, 0.9333333333333333
-    # 8527.547100731887, 10.0, 0.225, 1.0
-    # 9369.687273226324, 10.0, 0.175, 0.8
-    env = AnySplineEnv(render_mode='human')
-    obs, info = env.reset()
-
-    w = 2300
-    while True:
-        if pygame.event.get(pygame.QUIT):
-            break
-
-        x, y, da, angle_velo = obs[1], obs[2], obs[-1], obs[-2]
-        w *= da / (angle_velo + 1e-6)
-
-        pct_diff = 1 + abs(da - angle_velo) / (angle_velo + 1e-6)
-        left = 50 - da * w
+    # 17668.1092365258, 13.0, 0.2,
+        Ramsete(float beta, float zeta):
+            beta(beta), zeta(zeta) {
+            desired_x = 0;
+            desired_y = 0;
+            desired_theta = 0;
+        }
         right = 50 + da * w
         print(da, angle_velo, w)
         # left = 0
