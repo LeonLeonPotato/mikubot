@@ -22,7 +22,7 @@ class Polynomial {
         Polynomial(Eigen::VectorXf& coeffs) : coeffs(coeffs) { }
 
         float compute(float t);
-        float derivative(float t);
+        float derivative(float t, int n = 1);
         inline float operator()(float t) { return compute(t); }
 
         std::string debug_out();
@@ -40,8 +40,8 @@ class Polynomial2D {
         inline Eigen::Vector2f compute(float t) {
             return Eigen::Vector2f(x_poly(t), y_poly(t));
         }
-        inline Eigen::Vector2f derivative(float t) {
-            return Eigen::Vector2f(x_poly.derivative(t), y_poly.derivative(t));
+        inline Eigen::Vector2f derivative(float t, int n = 1) {
+            return Eigen::Vector2f(x_poly.derivative(t, n), y_poly.derivative(t, n));
         }
         inline Eigen::Vector2f normal(float t) {
             Eigen::Vector2f d = derivative(t);
@@ -49,6 +49,15 @@ class Polynomial2D {
         }
         inline float angle(float t) {
             return atan2(derivative(t)(1), derivative(t)(0));
+        }
+        inline float angular_velo(float t) {
+            auto d1 = derivative(t, 1);
+            auto d2 = derivative(t, 2);
+            return d1.cross(d2) / d1.dot(d1);
+        }
+        inline float curvature(float t) {
+            float n = derivative(t).norm();
+            return derivative(t, 2).norm() / pow(1 + n * n, 1.5);
         }
         float length(int resolution = 50);
 
@@ -77,10 +86,10 @@ class QuinticSpline {
             t = t - i + (int)(t == points.size() - 1);
             return segments[i](t);
         }
-        inline Eigen::Vector2f derivative(float t) {
+        inline Eigen::Vector2f derivative(float t, int n = 1) {
             int i = (int) t;
             t = t - i + (int)(t == points.size() - 1);
-            return segments[i].derivative(t);
+            return segments[i].derivative(t, n);
         }
 
         std::string debug_out(void);

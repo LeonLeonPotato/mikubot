@@ -21,11 +21,11 @@ float Polynomial<N>::compute(float t) {
 }
 
 template <int N>
-float Polynomial<N>::derivative(float t) {
+float Polynomial<N>::derivative(float t, int n) {
     float result = 0;
     float t_pow = 1;
-    for (int i = 1; i < N; i++) {
-        result += coeffs(i) * t_pow * i;
+    for (int i = n; i < N; i++) {
+        result += coeffs(n) * t_pow * differential_matrix_1(i, n);
         t_pow *= t;
     }
     return result;
