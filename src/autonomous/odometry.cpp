@@ -24,7 +24,7 @@ void run(void* args) {
         float dtheta = ctheta - ltheta;
         ltheta = ctheta;
 
-        robot::theta += dtheta;
+        robot::theta += dtheta * MULTIPLIER(robot::team);
         robot::angular_acceleration = (dtheta / dt - robot::angular_velocity) / dt;
         robot::angular_velocity = dtheta / dt;
         if (dtheta < rad(1)) dtheta = 0;

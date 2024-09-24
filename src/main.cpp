@@ -10,12 +10,16 @@
 
 #include <iostream>
 
+#include "autonomous/pathing.h"
 void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
 	spline::init();
-	robot::init();
-	odometry::init();
+	// robot::init();
+	// odometry::init();
+	spline::QuinticSpline sp;
+	
+	
 }
 
 void disabled(void) {
@@ -39,5 +43,5 @@ void autonomous(void) {
 
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
-	driving::run();
+	// driving::run();
 }

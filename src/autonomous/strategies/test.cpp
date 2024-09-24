@@ -5,9 +5,9 @@
 #include "api.h"
 
 namespace test_strategy {
-void run() {
-    spline::QuinticSpline sp;
-    sp.points.emplace_back(robot::x, robot::y);
-    sp.points.emplace_back(1, 1);
+void run(void) {
+    robot::velo(100, 100);
+    pros::delay(1000);
+    robot::velo(0, 0);
 }
 }

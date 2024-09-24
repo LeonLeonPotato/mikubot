@@ -8,6 +8,8 @@
 
 #include "autonomous/strategies.h"
 
+#define MULTIPLIER(T) (T == 'R' ? 1 : -1)
+
 namespace robot {
     const float TRACKING_WHEEL_RADIUS = 4.1275f;
     const float BACK_TRACKING_WHEEL_OFFSET = 7.075f;
@@ -41,6 +43,16 @@ namespace robot {
         inline float distance(float desired_x, float desired_y) {
             return sqrtf(powf(desired_x - x, 2) + powf(desired_y - y, 2));
         }
+    }
+
+    namespace signatures {
+        extern const int blue_ring_id;
+        extern const int red_ring_id;
+        extern const int goal_id;
+
+        extern const pros::vision_signature_s_t blue_ring;
+        extern const pros::vision_signature_s_t red_ring;
+        extern const pros::vision_signature_s_t goal;
     }
 
     extern pros::Controller master;

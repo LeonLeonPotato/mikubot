@@ -10,22 +10,11 @@ Eigen::Matrix<float, 6, 6> differential_matrix_1;
 Eigen::Matrix<float, 6, 6> differential_matrix_0;
 
 template <int N>
-float Polynomial<N>::compute(float t) const {
+float Polynomial<N>::compute(float t, int deriv) const {
     float result = 0;
     float t_pow = 1;
-    for (int i = 0; i < N; i++) {
-        result += coeffs(i) * t_pow;
-        t_pow *= t;
-    }
-    return result;
-}
-
-template <int N>
-float Polynomial<N>::derivative(float t, int n) const {
-    float result = 0;
-    float t_pow = 1;
-    for (int i = n; i < N; i++) {
-        result += coeffs(n) * t_pow * differential_matrix_1(i, n);
+    for (int i = deriv; i < N; i++) {
+        result += coeffs(i) * t_pow * differential_matrix_1(i, deriv);
         t_pow *= t;
     }
     return result;

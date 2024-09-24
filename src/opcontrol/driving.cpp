@@ -5,14 +5,6 @@
 #include <iostream>
 
 namespace driving {
-inline int min(int a, int b) { // WHY IS THIS NOT IN THE STANDARD LIBRARY
-    return (a < b) ? a : b;
-}
-
-inline int max(int a, int b) { // WHY IS THIS NOT IN THE STANDARD LIBRARY
-	return (a > b) ? a : b;
-}
-
 inline void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
 		int left = left_y + right_x;
@@ -28,7 +20,7 @@ inline void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 }
 
 inline void differential_drive(int left_x, int left_y, int right_x, int right_y) {
-	if (min(abs(left_y), abs(right_y)) > 3) {
+	if (std::min(abs(left_y), abs(right_y)) > 3) {
 		robot::velo(left_y, right_y);
 	} else {
 		robot::brake();
