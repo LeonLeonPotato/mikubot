@@ -1,5 +1,4 @@
-#ifndef _MIKUBOT_AUTONOMOUS_SPLINE_H_
-#define _MIKUBOT_AUTONOMOUS_SPLINE_H_
+#pragma once
 
 #define PROS_USE_SIMPLE_NAMES 
 #define PROS_USE_LITERALS 
@@ -193,5 +192,3 @@ class QuinticSpline : public AbstractSpline {
 
 void init(void);
 } // namespace spline
-
-#endif

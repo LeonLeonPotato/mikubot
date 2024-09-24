@@ -2,7 +2,7 @@
 #include "robot.h"
 
 namespace controllers {
-float PID::get() {
+float PID::get(void) {
     if (error > disable_integral_upper || error < disable_integral_lower) {
         integral = 0;
     } else {

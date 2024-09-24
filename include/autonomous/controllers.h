@@ -1,5 +1,4 @@
-#ifndef _MIKUBOT_AUTONOMOUS_CONTROLLERS_H_
-#define _MIKUBOT_AUTONOMOUS_CONTROLLERS_H_
+#pragma once
 
 #define PROS_USE_SIMPLE_NAMES 
 #define PROS_USE_LITERALS 
@@ -28,7 +27,7 @@ class PID {
             this->last_error = this->error;
             this->error = error;
         }
-        float get();
+        float get(void);
 };
 
 class Ramsete {
@@ -50,5 +49,3 @@ class Ramsete {
     static void quick_ramsete(float beta, float zeta, float x, float y, float theta, float &vl, float &vr);
 };
 } // namespace controllers
-
-#endif

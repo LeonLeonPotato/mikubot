@@ -1,5 +1,4 @@
-#ifndef _MIKUBOT_MAIN_H_
-#define _MIKUBOT_MAIN_H_
+#pragma once
 
 #define PROS_USE_SIMPLE_NAMES 
 #define PROS_USE_LITERALS 
@@ -11,5 +10,3 @@ void disabled(void);
 void competition_initialize(void);
 void opcontrol(void);
 }
-
-#endif

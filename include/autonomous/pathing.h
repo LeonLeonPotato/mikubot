@@ -1,5 +1,4 @@
-#ifndef _MIKUBOT_AUTONOMOUS_PATHING_H_
-#define _MIKUBOT_AUTONOMOUS_PATHING_H_
+#pragma once
 
 #define PROS_USE_SIMPLE_NAMES 
 #define PROS_USE_LITERALS 
@@ -13,5 +12,3 @@ float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& poi
                             Eigen::VectorXf guess, float start_bound, float end_bound, int iterations = 5, float threshold=1e-1);
 void follow_spline(spline::AbstractSpline& spline, float t);
 } // namespace pure_pursuit
-
-#endif

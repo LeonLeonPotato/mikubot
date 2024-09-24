@@ -1,5 +1,4 @@
-#ifndef _MIKUBOT_AUTONOMOUS_STRATEGIES_H_
-#define _MIKUBOT_AUTONOMOUS_STRATEGIES_H_
+#pragma once
 
 #include "autonomous/strategy/playback.h"
 #include "autonomous/strategy/test.h"
@@ -19,5 +18,3 @@ namespace strategies {
     extern const std::unordered_map<Strategy, void (*)()> functions;
     extern const Strategy default_strategy;
 }
-
-#endif

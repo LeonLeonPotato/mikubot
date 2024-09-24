@@ -51,8 +51,8 @@ pros::Vision vision(9);
 
 void init(void) {
     inertial.reset(true);
-    left_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_BRAKE);
-    right_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_BRAKE);
+    left_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
+    right_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
 
     vision.set_signature(signatures::blue_ring_id, &signatures::blue_ring);
     vision.set_signature(signatures::red_ring_id, &signatures::red_ring);
