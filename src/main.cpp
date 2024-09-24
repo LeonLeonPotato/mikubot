@@ -18,8 +18,25 @@ void initialize(void) {
 	// robot::init();
 	// odometry::init();
 	spline::QuinticSpline sp;
-	
-	
+	sp.points.emplace_back(0, 0);
+	sp.points.emplace_back(0, 1);
+	sp.points.emplace_back(1, 1);
+	sp.points.emplace_back(1, 0);
+	sp.solve_coeffs(0, 0, 0, 0, 0, 0, 0, 0);
+	std::cout << sp.debug_out() << std::endl;
+
+	Eigen::Vector2f point(0.5, 0.5);
+	float t = pure_pursuit::compute_intersections(
+		sp, point, 0.7, 0.9, 0, 3, 15, 1e-1
+	);
+	std::cout << "test one computed: " << t << std::endl;
+
+	Eigen::VectorXf guess(10);
+	guess.setLinSpaced(10, 0, 1.5);
+	t = pure_pursuit::compute_intersections(
+		sp, point, 0.7, guess, 0, 3, 15, 1e-1
+	);
+	std::cout << "test two computed: " << t << std::endl;
 }
 
 void disabled(void) {

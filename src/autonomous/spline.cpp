@@ -3,18 +3,26 @@
 #include "api.h"
 
 #include "Eigen/Sparse"
-#include "Eigen/SparseCholesky"
 
 namespace spline {
 Eigen::Matrix<float, 6, 6> differential_matrix_1;
 Eigen::Matrix<float, 6, 6> differential_matrix_0;
 
 template <int N>
+void Polynomial<N>::compute(Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv) const {
+    Eigen::VectorXf t_pow = Eigen::VectorXf::Ones(t.size());
+    for (int i = deriv; i < N; i++) {
+        res += coeffs(i).cwiseProduct(t_pow) * differential_matrix_1(deriv, i);
+        t_pow = t_pow.cwiseProduct(t);
+    }
+}
+
+template <int N>
 float Polynomial<N>::compute(float t, int deriv) const {
     float result = 0;
     float t_pow = 1;
     for (int i = deriv; i < N; i++) {
-        result += coeffs(i) * t_pow * differential_matrix_1(i, deriv);
+        result += coeffs(i) * t_pow * differential_matrix_1(deriv, i);
         t_pow *= t;
     }
     return result;
@@ -91,11 +99,11 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     }
 }
 
-void QuinticSpline::solve_length(int resolution) {
+void QuinticSpline::solve_lengths(int resolution) {
     lengths.clear();
     resolution *= segments.size();
     lengths.reserve(resolution + 1);
-    auto prev = points[0];
+    Eigen::Vector2f prev = points[0];
     float length = 0;
     for (int i = 1; i <= resolution; i++) {
         float t = (float) i / resolution * segments.size();

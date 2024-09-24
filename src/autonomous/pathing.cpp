@@ -3,64 +3,51 @@
 
 #include "api.h"
 
-inline void keysort(Eigen::VectorXf& v, Eigen::VectorXf& keys) {
-    std::vector<int> indices(keys.size());
-    for(int i = 0; i < indices.size(); ++i) {
-        indices[i] = i;
-    }
-
-    std::sort(indices.begin(), indices.end(),
-              [&keys](int i1, int i2) { return keys[i1] < keys[i2]; });
-
-    Eigen::VectorXf sorted_v(v.size());
-    Eigen::VectorXf sorted_keys(keys.size());
-
-    for(int i = 0; i < indices.size(); ++i) {
-        sorted_v[i] = v[indices[i]];
-        sorted_keys[i] = keys[indices[i]];
-    }
-
-    v = sorted_v;
-    keys = sorted_keys;
-}
-
 namespace pure_pursuit {
-float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float guess,
-                            float iterations, float threshold, float radius, float start_bound, float end_bound) 
+float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius,
+                            float guess, float start_bound, float end_bound, int iterations, float threshold) 
 {
     while (iterations--) {
-        Eigen::Vector2f f_guess = spline.compute(guess) - point;
-        float num = f_guess.dot(f_guess) - radius * radius;
-        float den = 2 * f_guess.dot(spline.compute(guess, 1));
-        guess -= num / (den + 1e-5);
-        guess = std::max(std::min(guess, end_bound), start_bound);
+        Eigen::Vector2f rel = spline.compute(guess) - point;
+        float num = rel.dot(rel) - radius * radius;
+        Eigen::Vector2f deriv = spline.compute(guess, 1);
+        float den = 2 * rel.dot(deriv);
+
+        if (fabs(den) < 1e-5) break;
+
+        float new_guess = guess - num / den;
+        guess = std::max(std::min(new_guess, end_bound), start_bound);
+
+        if (fabs(new_guess - guess) < threshold) break;
     }
 
-    float dist = (spline.compute(guess) - point).norm() - radius;
+    float dist = fabs((spline.compute(guess) - point).norm() - radius);
     if (dist > threshold) return -1;
     return guess;
 }
 
-float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, Eigen::VectorXf& guess,
-                            float iterations, float threshold, float radius, float start_bound, float end_bound) 
+float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius,
+                            Eigen::VectorXf guess, float start_bound, float end_bound, int iterations, float threshold) 
 {
     while (iterations--) {
-        Eigen::Matrix2Xf f_guess = spline.compute(guess) - point;
-        Eigen::VectorXf num = f_guess.cwiseProduct(f_guess).colwise().sum().array() - radius * radius;
-        Eigen::VectorXf den = 2 * f_guess.cwiseProduct(spline.compute(guess, 1)).colwise().sum().array() + 1e-5;
+        Eigen::Matrix2Xf rel = spline.compute(guess).colwise() - point;
+        Eigen::VectorXf num = rel.cwiseProduct(rel).colwise().sum().array() - radius * radius;
+        Eigen::Matrix2Xf deriv = spline.compute(guess, 1);
+        Eigen::VectorXf den = 2 * rel.cwiseProduct(deriv).colwise().sum().array() + 1e-5;
         guess -= num.cwiseQuotient(den);
         guess = guess.cwiseMax(start_bound).cwiseMin(end_bound);
     }
 
-    Eigen::Matrix2Xf f_guess = spline.compute(guess) - point;
-    Eigen::VectorXf keys = f_guess.cwiseProduct(f_guess).colwise().sum().sqrt().array() - radius;
+    Eigen::Matrix2Xf f_guess = spline.compute(guess).colwise() - point;
+    Eigen::VectorXf keys = (f_guess.cwiseProduct(f_guess).colwise().sum().cwiseSqrt().array() - radius).cwiseAbs();
 
-    keysort(guess, keys);
-
-    for (int i = keys.size()-1; i >= 0; i--) {
-        if (keys[i] < threshold) return guess[i];
+    float max_guess = -1;
+    for (int i = 0; i < guess.size(); i++) {
+        if (keys(i) < threshold) {
+            max_guess = std::max(max_guess, guess(i));
+        }
     }
 
-    return -1;
+    return max_guess;
 }
 } // namespace pathing
