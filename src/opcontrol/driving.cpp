@@ -19,7 +19,7 @@ inline void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	}
 }
 
-inline void differential_drive(int left_x, int left_y, int right_x, int right_y) {
+inline void tank_drive(int left_x, int left_y, int right_x, int right_y) {
 	if (std::min(abs(left_y), abs(right_y)) > 3) {
 		robot::velo(left_y, right_y);
 	} else {
