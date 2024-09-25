@@ -5,6 +5,7 @@
 #include "autonomous/spline.h"
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
+#include "gui/visiontest.h"
 
 #include "api.h"
 
@@ -16,7 +17,7 @@ void initialize(void) {
 
 	spline::init();
 	robot::init();
-	odometry::init();
+	// odometry::init();
 	// spline::QuinticSpline sp;
 	// sp.points.emplace_back(0, 0);
 	// sp.points.emplace_back(0, 1);
@@ -61,5 +62,5 @@ void autonomous(void) {
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
 	// driving::run();
-	test_strategy::run();
+	visiontest::init();
 }

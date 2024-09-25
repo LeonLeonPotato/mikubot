@@ -66,42 +66,7 @@ namespace signatures {
     extern pros::vision_signature_s_t goal;
 } // namespace signatures
 
-extern pros::Controller master;
-extern pros::IMU inertial;
-extern pros::Rotation side_encoder;
-extern pros::Rotation back_encoder;
-
-extern pros::MotorGroup left_motors;
-extern pros::MotorGroup right_motors;
-
-extern pros::MotorGroup intake;
-extern pros::Motor conveyor;
-
-extern pros::adi::Pneumatics excluder;
-extern pros::Optical classifier;
-
 extern pros::Vision vision;
-
-inline void velo(int left, int right) {
-    left = std::clamp(left, -127, 127);
-    right = std::clamp(right, -127, 127);
-    braking = false;
-    left_motors.move(left);
-    right_motors.move(right);
-}
-
-inline void brake(void) {
-    braking = true;
-    left_motors.move(0);
-    right_motors.move(0);
-    left_motors.brake();
-    right_motors.brake();
-}
-
-inline void set_brake_mode(pros::motor_brake_mode_e_t mode) {
-    left_motors.set_brake_mode_all(mode);
-    right_motors.set_brake_mode_all(mode);
-}
 
 void init(void);
 }
