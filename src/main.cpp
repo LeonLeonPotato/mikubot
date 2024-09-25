@@ -5,6 +5,7 @@
 #include "autonomous/spline.h"
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
+#include "gui/visiontest.h"
 #include "gui/utils.h"
 
 #include "api.h"
@@ -62,5 +63,5 @@ void opcontrol(void) {
 	autonrunner::init();
 	std::cout << "Opcontrol started" << std::endl;
 	// driving::run();
-	// test_strategy::run();
+	visiontest::init();
 }
