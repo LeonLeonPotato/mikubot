@@ -58,15 +58,10 @@ void autonomous(void) {
 	std::cout << "Auton started" << std::endl;
 }
 
-#include "robot.h"
 void opcontrol(void) {
 	competition_initialize();
 	autonrunner::init();
 	std::cout << "Opcontrol started" << std::endl;
 	// driving::run();
-	// visiontest::init();
-
-	while (true) {
-		printf("%f\n", robot::inertial.get_rotation());
-	}	
+	visiontest::init();
 }

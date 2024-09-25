@@ -61,7 +61,6 @@ namespace signatures {
 } // namespace signatures
 
 extern pros::Vision vision;
-extern pros::Imu inertial;
 
 void init(void);
 }
