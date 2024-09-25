@@ -9,9 +9,11 @@ namespace odometry {
 pros::task_t task;
 
 void run(void* args) {
-    float ls = rad(robot::side_encoder.get_position() / 100);
-    float lb = rad(robot::side_encoder.get_position() / 100);
-    float ltheta = rad(robot::inertial.get_rotation());
+    // float ls = rad(robot::side_encoder.get_position() / 100);
+    // float lb = rad(robot::side_encoder.get_position() / 100);
+    // float ltheta = rad(robot::inertial.get_rotation());
+    float ls = 0, lb = 0;
+    float ltheta = 0;
     auto ltime = pros::micros();
     float lx = 0, ly = 0;
     float lvx = 0, lvy = 0;
@@ -20,7 +22,8 @@ void run(void* args) {
         auto dt = (pros::micros() - ltime) / 1000000.0f;
         ltime = pros::micros();
 
-        float ctheta = rad(robot::inertial.get_rotation());
+        // float ctheta = rad(robot::inertial.get_rotation());
+        float ctheta = 0;
         float dtheta = ctheta - ltheta;
         ltheta = ctheta;
 
@@ -29,8 +32,10 @@ void run(void* args) {
         robot::angular_velocity = dtheta / dt;
         if (dtheta < rad(1)) dtheta = 0;
 
-        float cs = rad(robot::side_encoder.get_position() / 100.0);
-        float cb = rad(robot::side_encoder.get_position() / 100.0);
+        // float cs = rad(robot::side_encoder.get_position() / 100.0);
+        // float cb = rad(robot::side_encoder.get_position() / 100.0);
+        float cs = 0;
+        float cb = 0;
         float ds = cs - ls;
         float db = cb - lb;
         ls = cs;

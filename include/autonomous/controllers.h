@@ -48,4 +48,21 @@ class Ramsete {
     static void quick_ramsete(float beta, float zeta, float x, float y, float theta, float v, float w, float &vl, float &vr);
     static void quick_ramsete(float beta, float zeta, float x, float y, float theta, float &vl, float &vr);
 };
+
+class KalmanFilter {
+    private:
+        float x, p, q, r;
+    
+    public:
+        KalmanFilter(float x, float p, float q, float r):
+            x(x), p(p), q(q), r(r) {}
+        void update(float z) {
+            float k = p / (p + r);
+            x = x + k * (z - x);
+            p = (1 - k) * p + q;
+        }
+        float get(void) {
+            return x;
+        }
+};
 } // namespace controllers
