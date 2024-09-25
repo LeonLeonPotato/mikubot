@@ -6,6 +6,6 @@
 #include "liblvgl/lvgl.h"
 
 namespace renderer {
-    void init(void);
-    void destroy(void);
+void init(void);
+void destroy(void);
 }

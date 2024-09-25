@@ -235,24 +235,25 @@ void destroy(void) {
 
     lv_obj_del(team_selection_text);
     lv_obj_del(team_button);
-    delete team_selection_text_style;
-    delete team_button_style;
-    delete team_button_text_style;
+    lv_style_reset(team_button_style);
+    lv_style_reset(team_button_text_style);
+    lv_style_reset(team_selection_text_style);
+
 
     lv_obj_del(auton_selection_text);
     lv_obj_del(selected_auton_box);
-    delete auton_selection_text_style;
-    delete selected_auton_box_style;
+    lv_style_reset(selected_auton_box_style);
+    lv_style_reset(auton_selection_text_style);
 
     for (auto& i : auton_buttons) {
         lv_obj_del(i->button);
-        delete i->button_style;
-        delete i->text_style;
+        lv_style_reset(i->button_style);
+        lv_style_reset(i->text_style);
         delete i;
     }
 
     lv_obj_del(confirm_button);
-    delete confirm_button_style;
+    lv_style_reset(confirm_button_style);
 
     miku_gif->clean();
     delete miku_gif;

@@ -68,6 +68,8 @@ extern pros::Motor conveyor;
 extern pros::adi::Pneumatics excluder;
 extern pros::Optical classifier;
 
+extern pros::Vision vision;
+
 inline void velo(int left, int right) {
     braking = false;
     left_motors.move(left);
