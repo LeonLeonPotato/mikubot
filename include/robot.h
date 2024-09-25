@@ -50,9 +50,9 @@ namespace robot {
         extern const int red_ring_id;
         extern const int goal_id;
 
-        extern const pros::vision_signature_s_t blue_ring;
-        extern const pros::vision_signature_s_t red_ring;
-        extern const pros::vision_signature_s_t goal;
+        extern pros::vision_signature_s_t blue_ring;
+        extern pros::vision_signature_s_t red_ring;
+        extern pros::vision_signature_s_t goal;
     }
 
     extern pros::Controller master;
