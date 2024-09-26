@@ -1,16 +1,10 @@
 #include "gui/visiontest.h"
 #include "gui/utils.h"
-#include "gui/gif-pros/gifclass.hpp"
-#include "autonomous/strategies.h"
-#include "version.h"
 #include "robot.h"
 #include <map>
 
 #include "api.h"
 #include "liblvgl/lvgl.h"
-#include "gui/fonts/roboto_regular_16.c"
-#include "gui/fonts/roboto_regular_bold_16.c"
-#include "gui/fonts/roboto_regular_30.c"
 
 namespace visiontest {
 pros::task_t task;
@@ -24,7 +18,7 @@ struct bbox {
     lv_style_t* sig_style;
 };
 
-std::vector<bbox> boxes;
+std::vector<bbox*> boxes;
 
 int x, y;
 lv_obj_t* view_box;
@@ -32,46 +26,69 @@ lv_style_t* view_box_style;
 
 lv_obj_t* obj_cnt;
 
-void destroy_box(bbox& b) {
-    lv_obj_del(b.box);
-    lv_style_reset(b.style);
-    lv_obj_del(b.sig);
-    lv_style_reset(b.sig_style);
+void destroy_box(bbox* b) {
+    lv_obj_del(b->box);
+    lv_style_reset(b->style);
+    lv_obj_del(b->sig);
+    lv_style_reset(b->sig_style);
 }
 
-bbox create_box(void) {
-    bbox b;
-    b.box = lv_obj_create(view_box);
-    b.style = new lv_style_t();
-    lv_style_init(b.style);
-    lv_style_set_bg_opa(b.style, LV_OPA_0);
-    lv_style_set_border_width(b.style, 1);
+bbox* create_box(void) {
+    bbox* b = new bbox();
+    b->box = lv_obj_create(view_box);
+    lv_obj_remove_style_all(b->box);
 
-    b.sig = lv_obj_create(view_box);
-    b.sig_style = new lv_style_t();
-    lv_style_init(b.sig_style);
-    lv_style_set_bg_opa(b.sig_style, LV_OPA_50);
+    b->style = new lv_style_t();
+    lv_style_init(b->style);
+    lv_style_set_bg_opa(b->style, LV_OPA_0);
+    lv_style_set_border_width(b->style, 1);
+    lv_obj_add_style(b->box, b->style, 0);
+
+    b->sig = lv_label_create(view_box);
+    b->sig_style = new lv_style_t();
+    lv_style_init(b->sig_style);
+    lv_style_set_bg_opa(b->sig_style, LV_OPA_0);
+    lv_style_set_text_color(b->sig_style, lv_color_hex(0xFFFFFF));
+    lv_obj_add_style(b->sig, b->sig_style, 0);
+    return b;
 }
 
-void update(void) {
-    int cnt = robot::vision.get_object_count();
-    lv_label_set_text_fmt(obj_cnt, "Objects: %d", cnt);
-
-    while (boxes.size() > cnt) {
-        destroy_box(boxes.back());
-        boxes.pop_back();
+void update(void* args) {
+    for (int i = 0; i < 10; i++) {
+        boxes.push_back(create_box());
     }
-    for (int i = 0; i < cnt; i++) {
-        if (i >= boxes.size()) boxes.push_back(create_box());
-        bbox& b = boxes[i];
-        pros::vision_object_s_t obj = robot::vision.get_by_sig(0, i);
-        lv_obj_set_pos(boxes[i].box, obj.left_coord, obj.top_coord);
-        lv_obj_set_size(boxes[i].box, obj.width, obj.height);
-        lv_style_set_border_color(b.style, lv_color_hex(sig_color_map[obj.signature]));
 
-        lv_obj_set_pos(boxes[i].sig, obj.left_coord, obj.top_coord - 20);
-        std::string text = "Sig " + std::to_string(obj.signature);
-        lv_label_set_text(boxes[i].sig, text.c_str());
+    std::cout << "Starting vision test" << std::endl;
+
+    while (true) {
+        int cnt = robot::vision.get_object_count();
+        lv_label_set_text_fmt(obj_cnt, "Objects: %d", cnt);
+
+        pros::vision_object_s_t object_arr[10];
+        int n = robot::vision.read_by_size(0, 10, object_arr);
+
+        for (int i = 0; i < std::min(10, cnt); i++) {
+            bbox* b = boxes[i];
+            pros::vision_object_s_t& obj = object_arr[i];
+
+            lv_obj_set_pos(b->box, obj.left_coord, obj.top_coord);
+            lv_obj_set_size(b->box, obj.width, obj.height);
+            lv_style_set_border_color(b->style, lv_color_hex(sig_color_map[obj.signature]));
+
+            lv_obj_set_pos(b->sig, obj.left_coord, obj.top_coord - 20);
+            std::string text = "Sig " + std::to_string(obj.signature);
+            lv_label_set_text(b->sig, text.c_str());
+
+            printf("Sig %d at [%d, %d, %d, %d]\n", obj.signature, obj.left_coord, obj.top_coord, obj.width, obj.height);
+        }
+        // for (int i = cnt; i < boxes.size(); i++) {
+        //     bbox* b = boxes[i];
+        //     lv_obj_set_pos(b->box, 0, 0);
+        //     lv_obj_set_size(b->box, 1, 1);
+        //     lv_label_set_text(b->sig, "");
+        // }
+
+        pros::c::task_delay(50);
     }
 }
 
@@ -91,22 +108,13 @@ void init(void) {
 
     obj_cnt = lv_label_create(lv_scr_act());
     lv_label_set_text(obj_cnt, "Objects: 0");
-    lv_obj_set_pos(view_box, 10, 10);
+    lv_obj_set_pos(obj_cnt, 10, 10);
 
-    sig_color_map[0] = 0xFF0000;
-    sig_color_map[1] = 0x00FF00;
-    sig_color_map[2] = 0x0000FF;
-    sig_color_map[3] = 0xFFFF00;
-    sig_color_map[4] = 0xFF00FF;
-    sig_color_map[5] = 0x00FFFF;
-    sig_color_map[6] = 0xFFFFFF;
+    sig_color_map[robot::signatures::blue_ring_id] = 0x0000FF;
+    sig_color_map[robot::signatures::red_ring_id] = 0xFF0000;
+    sig_color_map[robot::signatures::goal_id] = 0x00FF00;
     
-    task = pros::c::task_create([](void*) {
-        while (true) {
-            update();
-            pros::c::task_delay(50);
-        }
-    }, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Vision Test");
+    task = pros::c::task_create(update, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Vision Test");
 }
 
 void destroy(void) {
@@ -114,7 +122,10 @@ void destroy(void) {
     lv_obj_del(view_box);
     lv_style_reset(view_box_style);
     lv_obj_del(obj_cnt);
-    for (bbox& b : boxes) destroy_box(b);
+    for (bbox*& b : boxes) {
+        destroy_box(b);
+        delete b;
+    }
     boxes.clear();
     sig_color_map.clear();
 }
