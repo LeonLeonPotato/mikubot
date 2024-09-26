@@ -9,8 +9,9 @@ namespace odometry {
 pros::task_t task;
 
 void run(void* args) {
+    int iterations = 0;
     float ls = rad(robot::side_encoder.get_position() / 100);
-    float lb = rad(robot::side_encoder.get_position() / 100);
+    float lb = rad(robot::back_encoder.get_position() / 100);
     float ltheta = rad(robot::inertial.get_rotation());
     auto ltime = pros::micros();
     float lx = 0, ly = 0;
@@ -23,19 +24,19 @@ void run(void* args) {
         float ctheta = rad(robot::inertial.get_rotation());
         float dtheta = ctheta - ltheta;
         ltheta = ctheta;
+        if (fabs(dtheta) < rad(1)) dtheta = 0;
 
-        robot::theta += dtheta * MULTIPLIER(robot::team);
+        robot::theta += dtheta;
         robot::angular_acceleration = (dtheta / dt - robot::angular_velocity) / dt;
         robot::angular_velocity = dtheta / dt;
-        if (dtheta < rad(1)) dtheta = 0;
 
         float cs = rad(robot::side_encoder.get_position() / 100.0);
-        float cb = rad(robot::side_encoder.get_position() / 100.0);
+        float cb = rad(robot::back_encoder.get_position() / 100.0);
         float ds = cs - ls;
         float db = cb - lb;
         ls = cs;
         lb = cb;
-
+        
         float travel_side = ds * robot::TRACKING_WHEEL_RADIUS;
         float travel_back = db * robot::TRACKING_WHEEL_RADIUS;
 
@@ -52,8 +53,8 @@ void run(void* args) {
         lvx = robot::velocity_x;
         lvy = robot::velocity_y;
 
-        robot::x += travel_side * sin(av_theta) - travel_back * cos(av_theta);
-        robot::y += travel_side * cos(av_theta) + travel_back * sin(av_theta);
+        robot::x += travel_side * cos(av_theta) + travel_back * sin(av_theta);
+        robot::y += travel_side * sin(av_theta) - travel_back * cos(av_theta);
 
         robot::velocity_x = (robot::x - lx) / dt;
         robot::velocity_y = (robot::y - ly) / dt;
@@ -61,6 +62,8 @@ void run(void* args) {
         robot::acceleration_y = (robot::velocity_y - lvy) / dt;
 
         pros::c::delay(10);
+
+        iterations++;
     }
 }
 

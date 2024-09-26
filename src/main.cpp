@@ -60,5 +60,6 @@ void autonomous(void) {
 
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
-	driving::run();
+	// driving::run();
+	test_strategy::run();
 }

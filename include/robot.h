@@ -36,11 +36,11 @@ inline namespace state {
     }
 
     inline float angular_diff(float desired_x, float desired_y) {
-        return angular_diff(atan2(desired_y - y, desired_x - x));
+        return angular_diff(atan2(desired_x - x, desired_y - y));
     }
 
     inline float distance(float desired_x, float desired_y) {
-        return sqrtf(powf(desired_x - x, 2) + powf(desired_y - y, 2));
+        return sqrtf((desired_x - x) * (desired_x - x) + (desired_y - y) * (desired_y - y));
     }
 } // namespace state
 
@@ -71,6 +71,8 @@ extern pros::Optical classifier;
 extern pros::Vision vision;
 
 inline void velo(int left, int right) {
+    left = std::clamp(left, -127, 127);
+    right = std::clamp(right, -127, 127);
     braking = false;
     left_motors.move(left);
     right_motors.move(right);

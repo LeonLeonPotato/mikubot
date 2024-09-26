@@ -3,10 +3,8 @@
 
 #include "api.h"
 
-#include "nlohmann/json.h"
-
 namespace robot {
-char team;
+char team = 'R';
 strategies::Strategy auton_strategy;
 
 inline namespace state {
@@ -34,7 +32,7 @@ pros::vision_signature_s_t goal = pros::Vision::signature_from_utility(
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
-pros::Imu inertial(20);
+pros::Imu inertial(9);
 pros::Rotation side_encoder(-12);
 pros::Rotation back_encoder(3);
 
@@ -42,12 +40,12 @@ pros::MotorGroup left_motors({-6, -7, -16}, pros::MotorGearset::blue);
 pros::MotorGroup right_motors({11, 17, 15}, pros::MotorGearset::blue);
 
 // pros::MotorGroup intake({2, 9});
-pros::Motor conveyor(10);
+// pros::Motor conveyor(10);
 
 pros::adi::Pneumatics excluder('B', false);
 pros::Optical classifier(13);
 
-pros::Vision vision(9);
+pros::Vision vision(10);
 
 void init(void) {
     inertial.reset(true);
