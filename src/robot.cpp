@@ -34,8 +34,10 @@ pros::vision_signature_s_t goal = pros::Vision::signature_from_utility(
 
 pros::Vision vision(9);
 
+pros::Imu inertial(1);
+
 void init(void) {
-    // inertial.reset(true);
+    inertial.reset(true);
     // left_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
     // right_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
 
