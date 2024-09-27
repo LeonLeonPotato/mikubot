@@ -7,6 +7,10 @@
 
 #include "autonomous/strategies.h"
 
+#undef __ARM_NEON__
+#undef __ARM_NEON
+#include "Eigen/Dense"
+
 #define MULTIPLIER(T) (T == 'R' ? 1 : -1)
 
 namespace robot {
@@ -39,8 +43,16 @@ inline namespace state {
         return angular_diff(atan2(desired_x - x, desired_y - y));
     }
 
+    inline float angular_diff(Eigen::Vector2f& point) {
+        return angular_diff(atan2(point(0) - x, point(1) - y));
+    }
+
     inline float distance(float desired_x, float desired_y) {
         return sqrtf((desired_x - x) * (desired_x - x) + (desired_y - y) * (desired_y - y));
+    }
+
+    inline float distance(Eigen::Vector2f& point) {
+        return sqrtf((point(0) - x) * (point(0) - x) + (point(1) - y) * (point(1) - y));
     }
 } // namespace state
 

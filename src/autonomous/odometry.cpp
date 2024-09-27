@@ -9,7 +9,7 @@ namespace odometry {
 pros::task_t task;
 
 void run(void* args) {
-    int iterations = 0;
+    long long iterations = 0;
     float ls = rad(robot::side_encoder.get_position() / 100);
     float lb = rad(robot::back_encoder.get_position() / 100);
     float ltheta = rad(robot::inertial.get_rotation());

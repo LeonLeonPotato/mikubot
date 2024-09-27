@@ -3,16 +3,16 @@
 
 namespace controllers {
 float PID::get(void) {
-    if (error > disable_integral_upper || error < disable_integral_lower) {
+    if (error > disable_integral_upper || error < disable_integral_lower || (std::signbit(error) != std::signbit(last_error))) {
         integral = 0;
     } else {
         integral += error;
         integral = fmax(integral_min, fmin(integral_max, integral));
     }
 
-    float derivative = 2*last_error - error;
+    float derivative = error - last_error;
 
-    return kp * error + ki * integral + kd * derivative;
+    return kp * error + ki * integral - kd * derivative;
 }
 
 void Ramsete::get(float &vl, float &vr, bool use_vw) {
