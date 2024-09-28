@@ -17,7 +17,7 @@ void initialize(void) {
 
 	spline::init();
 	robot::init();
-	odometry::init();
+	// odometry::init();
 	renderer::init();
 	// spline::QuinticSpline sp;
 	// sp.points.emplace_back(0, 0);
