@@ -11,6 +11,7 @@
 
 #include "api.h"
 
+#include "autonomous/pathing.h"
 void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
