@@ -66,8 +66,6 @@ void run(void* args) {
         robot::acceleration_y = (robot::velocity_y - lvy) / dt;
 
         pros::c::delay(10);
-
-        iterations++;
     }
 }
 

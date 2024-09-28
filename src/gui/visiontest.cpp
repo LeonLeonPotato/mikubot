@@ -79,16 +79,16 @@ void update(void* args) {
             std::string text = "Sig " + std::to_string(obj.signature);
             lv_label_set_text(b->sig, text.c_str());
 
-            printf("Sig %d at [%d, %d, %d, %d]\n", obj.signature, obj.left_coord, obj.top_coord, obj.width, obj.height);
+            // printf("Sig %d at [%d, %d, %d, %d]\n", obj.signature, obj.left_coord, obj.top_coord, obj.width, obj.height);
         }
-        // for (int i = cnt; i < boxes.size(); i++) {
-        //     bbox* b = boxes[i];
-        //     lv_obj_set_pos(b->box, 0, 0);
-        //     lv_obj_set_size(b->box, 1, 1);
-        //     lv_label_set_text(b->sig, "");
-        // }
+        for (int i = cnt; i < boxes.size(); i++) {
+            bbox* b = boxes[i];
+            lv_obj_set_pos(b->box, 0, 0);
+            lv_obj_set_size(b->box, 1, 1);
+            lv_label_set_text(b->sig, "");
+        }
 
-        pros::c::task_delay(50);
+        pros::delay(50);
     }
 }
 
@@ -113,6 +113,7 @@ void init(void) {
     sig_color_map[robot::signatures::blue_ring_id] = 0x0000FF;
     sig_color_map[robot::signatures::red_ring_id] = 0xFF0000;
     sig_color_map[robot::signatures::goal_id] = 0x00FF00;
+    sig_color_map[robot::signatures::test_id] = 0xFFFF00;
     
     task = pros::c::task_create(update, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Vision Test");
 }

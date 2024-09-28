@@ -6,12 +6,12 @@
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
 #include "gui/visiontest.h"
+#include "autonomous/controllers.h"
 
 #include "api.h"
 
 #include <iostream>
 
-#include "autonomous/pathing.h"
 void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
@@ -59,13 +59,24 @@ void autonomous(void) {
 	std::cout << "Auton started" << std::endl;
 }
 
-#include "robot.h"
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
 	// driving::run();
-	// visiontest::init();
-
+	visiontest::init();
+	controllers::PID pid(0.05, 0.005, 0.0, -999, 999, 999, -999);
 	while (true) {
-		printf("%f\n", robot::inertial.get_rotation());
+		if (robot::vision.get_object_count() > 0) {
+			pros::vision_object_s_t biggest = robot::vision.get_by_sig(0, robot::signatures::test_id);
+			int diff = biggest.x_middle_coord - 158;
+			pid.register_error((float)diff);
+			int power = (int) (pid.get());
+			// if (fabs(power) < 3) continue;
+			power = fmin(fmax(power, -10), 10);
+			robot::motor.move(power);
+		} else {
+			pid.reset();
+			robot::motor.brake();
+		}
+		pros::delay(10);
 	}	
 }
