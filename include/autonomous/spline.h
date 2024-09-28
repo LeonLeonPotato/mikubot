@@ -3,14 +3,11 @@
 #define PROS_USE_SIMPLE_NAMES 
 #define PROS_USE_LITERALS 
 
-#undef __ARM_NEON__
-#undef __ARM_NEON
 #include "Eigen/Dense"
 #include <vector>
 #include <iostream>
 
 #define LOCALIZE_T int i = (int) t - (int) (t == segments.size()); t = t - i;
-typedef Eigen::Matrix<float, 2, -1> Matrix2Nf;
 
 namespace spline {
 extern Eigen::Matrix<float, 6, 6> differential_matrix_1;
@@ -32,8 +29,8 @@ class Polynomial {
         }
         float compute(float t, int deriv = 0) const;
 
-        inline void operator()(Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv = 0) const { compute(t, res, deriv); }
-        inline Eigen::VectorXf operator()(Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
+        inline void operator()(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv = 0) const { compute(t, res, deriv); }
+        inline Eigen::VectorXf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
         inline float operator()(float t, int deriv = 0) const { return compute(t, deriv); }
 
         std::string debug_out() const;
@@ -46,14 +43,14 @@ class Polynomial2D {
         Polynomial<N> y_poly;
 
         Polynomial2D(void) {}
-        Polynomial2D(Polynomial<N>& x_poly, Polynomial<N>& y_poly) : x_poly(x_poly), y_poly(y_poly) {}
+        Polynomial2D(const Polynomial<N>& x_poly, const Polynomial<N>& y_poly) : x_poly(x_poly), y_poly(y_poly) {}
 
-        inline void compute(Eigen::VectorXf& t, Matrix2Nf& res, int deriv = 0) const {
+        inline void compute(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const {
             x_poly.compute(t, res(0), deriv);
             y_poly.compute(t, res(1), deriv);
         }
-        inline Matrix2Nf compute(Eigen::VectorXf& t, int deriv = 0) const {
-            Matrix2Nf x;
+        inline Eigen::Matrix<float, 2, -1> compute(const Eigen::VectorXf& t, int deriv = 0) const {
+            Eigen::Matrix<float, 2, -1> x;
             compute(t, x, deriv);
             return x;
         }
@@ -83,8 +80,8 @@ class Polynomial2D {
             return compute(t, 2).norm() / pow(1 + n * n, 1.5);
         }
 
-        inline void operator()(Eigen::VectorXf& t, Matrix2Nf& res, int deriv = 0) const { compute(t, res, deriv); }
-        inline Matrix2Nf operator()(Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
+        inline void operator()(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const { compute(t, res, deriv); }
+        inline Eigen::Matrix<float, 2, -1> operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
         inline void operator()(float t, Eigen::Vector2f& res, int deriv = 0) const { compute(t, res, deriv); }
         inline Eigen::Vector2f operator()(float t, int deriv = 0) const { return compute(t, deriv); }
 };
@@ -100,8 +97,8 @@ class AbstractSpline {
         virtual float time_parameter(float s) const = 0;
         virtual float arc_parameter(float t) const = 0;
 
-        virtual inline void compute(Eigen::VectorXf& t, Matrix2Nf& res, int deriv = 0) const = 0;
-        virtual inline Matrix2Nf compute(Eigen::VectorXf& t, int deriv = 0) const = 0;
+        virtual inline void compute(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const = 0;
+        virtual inline Eigen::Matrix<float, 2, -1> compute(const Eigen::VectorXf& t, int deriv = 0) const = 0;
         virtual inline void compute(float t, Eigen::Vector2f& res, int deriv = 0) const = 0;
         virtual inline Eigen::Vector2f compute(float t, int deriv = 0) const = 0;
 
@@ -110,8 +107,8 @@ class AbstractSpline {
         virtual inline float angular_velocity(float t) const = 0;
         virtual inline float curvature(float t) const = 0;
 
-        inline void operator()(Eigen::VectorXf& t, Matrix2Nf& res, int deriv = 0) const { compute(t, res, deriv); }
-        inline Matrix2Nf operator()(Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
+        inline void operator()(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const { compute(t, res, deriv); }
+        inline Eigen::Matrix<float, 2, -1> operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
         inline void operator()(float t, Eigen::Vector2f& res, int deriv = 0) const { compute(t, res, deriv); }
         inline Eigen::Vector2f operator()(float t, int deriv = 0) const { return compute(t, deriv); }
 };
@@ -148,15 +145,15 @@ class QuinticSpline : public AbstractSpline {
             solve_spline(1, icy0, icy1, bcy0, bcy1);
         }
 
-        inline void compute(Eigen::VectorXf& t, Matrix2Nf& res, int deriv = 0) const override {
+        inline void compute(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const override {
             for (int j = 0; j < t.size(); j++) {
                 int i = (int) t(j) - (int) (t(j) == points.size() - 1);
                 float tj = t(j) - i;
                 res.col(j) = segments[i].compute(tj, deriv);
             }
         }
-        inline Matrix2Nf compute(Eigen::VectorXf& t, int deriv = 0) const override {
-            Matrix2Nf x;
+        inline Eigen::Matrix<float, 2, -1> compute(const Eigen::VectorXf& t, int deriv = 0) const override {
+            Eigen::Matrix<float, 2, -1> x;
             x.resize(2, t.size());
             compute(t, x, deriv);
             return x;

@@ -1,7 +1,4 @@
 #include "essential.h"
-#include "autonomous/autonconfig.h"
-
-#include "api.h"
 
 namespace robot {
 inline namespace state {
@@ -27,6 +24,11 @@ pros::vision_signature_s_t goal = pros::Vision::signature_from_utility(
 );
 } // namespace signatures
 
+namespace config {
+const bool velo_based = true;
+const pros::motor_brake_mode_e_t default_brake_mode = pros::E_MOTOR_BRAKE_COAST;
+} // namespace config
+
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
 pros::Imu inertial(9);
@@ -46,8 +48,8 @@ pros::Vision vision(10);
 
 void init(void) {
     inertial.reset(true);
-    left_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
-    right_motors.set_brake_mode_all(pros::E_MOTOR_BRAKE_COAST);
+    left_motors.set_brake_mode_all(config::default_brake_mode);
+    right_motors.set_brake_mode_all(config::default_brake_mode);
 
     vision.set_signature(signatures::blue_ring_id, &signatures::blue_ring);
     vision.set_signature(signatures::red_ring_id, &signatures::red_ring);
