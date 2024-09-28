@@ -21,6 +21,7 @@ class PID {
             registered = false;
         }
         void reset(void) {
+            registered = false;
             error = 0;
             integral = 0;
             last_error = 0;

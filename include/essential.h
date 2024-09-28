@@ -54,14 +54,16 @@ namespace signatures {
     extern const int blue_ring_id;
     extern const int red_ring_id;
     extern const int goal_id;
+    extern const int test_id;
 
     extern pros::vision_signature_s_t blue_ring;
     extern pros::vision_signature_s_t red_ring;
     extern pros::vision_signature_s_t goal;
+    extern pros::vision_signature_s_t test;
 } // namespace signatures
 
 extern pros::Vision vision;
-extern pros::Imu inertial;
+extern pros::Motor motor;
 
 void init(void);
 }

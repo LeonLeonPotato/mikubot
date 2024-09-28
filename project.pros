@@ -1,7 +1,7 @@
 {
   "py/object": "pros.conductor.project.Project",
   "py/state": {
-    "project_name": "mikubot",
+    "project_name": "MikuBot",
     "target": "v5",
     "templates": {
       "kernel": {
