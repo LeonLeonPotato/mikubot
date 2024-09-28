@@ -65,7 +65,7 @@ void run(void) {
                     t, point(0), point(1), fdist, res(0), res(1), dtheta, dist, left, right);
         }
 
-        robot::velo(left, right);
+        robot::volt(left, right);
 
         pros::delay(20);
         it++;

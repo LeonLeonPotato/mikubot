@@ -9,11 +9,25 @@ inline void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
 		int left = left_y + right_x;
 		int right = left_y - right_x;
-		robot::velo(left, right);
+		robot::volt(left, right);
 	} else if (abs(right_x) > 10 && abs(left_y) < 10) { // turning
-		robot::velo(right_x, -right_x);
+		robot::volt(right_x, -right_x);
 	} else if (abs(right_x) < 10 && abs(left_y) > 10) { // driving
-		robot::velo(left_y, left_y);
+		robot::volt(left_y, left_y);
+	} else { // stop
+		robot::brake();
+	}
+}
+
+inline void leon_mode_velocity_based(int left_x, int left_y, int right_x, int right_y) {
+	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
+		float left = fminf(fmaxf(left_y + right_x, -127), 127);
+		float right = fminf(fmaxf(left_y - right_x, -127), 127);
+		robot::velo(left / 127.0f, right / 127.0f);
+	} else if (abs(right_x) > 10 && abs(left_y) < 10) { // turning
+		robot::volt(right_x / 127.0f, -right_x / 127.0f);
+	} else if (abs(right_x) < 10 && abs(left_y) > 10) { // driving
+		robot::volt(left_y / 127.0f, left_y / 127.0f);
 	} else { // stop
 		robot::brake();
 	}
@@ -21,7 +35,7 @@ inline void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 
 inline void tank_drive(int left_x, int left_y, int right_x, int right_y) {
 	if (std::min(abs(left_y), abs(right_y)) > 3) {
-		robot::velo(left_y, right_y);
+		robot::volt(left_y, right_y);
 	} else {
 		robot::brake();
 	}

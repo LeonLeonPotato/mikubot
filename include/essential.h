@@ -4,7 +4,6 @@
 #define PROS_USE_LITERALS 
 
 #include "api.h"
-#include "autonomous/autonconfig.h"
 
 #undef __ARM_NEON__
 #undef __ARM_NEON
@@ -76,7 +75,20 @@ extern pros::Optical classifier;
 
 extern pros::Vision vision;
 
-inline void velo(int left, int right) {
+inline int max_speed(void) {
+    switch (left_motors.get_gearing()) {
+        case pros::MotorGears::blue:
+            return 600;
+        case pros::MotorGears::green:
+            return 200;
+        case pros::MotorGears::red:
+            return 100;
+        default:
+            return 200;
+    }
+}
+
+inline void volt(int left, int right) {
     left = std::clamp(left, -127, 127);
     right = std::clamp(right, -127, 127);
     braking = false;
@@ -84,10 +96,22 @@ inline void velo(int left, int right) {
     right_motors.move(right);
 }
 
+inline void velo(int left, int right) {
+    int max = max_speed();
+    left = std::clamp(left, -max, max);
+    right = std::clamp(right, -max, max);
+    braking = false;
+    left_motors.move_velocity(left);
+    right_motors.move_velocity(right);
+}
+
+inline void velo(float left, float right) {
+    int max = max_speed();
+    velo((int) (left * max), (int) (right * max));
+}
+
 inline void brake(void) {
     braking = true;
-    left_motors.move(0);
-    right_motors.move(0);
     left_motors.brake();
     right_motors.brake();
 }
