@@ -1,7 +1,6 @@
 #include "gui/utils.h"
 
 namespace renderer {
-
 void Text::rename(const std::string& text) const {
     lv_label_set_text(this->text, text.c_str());
     lv_obj_center(this->text);

@@ -20,6 +20,7 @@ lv_obj_t* logo;
 
 renderer::Text* team_selection_text;
 renderer::NamedButton* team_button;
+renderer::NamedButton* side_button;
 
 renderer::Text* auton_selection_text;
 int current_selected_idx;
@@ -64,6 +65,11 @@ void team_switch_callback(lv_event_t* e) {
     team_button->rename(auton_config::get_team_name());
 }
 
+void side_switch_callback(lv_event_t* e) {
+    auton_config::side = -auton_config::side;
+    side_button->rename(auton_config::get_side_name());
+}
+
 inline void team_selector(void) {
     team_selection_text = new renderer::Text(
         "Team",
@@ -72,12 +78,19 @@ inline void team_selector(void) {
     );
     team_button = new renderer::NamedButton(
         auton_config::get_team_name(), 
-        roboto_regular_16, 
-        110, 60, 130, 50, 
+        roboto_regular_bold_16, 
+        110, 60, 120, 50, 
         0xFF0000
+    );
+    side_button = new renderer::NamedButton(
+        auton_config::get_side_name(), 
+        roboto_regular_bold_16, 
+        240, 60, 120, 50,
+        0x838482
     );
 
     lv_obj_add_event_cb(team_button->button, team_switch_callback, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(side_button->button, side_switch_callback, LV_EVENT_CLICKED, NULL);
 }
 
 void auton_selection_callback(lv_event_t* e) {
@@ -175,6 +188,7 @@ void destroy(void) {
 
     delete team_selection_text;
     delete team_button;
+    delete side_button;
     delete auton_selection_text;
 
     for (auto i : auton_buttons) {

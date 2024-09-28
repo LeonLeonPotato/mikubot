@@ -5,6 +5,7 @@
 #include "autonomous/spline.h"
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
+#include "gui/utils.h"
 
 #include "api.h"
 
@@ -14,6 +15,7 @@ void initialize(void) {
 	spline::init();
 	robot::init();
 	odometry::init();
+	renderer::init();
 	// spline::QuinticSpline sp;
 	// sp.points.emplace_back(0, 0);
 	// sp.points.emplace_back(0, 1);
