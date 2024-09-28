@@ -11,6 +11,8 @@
 #ifndef EIGEN_FUZZY_H
 #define EIGEN_FUZZY_H
 
+#include "./InternalHeaderCheck.h"
+
 namespace Eigen { 
 
 namespace internal
@@ -24,7 +26,7 @@ struct isApprox_selector
   {
     typename internal::nested_eval<Derived,2>::type nested(x);
     typename internal::nested_eval<OtherDerived,2>::type otherNested(y);
-    return (nested - otherNested).cwiseAbs2().sum() <= prec * prec * numext::mini(nested.cwiseAbs2().sum(), otherNested.cwiseAbs2().sum());
+    return (nested.matrix() - otherNested.matrix()).cwiseAbs2().sum() <= prec * prec * numext::mini(nested.cwiseAbs2().sum(), otherNested.cwiseAbs2().sum());
   }
 };
 

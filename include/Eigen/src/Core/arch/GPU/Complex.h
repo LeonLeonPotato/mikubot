@@ -8,18 +8,29 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_COMPLEX_CUDA_H
-#define EIGEN_COMPLEX_CUDA_H
+#ifndef EIGEN_COMPLEX_GPU_H
+#define EIGEN_COMPLEX_GPU_H
 
-// clang-format off
 // Many std::complex methods such as operator+, operator-, operator* and
 // operator/ are not constexpr. Due to this, GCC and older versions of clang do
 // not treat them as device functions and thus Eigen functors making use of
 // these operators fail to compile. Here, we manually specialize these
 // operators and functors for complex types when building for CUDA to enable
 // their use on-device.
+//
+// NOTES:
+//  - Compound assignment operators +=,-=,*=,/=(Scalar) will not work on device,
+//    since they are already specialized in the standard. Using them will result
+//    in silent kernel failures.
+//  - Compiling with MSVC and using +=,-=,*=,/=(std::complex<Scalar>) will lead
+//    to duplicate definition errors, since these are already specialized in
+//    Visual Studio's <complex> header (contrary to the standard).  This is
+//    preferable to removing such definitions, which will lead to silent kernel
+//    failures.
+//  - Compiling with ICC requires defining _USE_COMPLEX_SPECIALIZATION_ prior
+//    to the first inclusion of <complex>.
 
-#if defined(EIGEN_CUDACC) && defined(EIGEN_GPU_COMPILE_PHASE)
+#if defined(EIGEN_GPUCC) && defined(EIGEN_GPU_COMPILE_PHASE)
     
 // ICC already specializes std::complex<float> and std::complex<double>
 // operators, preventing us from making them device functions here.
@@ -28,7 +39,7 @@
 // To allow std::complex operator use on device, define _OVERRIDE_COMPLEX_SPECIALIZATION_
 // prior to first inclusion of <complex>.  This prevents ICC from adding
 // its own specializations, so our custom ones below can be used instead.
-#if !(defined(EIGEN_COMP_ICC) && defined(_USE_COMPLEX_SPECIALIZATION_))
+#if !(EIGEN_COMP_ICC && defined(_USE_COMPLEX_SPECIALIZATION_))
 
 // Import Eigen's internal operator specializations.
 #define EIGEN_USING_STD_COMPLEX_OPERATORS           \
@@ -42,6 +53,8 @@
   using Eigen::complex_operator_detail::operator/=; \
   using Eigen::complex_operator_detail::operator==; \
   using Eigen::complex_operator_detail::operator!=;
+
+#include "../../InternalHeaderCheck.h"
 
 namespace Eigen {
 
@@ -253,6 +266,6 @@ EIGEN_USING_STD_COMPLEX_OPERATORS
 
 #endif  // !(EIGEN_COMP_ICC && _USE_COMPLEX_SPECIALIZATION_)
 
-#endif  // EIGEN_CUDACC && EIGEN_GPU_COMPILE_PHASE
+#endif  // EIGEN_GPUCC && EIGEN_GPU_COMPILE_PHASE
 
-#endif  // EIGEN_COMPLEX_CUDA_H
+#endif  // EIGEN_COMPLEX_GPU_H

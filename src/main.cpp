@@ -8,9 +8,6 @@
 
 #include "api.h"
 
-#include <iostream>
-
-#include "autonomous/pathing.h"
 void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
