@@ -4,22 +4,16 @@
 #define PROS_USE_LITERALS 
 
 #include "api.h"
-
-#include "autonomous/strategies.h"
+#include "autonomous/autonconfig.h"
 
 #undef __ARM_NEON__
 #undef __ARM_NEON
 #include "Eigen/Dense"
 
-#define MULTIPLIER(T) (T == 'R' ? 1 : -1)
-
 namespace robot {
 const float TRACKING_WHEEL_RADIUS = 4.1275f;
 const float BACK_TRACKING_WHEEL_OFFSET = 7.075f;
 const float SIDE_TRACKING_WHEEL_OFFSET = 10.5f;
-
-extern char team;
-extern strategies::Strategy auton_strategy;
 
 inline namespace state {
     extern bool braking;

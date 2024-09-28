@@ -1,12 +1,9 @@
-#include "robot.h"
-#include "autonomous/strategies.h"
+#include "essential.h"
+#include "autonomous/autonconfig.h"
 
 #include "api.h"
 
 namespace robot {
-char team = 'R';
-strategies::Strategy auton_strategy;
-
 inline namespace state {
 bool braking = false;
 double x = 0, velocity_x = 0, acceleration_x = 0;

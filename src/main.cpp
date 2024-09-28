@@ -1,5 +1,5 @@
 #include "main.h"
-#include "robot.h"
+#include "essential.h"
 #include "opcontrol/driving.h"
 #include "autonomous/odometry.h"
 #include "autonomous/spline.h"
@@ -57,6 +57,7 @@ void autonomous(void) {
 
 void opcontrol(void) {
 	competition_initialize();
+	autonrunner::init();
 	std::cout << "Opcontrol started" << std::endl;
 	// driving::run();
 	// test_strategy::run();

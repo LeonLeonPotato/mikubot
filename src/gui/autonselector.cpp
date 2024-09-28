@@ -1,9 +1,9 @@
 #include "gui/autonselector.h"
 #include "gui/utils.h"
 #include "gui/gif-pros/gifclass.hpp"
-#include "autonomous/strategies.h"
+#include "autonomous/autonconfig.h"
 #include "version.h"
-#include "robot.h"
+#include "essential.h"
 
 #include "api.h"
 #include "liblvgl/lvgl.h"
@@ -14,35 +14,20 @@
 #include <vector>
 
 namespace autonselector {
-struct Auton_strategy_button {
-    strategies::Strategy strategy;
-    lv_obj_t* button;
-    lv_style_t* button_style;
-    lv_obj_t* text;
-    lv_style_t* text_style;
-};
-
 bool finished_selection = false;
 
 lv_obj_t* logo;
 
-lv_obj_t* team_selection_text;
-lv_style_t* team_selection_text_style;
-lv_obj_t* team_button;
-lv_style_t* team_button_style;
-lv_obj_t* team_button_text;
-lv_style_t* team_button_text_style;
+renderer::Text* team_selection_text;
+renderer::NamedButton* team_button;
 
-lv_obj_t* auton_selection_text;
-lv_style_t* auton_selection_text_style;
+renderer::Text* auton_selection_text;
+int current_selected_idx;
+std::vector<std::pair<auton_strategies::Strategy, renderer::NamedButton*>> auton_buttons;
 lv_obj_t* selected_auton_box;
 lv_style_t* selected_auton_box_style;
-Auton_strategy_button* selected_auton_strategy;
-std::vector<Auton_strategy_button*> auton_buttons;
 
-lv_obj_t* confirm_button;
-lv_style_t* confirm_button_style;
-lv_obj_t* confirm_button_text;
+renderer::NamedButton* confirm_button;
 
 Gif* miku_gif;
 
@@ -51,8 +36,7 @@ inline void create_logo(void) {
     lv_obj_set_pos(logo, 10, 10);
 
     lv_span_t* big_m = lv_spangroup_new_span(logo);;
-    const char m = 'M';
-    lv_span_set_text(big_m, &m);
+    lv_span_set_text(big_m, "M");
 
     lv_style_init(&big_m->style);
     lv_style_set_text_color(&big_m->style, lv_color_hex(0x34aeeb));
@@ -70,52 +54,36 @@ inline void create_logo(void) {
 }
 
 void team_switch_callback(lv_event_t* e) {
-    if (*lv_label_get_text(team_button_text) == 'R') { // hack
-        lv_label_set_text(team_button_text, "Blue");
-        lv_style_set_bg_color(team_button_style, lv_color_hex(0x0000FF));
+    if (auton_config::team == 'R') {
+        auton_config::team = 'B';
+        team_button->bg_color(0x0000FF);
     } else {
-        lv_label_set_text(team_button_text, "Red");
-        lv_style_set_bg_color(team_button_style, lv_color_hex(0xFF0000));
+        auton_config::team = 'R';
+        team_button->bg_color(0xFF0000);
     }
+    team_button->rename(auton_config::get_team_name());
 }
 
 inline void team_selector(void) {
-    team_selection_text = lv_label_create(lv_scr_act());;
-    lv_label_set_text(team_selection_text, "Config");
-    lv_obj_set_pos(team_selection_text, 10, 70);
+    team_selection_text = new renderer::Text(
+        "Team",
+        roboto_regular_30, 
+        10, 70
+    );
+    team_button = new renderer::NamedButton(
+        auton_config::get_team_name(), 
+        roboto_regular_16, 
+        110, 60, 130, 50, 
+        0xFF0000
+    );
 
-    team_selection_text_style = new lv_style_t();
-    lv_style_init(team_selection_text_style);
-    lv_style_set_text_font(team_selection_text_style, &roboto_regular_30);
-    lv_style_set_text_color(team_selection_text_style, lv_color_hex(0xFFFFFF));
-    lv_obj_add_style(team_selection_text, team_selection_text_style, 0);
-
-    ////////// Team Button //////////
-
-    team_button = lv_btn_create(lv_scr_act());
-    lv_obj_set_pos(team_button, 110, 60);
-    lv_obj_set_size(team_button, 130, 50);
-
-    team_button_style = new lv_style_t();
-    lv_style_init(team_button_style);
-    lv_style_set_bg_color(team_button_style, lv_color_hex(0xFF0000));
-    lv_obj_add_style(team_button, team_button_style, 0);
-    
-    team_button_text = lv_label_create(team_button);
-    lv_label_set_text(team_button_text, "Red");
-    lv_obj_center(team_button_text);
-
-    team_button_text_style = new lv_style_t();
-    lv_style_init(team_button_text_style);
-    lv_style_set_text_color(team_button_text_style, lv_color_hex(0xFFFFFF));
-    lv_style_set_text_font(team_button_text_style, &roboto_regular_16);
-    lv_obj_add_style(team_button_text, team_button_text_style, 0);
-
-    lv_obj_add_event_cb(team_button, team_switch_callback, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(team_button->button, team_switch_callback, LV_EVENT_CLICKED, NULL);
 }
 
 void auton_selection_callback(lv_event_t* e) {
-    Auton_strategy_button* clicked_button = static_cast<Auton_strategy_button*>(lv_event_get_user_data(e));
+    int i = reinterpret_cast<int>(lv_event_get_user_data(e));
+    const auto& clicked_button = auton_buttons[i].second;
+    const auto& clicked_strategy = auton_buttons[i].first;
 
     lv_obj_set_pos(
         selected_auton_box, 
@@ -123,53 +91,34 @@ void auton_selection_callback(lv_event_t* e) {
         lv_obj_get_y(clicked_button->button)-5
     );
 
-    lv_style_set_text_font(clicked_button->text_style, &roboto_regular_bold_16);
-    lv_style_set_text_font(selected_auton_strategy->text_style, &roboto_regular_16);
+    clicked_button->set_font(roboto_regular_bold_16);
+    auton_buttons[current_selected_idx].second->set_font(roboto_regular_16);
 
-    selected_auton_strategy = clicked_button;
+    current_selected_idx = i;
 }
 
 inline void auton_strategy(void) {
-    auton_selection_text = lv_label_create(lv_scr_act());;
-    lv_label_set_text(auton_selection_text, "Auton");
-    lv_obj_set_pos(auton_selection_text, 10, 130);
-
-    auton_selection_text_style = new lv_style_t();
-    lv_style_init(auton_selection_text_style);
-    lv_style_set_text_font(auton_selection_text_style, &roboto_regular_30);
-    lv_style_set_text_color(auton_selection_text_style, lv_color_hex(0xFFFFFF));
-    lv_obj_add_style(auton_selection_text, auton_selection_text_style, 0);
+    auton_selection_text = new renderer::Text(
+        "Auton",
+        roboto_regular_30, 
+        10, 130
+    );
 
     int x = 115;
     int y = 120;
-    for (auto& i : strategies::names) {
-        Auton_strategy_button* auton_button = new Auton_strategy_button();
-        auton_button->strategy = i.first;
+    int i = 0;
+    for (const auto& strat : auton_strategies::names) {
+        auto* btn = new renderer::NamedButton(
+            strat.second, 
+            roboto_regular_16, 
+            x, y, 130, 50
+        );
+        lv_obj_add_event_cb(btn->button, auton_selection_callback, LV_EVENT_CLICKED, reinterpret_cast<void*>(i));
 
-        auton_button->button = lv_btn_create(lv_scr_act());
-        lv_obj_set_pos(auton_button->button , x, y);
-        lv_obj_set_size(auton_button->button , 130, 50);
+        auton_buttons.emplace_back(strat.first, btn);
 
-        auton_button->button_style = new lv_style_t();
-        lv_style_init(auton_button->button_style);
-        lv_style_set_bg_color(auton_button->button_style, lv_color_hex(0x34aeeb));
-        lv_obj_add_style(auton_button->button, auton_button->button_style, 0);
-
-        auton_button->text = lv_label_create(auton_button->button);
-        lv_label_set_text(auton_button->text, i.second.c_str());
-        lv_obj_center(auton_button->text);
-
-        auton_button->text_style = new lv_style_t();
-        lv_style_init(auton_button->text_style);
-        lv_style_set_text_color(auton_button->text_style, lv_color_hex(0xFFFFFF));
-        lv_style_set_text_font(auton_button->text_style, &roboto_regular_16);
-        lv_obj_add_style(auton_button->text, auton_button->text_style, 0);
-
-        auton_buttons.push_back(auton_button);
-        lv_obj_add_event_cb(auton_button->button, auton_selection_callback, LV_EVENT_CLICKED, auton_button);
-
-        if (i.first == strategies::default_strategy) {
-            lv_style_set_text_font(auton_button->text_style, &roboto_regular_bold_16);
+        if (strat.first == auton_strategies::default_strategy) {
+            btn->set_font(roboto_regular_bold_16);
 
             selected_auton_box = lv_obj_create(lv_scr_act());
             lv_obj_remove_style_all(selected_auton_box);
@@ -183,7 +132,7 @@ inline void auton_strategy(void) {
             lv_style_set_bg_opa(selected_auton_box_style, LV_OPA_0);
             lv_obj_add_style(selected_auton_box, selected_auton_box_style, 0);
 
-            selected_auton_strategy = auton_button;
+            current_selected_idx = i;
         }
 
         x += 140;
@@ -191,31 +140,22 @@ inline void auton_strategy(void) {
             x = 115;
             y += 60;
         }
+        i++;
     }
 }
 
 void confirm_selection_callback(lv_event_t* e) {
     finished_selection = true;
-
-    robot::team = *lv_label_get_text(team_button_text);
-    robot::auton_strategy = selected_auton_strategy->strategy;
 }
 
 inline void confirm_selection(void) {
-    confirm_button = lv_btn_create(lv_scr_act());
-    lv_obj_set_pos(confirm_button, 20, 175);
-    lv_obj_set_size(confirm_button, 70, 50);
+    confirm_button = new renderer::NamedButton(
+        "Confirm", 
+        roboto_regular_16, 
+        20, 175, 70, 50
+    );
 
-    confirm_button_style = new lv_style_t();
-    lv_style_init(confirm_button_style);
-    lv_style_set_bg_color(confirm_button_style, lv_color_hex(0x34aeeb));
-    lv_obj_add_style(confirm_button, confirm_button_style, 0);
-
-    confirm_button_text = lv_label_create(confirm_button);
-    lv_label_set_text(confirm_button_text, "Confirm");
-    lv_obj_center(confirm_button_text);
-
-    lv_obj_add_event_cb(confirm_button, confirm_selection_callback, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(confirm_button->button, confirm_selection_callback, LV_EVENT_CLICKED, NULL);
 }
 
 void init_gif(void) {
@@ -233,27 +173,18 @@ void init(void) {
 void destroy(void) {
     lv_obj_del(logo);
 
-    lv_obj_del(team_selection_text);
-    lv_obj_del(team_button);
-    lv_style_reset(team_button_style);
-    lv_style_reset(team_button_text_style);
-    lv_style_reset(team_selection_text_style);
+    delete team_selection_text;
+    delete team_button;
+    delete auton_selection_text;
 
-
-    lv_obj_del(auton_selection_text);
-    lv_obj_del(selected_auton_box);
-    lv_style_reset(selected_auton_box_style);
-    lv_style_reset(auton_selection_text_style);
-
-    for (auto& i : auton_buttons) {
-        lv_obj_del(i->button);
-        lv_style_reset(i->button_style);
-        lv_style_reset(i->text_style);
-        delete i;
+    for (auto i : auton_buttons) {
+        delete i.second;
     }
 
-    lv_obj_del(confirm_button);
-    lv_style_reset(confirm_button_style);
+    delete confirm_button;
+
+    lv_obj_del(selected_auton_box);
+    lv_style_reset(selected_auton_box_style);
 
     miku_gif->clean();
     delete miku_gif;
