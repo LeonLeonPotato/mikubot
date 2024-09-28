@@ -6,25 +6,33 @@
 namespace controllers {
 class PID {
     private:
+        bool registered;
         float kp, ki, kd;
         float error, last_error, integral;
         float integral_min, integral_max;
         float disable_integral_upper, disable_integral_lower;
 
     public:
-        PID(float kp, float ki, float kd, float integral_min, float integral_max, float disable_integral_upper, float disable_integral_lower):
-            kp(kp), ki(ki), kd(kd), integral_min(integral_min), integral_max(integral_max), disable_integral_upper(disable_integral_upper), disable_integral_lower(disable_integral_lower) {
+        PID(float kp, float ki, float kd, float integral_min, float integral_max, float disable_integral_lower, float disable_integral_upper):
+            kp(kp), ki(ki), kd(kd), integral_min(integral_min), integral_max(integral_max), disable_integral_lower(disable_integral_lower), disable_integral_upper(disable_integral_upper) {
             error = 0;
             integral = 0;
             last_error = 0;
+            registered = false;
         }
         void reset(void) {
             error = 0;
             integral = 0;
             last_error = 0;
+            registered = false;
         }
         void register_error(float error) {
-            this->last_error = this->error;
+            if (!registered) {
+                last_error = error;
+                registered = true;
+            } else {
+                last_error = this->error;
+            }
             this->error = error;
         }
         float get(void);

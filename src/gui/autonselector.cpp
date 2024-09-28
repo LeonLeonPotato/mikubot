@@ -81,7 +81,7 @@ void team_switch_callback(lv_event_t* e) {
 
 inline void team_selector(void) {
     team_selection_text = lv_label_create(lv_scr_act());;
-    lv_label_set_text(team_selection_text, "Team");
+    lv_label_set_text(team_selection_text, "Config");
     lv_obj_set_pos(team_selection_text, 10, 70);
 
     team_selection_text_style = new lv_style_t();
@@ -93,7 +93,7 @@ inline void team_selector(void) {
     ////////// Team Button //////////
 
     team_button = lv_btn_create(lv_scr_act());
-    lv_obj_set_pos(team_button, 100, 60);
+    lv_obj_set_pos(team_button, 110, 60);
     lv_obj_set_size(team_button, 130, 50);
 
     team_button_style = new lv_style_t();

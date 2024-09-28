@@ -59,7 +59,8 @@ void autonomous(void) {
 }
 
 void opcontrol(void) {
+	competition_initialize();
 	std::cout << "Opcontrol started" << std::endl;
 	// driving::run();
-	test_strategy::run();
+	// test_strategy::run();
 }
