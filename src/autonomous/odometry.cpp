@@ -23,10 +23,10 @@ void run(void* args) {
 
         float ctheta = rad(robot::inertial.get_rotation());
         float dtheta = ctheta - ltheta;
-        ltheta = ctheta;
-        if (fabs(dtheta) < rad(1)) dtheta = 0;
-
         robot::theta += dtheta;
+        ltheta = ctheta;
+        if (fabs(dtheta) < rad(0.1)) dtheta = 0;
+
         robot::angular_acceleration = (dtheta / dt - robot::angular_velocity) / dt;
         robot::angular_velocity = dtheta / dt;
 
@@ -53,7 +53,7 @@ void run(void* args) {
         lvx = robot::velocity_x;
         lvy = robot::velocity_y;
 
-        robot::x += travel_side * cos(av_theta) + travel_back * sin(av_theta);
+        robot::x -= travel_side * cos(av_theta) + travel_back * sin(av_theta);
         robot::y += travel_side * sin(av_theta) - travel_back * cos(av_theta);
 
         robot::velocity_x = (robot::x - lx) / dt;

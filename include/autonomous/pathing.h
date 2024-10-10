@@ -6,7 +6,7 @@
 #include "autonomous/spline.h"
 
 namespace pure_pursuit {
-float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius, 
+std::pair<float, float> compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius, 
                             float guess, float start_bound, float end_bound, int iterations = 5, float threshold=1e-1);
 float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius, 
                             Eigen::VectorXf guess, float start_bound, float end_bound, int iterations = 5, float threshold=1e-1);

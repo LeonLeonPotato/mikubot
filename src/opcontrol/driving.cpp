@@ -51,6 +51,7 @@ inline void tank_drive_velocity_based(int left_x, int left_y, int right_x, int r
 }
 
 void run() {
+	int it = 0;
 	while (true) {
 		int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
         int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -59,7 +60,12 @@ void run() {
 
 		// swap out for other modes
 		leon_mode(left_x, left_y, right_x, right_y);
-		
+
+		it ++;
+
+		if (it % 10 == 0) {
+			printf("[%f, %f] %f\n", robot::x, robot::y, robot::theta);
+		}
 		pros::delay(20);
 	}
 }

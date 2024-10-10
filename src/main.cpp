@@ -6,6 +6,7 @@
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
 #include "gui/utils.h"
+#include "autonomous/strategy/test.h"
 
 #include "api.h"
 
@@ -58,10 +59,20 @@ void autonomous(void) {
 }
 
 void opcontrol(void) {
-	competition_initialize();
-	autonrunner::init();
+	// competition_initialize();
+	// autonrunner::init();
 	std::cout << "Opcontrol started" << std::endl;
+	test_strategy::run();
 	// driving::run();
+
+	// auto targ = Eigen::Vector2f(50, 50);
+	// while (true) {
+	// 	float dtheta = robot::angular_diff(targ);
+	// 	robot::velo((int) (dtheta * 100), (int) (-dtheta * 100));
+	// 	printf("dtheta = %f, robot theta = %f\n", dtheta, robot::theta);
+
+	// 	pros::delay(20);
+	// }
 	// test_strategy::run();
 	
 }

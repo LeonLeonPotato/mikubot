@@ -4,7 +4,7 @@
 #include "api.h"
 
 namespace pure_pursuit {
-float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius,
+std::pair<float, float> compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius,
                             float guess, float start_bound, float end_bound, int iterations, float threshold) 
 {
     while (iterations--) {
@@ -22,8 +22,8 @@ float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& poi
     }
 
     float dist = fabs((spline.compute(guess) - point).norm() - radius);
-    if (dist > threshold) return -1;
-    return guess;
+    // if (dist > threshold) return -1;
+    return {guess, dist};
 }
 
 float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius,
