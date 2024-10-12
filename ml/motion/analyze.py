@@ -111,8 +111,11 @@ def get_inverse_transformer(df):
     }
 
 if __name__ == "__main__":
-    df = load_processed_df('driving_logs_0.csv')
-    dataset = RobotDataset(df.values, df)
-    
-    df.hist(bins=100)
+    df = pd.read_csv("ml/motion/driving_logs_1.csv").dropna()
+    df['right_voltage'] /= 12000
+    df['right_velo'] /= df['right_velo'].max()
+
+    plt.plot(df['right_voltage'])
+    plt.plot(df['right_velo'])
+
     plt.show()

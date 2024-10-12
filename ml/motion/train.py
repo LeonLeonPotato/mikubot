@@ -8,7 +8,7 @@ import analyze
 import constants
 
 if __name__ == "__main__":
-    df = analyze.load_processed_df("driving_logs_0.csv")
+    df = analyze.load_processed_df("driving_logs_1.csv")
     X = th.tensor(df.values).float()
 
     train = X[:int(len(X) * 0.8)]
