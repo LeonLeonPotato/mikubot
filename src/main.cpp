@@ -62,8 +62,8 @@ void opcontrol(void) {
 	// competition_initialize();
 	// autonrunner::init();
 	std::cout << "Opcontrol started" << std::endl;
-	test_strategy::run();
-	// driving::run();
+	//test_strategy::run();
+	driving::run();
 
 	// auto targ = Eigen::Vector2f(50, 50);
 	// while (true) {

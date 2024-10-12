@@ -27,16 +27,15 @@ float recompute_full() {
 }
 
 void run(void) {
-    // freopen("output.txt", "w", stdout);
     long long it = 0;
     sp = spline::QuinticSpline();
     sp.points.emplace_back(robot::x, robot::y);
-    sp.points.emplace_back(robot::x + 0, robot::y + 100);
+    sp.points.emplace_back(robot::x, robot::y + 100);
     sp.points.emplace_back(robot::x - 50, robot::y + 100);
-    Eigen::Vector2f back = Eigen::Vector2f(robot::x - 50, robot::y + 100);
+    Eigen::Vector2f back = sp.points.back();
+
     std::vector<Eigen::Vector2f> tracker_res;
     std::vector<Eigen::Vector2f> tracker_pos;
-
 
     float t = recompute_full();
     std::cout << sp.debug_out() << std::endl;
