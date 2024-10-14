@@ -7,6 +7,25 @@ import models
 import analyze
 import constants
 
+class WeightedL1Loss(nn.Module):
+    def __init__(self, weight=None, reduction='mean'):
+        super(WeightedL1Loss, self).__init__()
+        self.weight = weight
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        l1_loss = th.abs(inputs - targets)
+        
+        if self.weight is not None:
+            l1_loss = l1_loss * self.weight
+        
+        if self.reduction == 'mean':
+            return l1_loss.mean()
+        elif self.reduction == 'sum':
+            return l1_loss.sum()
+        else:
+            return l1_loss
+
 if __name__ == "__main__":
     df = analyze.load_processed_df("driving_logs_1.csv")
     X = th.tensor(df.values).float()
@@ -23,18 +42,18 @@ if __name__ == "__main__":
     present_size = train_dataset[0][1].shape[-1]
     future_size = train_dataset[0][2].shape[-1]
 
-    model = models.MotionModel(past_size, present_size, future_size).cuda()
-    criterion = nn.MSELoss()
-    optimizer = th.optim.Adam(model.parameters(), lr=constants.learning_rate)
+    model = models.MotionModel(past_size, present_size, future_size).to(constants.device)
+    criterion = WeightedL1Loss(weight=th.tensor([0, 0, 0, 0, 1, 1, 0, 0]).to(constants.device))
+    optimizer = th.optim.AdamW(model.parameters(), lr=constants.learning_rate)
 
     def do_eval():
         model.eval()
         with th.inference_mode():
             total_loss = 0
             for past, present, future in eval_loader:
-                past, present, future = past.cuda(), present.cuda(), future.cuda()
+                past, present, future = past.to(constants.device), present.to(constants.device), future.to(constants.device)
                 output = model(past, present)
-                loss = criterion(output, future) * 10
+                loss = criterion(output, future)
                 total_loss += loss.item()
         model.train()
         return total_loss / len(eval_loader)
@@ -49,11 +68,11 @@ if __name__ == "__main__":
     try:
         for epoch in range(1000):
             for past, present, future in train_loader:
-                past, present, future = past.cuda(), present.cuda(), future.cuda()
+                past, present, future = past.to(constants.device), present.to(constants.device), future.to(constants.device)
 
                 optimizer.zero_grad()
                 output = model(past, present)
-                loss = criterion(output, future) * 10
+                loss = criterion(output, future)
 
                 loss.backward()
                 optimizer.step()
