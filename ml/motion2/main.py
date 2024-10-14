@@ -8,8 +8,9 @@ import torch.nn as nn
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+from typing import Tuple, List
 
-def load_dataset():
+def load_dataset() -> Tuple[data.ConcatDataset, data.ConcatDataset]:
     train_datasets = []
     test_datasets = []
     for file in os.listdir("ml/motion2/datasets"):
@@ -24,16 +25,9 @@ train_dataset, eval_dataset = load_dataset()
 train_loader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 eval_loader = data.DataLoader(eval_dataset, batch_size=batch_size, shuffle=True)
 
-model = MotionModel(
-    6,
-    len(RobotDataset.PRESENT_COLS),
-    len(RobotDataset.FUTURE_COLS)
-).to(device)
+th.set_printoptions(sci_mode=False)
 
-criterion = nn.MSELoss()
-optimizer = th.optim.AdamW(model.parameters(), lr=learning_rate)
-
-def do_eval():
+def do_eval(model, criterion) -> float:
     model.eval()
     with th.no_grad():
         total_loss = 0
@@ -45,16 +39,17 @@ def do_eval():
     model.train()
     return total_loss / len(eval_loader)
 
-def do_train():
+def do_train(model, criterion, optimizer, evaluate=True, output_console=True, max_steps=2000):
     total_steps = 0
     train_plot_x = []
     train_plot_y = []
-    eval_plot_x = []
-    eval_plot_y = []
+    eval_plot_x = [1]
+    eval_plot_y = [do_eval(model, criterion)]
 
     try:
-        for epoch in range(1000):
+        while total_steps < max_steps:
             for past, present, future in train_loader:
+                total_steps += 1
                 past, present, future = past.to(device), present.to(device), future.to(device)
 
                 optimizer.zero_grad()
@@ -68,14 +63,20 @@ def do_train():
                 train_plot_y.append(loss.item())
 
                 if total_steps % 50 == 0:
-                    eval_loss = do_eval()
+                    if evaluate:
+                        eval_loss = do_eval(model, criterion)
 
-                    eval_plot_x.append(total_steps)
-                    eval_plot_y.append(eval_loss)
+                        eval_plot_x.append(total_steps)
+                        eval_plot_y.append(eval_loss)
 
-                    print(f"step {total_steps} eval loss: {eval_loss} train loss: {loss.item()}")
+                        if output_console:
+                            print(f"step {total_steps} eval loss: {eval_loss:.4f} train loss: {loss.item():.4f}")
+                    else:
+                        if output_console:
+                            print(f"step {total_steps} train loss: {loss.item():.4f}")
 
-                total_steps += 1
+                if total_steps >= max_steps:
+                    break
     except BaseException as e:
         if isinstance(e, KeyboardInterrupt):
             print("Exiting early")
@@ -85,10 +86,31 @@ def do_train():
     return train_plot_x, train_plot_y, eval_plot_x, eval_plot_y
 
 if __name__ == "__main__":
-    train_plot_x, train_plot_y, eval_plot_x, eval_plot_y = do_train()
-    th.save(model.state_dict(), f"ml/motion2/{save_name}")
+    import constants
+    best_model = None
+    best_eval_score = 999
+    criterion = nn.L1Loss()
 
-    plt.plot(train_plot_x, train_plot_y, label='Train Loss')
-    plt.plot(eval_plot_x, eval_plot_y, label='Eval Loss')
-    plt.legend()
-    plt.show()
+    for hidden_size in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
+        torch.manual_seed(42)
+
+        model = MotionModel(
+            4,
+            len(RobotDataset.PRESENT_COLS),
+            len(RobotDataset.FUTURE_COLS),
+            psize=hidden_size
+        ).to(device)
+
+        optimizer = th.optim.AdamW(model.parameters(), lr=learning_rate)
+
+        train_plot_x, train_plot_y, eval_plot_x, eval_plot_y = do_train(model, criterion, optimizer, evaluate=True, output_console=False, max_steps=2000)
+
+        print(f"Hidden Size: {hidden_size} | Best eval score: {eval_plot_y[-1]}")
+
+        if eval_plot_y[-1] < best_eval_score:
+            best_eval_score = eval_plot_y[-1]
+            best_model = model.state_dict()
+            print("New best model")
+
+    th.save(best_model, f"ml/motion2/best_{save_name}")
+    print(f"Best eval score: {best_eval_score}")

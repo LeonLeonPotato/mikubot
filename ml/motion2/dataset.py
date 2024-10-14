@@ -3,21 +3,29 @@ import pandas as pd
 from constants import *
 
 class RobotDataset(data.Dataset):
-    PRESENT_COLS = ['left_voltage', 'right_voltage', 'dt']
-    FUTURE_COLS = ['left_velo', 'right_velo']
+    PRESENT_COLS = ['volt', 'dt']
+    FUTURE_COLS = ['velo']
+
+    MEANS = {
+        'volt': 0.000039,
+        'velo': 0.000000,
+        'accel': -0.000078,
+        'dt': 19997.082031
+    }
+
+    STDS = {
+        'volt': 8449.343750,
+        'velo': 336.078247,
+        'accel': 16801.458984,
+        'dt': 359.323303
+    }
 
     def __init__(self, df : pd.DataFrame, split : str):
         self.indexer = {df.columns[i] : i for i in range(len(df.columns))}
-        self.transformer = {
-            col : (lambda x : (x - df[col].mean()) / df[col].std())
-            for col in df.columns
-        }
-        self.inverse_transformer = {
-            col : (lambda x : x * df[col].std() + df[col].mean())
-            for col in df.columns
-        }
+        self.transformer = lambda x, col: (x - RobotDataset.MEANS[col]) / RobotDataset.STDS[col]
+        self.inverse_transformer = lambda x, col: x * RobotDataset.STDS[col] + RobotDataset.MEANS[col]
 
-        df = df.copy().apply(lambda col : self.transformer[col.name](col))
+        df = df.copy().apply(lambda col: (col - RobotDataset.MEANS[col.name]) / RobotDataset.STDS[col.name])
         train_size = int(len(df) * 0.8)
         test_size = len(df) - train_size
         self.X = torch.tensor(
