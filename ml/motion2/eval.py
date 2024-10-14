@@ -5,11 +5,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from constants import *
 
-df = pd.read_csv("ml/motion2/datasets/00.csv")
-test = RobotDataset(df, 'test')
+import signal
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+df = pd.read_csv("ml/motion2/datasets/test/02.csv")
+test = RobotDataset(df, 'all')
 
 model = MotionModel(
-    test.total_feature_size,
+    len(RobotDataset.PAST_COLS),
     len(RobotDataset.PRESENT_COLS),
     len(RobotDataset.FUTURE_COLS)
 ).to(device)
@@ -26,6 +29,7 @@ plt.title('Predicted vs Actual Velocity')
 last_is = []
 last_preds = []
 last_futures = []
+losses = []
 
 with torch.inference_mode():
     for i in range(len(test)):
@@ -33,8 +37,11 @@ with torch.inference_mode():
         past, present, future = past.to(device), present.to(device), future.cpu().item()
         pred = model(past, present)[0].cpu().item()
 
-        pred = test.inverse_transformer(pred, 'velo')
-        future = test.inverse_transformer(future, 'velo')
+        pred = RobotDataset.INVERSE_TRANSFORMER(pred, 'velo')
+        future = RobotDataset.INVERSE_TRANSFORMER(future, 'velo')
+
+        print("Loss: {:.4f}".format(abs(pred - future)))
+        losses.append(abs(pred - future))
 
         last_is.append(i)
         last_preds.append(pred)
@@ -49,3 +56,19 @@ with torch.inference_mode():
         plt.draw()
         plt.pause(0.02)
         plt.clf()
+
+import numpy as np
+
+print("Average loss: {:.4f}".format(sum(losses) / len(losses)))
+print("Median:", np.median(losses))
+print("25%", np.percentile(losses, 25))
+print("75%", np.percentile(losses, 75))
+print("Max:", max(losses))
+print("Min:", min(losses))
+
+plt.ioff(); plt.cla(); plt.clf()
+plt.hist(losses, bins=100)
+plt.xlabel('Time')
+plt.ylabel('Loss')
+plt.title('Loss over time')
+plt.show()

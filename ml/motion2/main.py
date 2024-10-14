@@ -13,9 +13,9 @@ from typing import Tuple, List
 def load_dataset() -> Tuple[data.ConcatDataset, data.ConcatDataset]:
     train_datasets = []
     test_datasets = []
-    for file in os.listdir("ml/motion2/datasets"):
+    for file in os.listdir("ml/motion2/datasets/train/"):
         if file.endswith(".csv"):
-            df = pd.read_csv(f"ml/motion2/datasets/{file}").dropna()
+            df = pd.read_csv(f"ml/motion2/datasets/train/{file}").dropna()
             train_datasets.append(RobotDataset(df, 'train'))
             test_datasets.append(RobotDataset(df, 'test'))
             
@@ -86,31 +86,52 @@ def do_train(model, criterion, optimizer, evaluate=True, output_console=True, ma
     return train_plot_x, train_plot_y, eval_plot_x, eval_plot_y
 
 if __name__ == "__main__":
-    import constants
-    best_model = None
-    best_eval_score = 999
-    criterion = nn.L1Loss()
+    # import constants
+    # best_model = None
+    # best_eval_score = 999
+    # criterion = nn.L1Loss()
 
-    for hidden_size in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
-        torch.manual_seed(42)
+    # for hidden_size in [1, 2, 4, 8, 16, 32, 64, 128, 256]:
+    #     torch.manual_seed(42)
 
-        model = MotionModel(
-            4,
-            len(RobotDataset.PRESENT_COLS),
-            len(RobotDataset.FUTURE_COLS),
-            psize=hidden_size
-        ).to(device)
+    #     model = MotionModel(
+    #         4,
+    #         len(RobotDataset.PRESENT_COLS),
+    #         len(RobotDataset.FUTURE_COLS),
+    #         psize=hidden_size
+    #     ).to(device)
 
-        optimizer = th.optim.AdamW(model.parameters(), lr=learning_rate)
+    #     optimizer = th.optim.AdamW(model.parameters(), lr=learning_rate)
 
-        train_plot_x, train_plot_y, eval_plot_x, eval_plot_y = do_train(model, criterion, optimizer, evaluate=True, output_console=False, max_steps=2000)
+    #     train_plot_x, train_plot_y, eval_plot_x, eval_plot_y = do_train(model, criterion, optimizer, evaluate=True, output_console=False, max_steps=2000)
 
-        print(f"Hidden Size: {hidden_size} | Best eval score: {eval_plot_y[-1]}")
+    #     print(f"Hidden Size: {hidden_size} | Best eval score: {eval_plot_y[-1]}")
 
-        if eval_plot_y[-1] < best_eval_score:
-            best_eval_score = eval_plot_y[-1]
-            best_model = model.state_dict()
-            print("New best model")
+    #     if eval_plot_y[-1] < best_eval_score:
+    #         best_eval_score = eval_plot_y[-1]
+    #         best_model = model.state_dict()
+    #         print("New best model")
 
-    th.save(best_model, f"ml/motion2/best_{save_name}")
-    print(f"Best eval score: {best_eval_score}")
+    # th.save(best_model, f"ml/motion2/best_{save_name}")
+    # print(f"Best eval score: {best_eval_score}")
+
+    model = MotionModel(
+        len(RobotDataset.PAST_COLS),
+        len(RobotDataset.PRESENT_COLS),
+        len(RobotDataset.FUTURE_COLS)
+    ).to(device)
+
+    criterion = nn.SmoothL1Loss(reduction='mean')
+    optimizer = th.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.01)
+
+    train_plot_x, train_plot_y, eval_plot_x, eval_plot_y = do_train(model, criterion, optimizer, evaluate=True, output_console=True, max_steps=10000)
+
+    th.save(model.state_dict(), f"ml/motion2/{save_name}")
+
+    plt.plot(train_plot_x, train_plot_y, label='Train Loss')
+    plt.plot(eval_plot_x, eval_plot_y, label='Eval Loss')
+    plt.xlabel('Steps')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.grid()
+    plt.show()

@@ -1,18 +1,18 @@
 # MikuBot
 
-After the advancements in the space of robotics, with my *Monumental* contributions such as `winter_controller` and `summer_controller`, I have decided, with my genius of a brain, to make a VEX v5 program to end all VEX v5 programs.
+After the advancements in the space of robotics, with my *Monumental* contributions such as `winter_controller` and `summer_controller`, I have decided, with my genius of a brain, to make a VEX v5 (Pros actually) program to end all VEX v5 programs.
 
 ## `./ml/`
 
-Contains stuff related to machine learning, mainly an experiment.
+Contains stuff related to machine learning, mainly an experiment. (Nothing working has ever come outta there LOL)
 
 ## `./src/`
 
-The source code folder. You know.
+The source code folder. Has a lot of the actual robot code maybe? Who knows.
 
 ## `./include/`
 
-Header files. Put yo includes there
+Header files. Put yo includes there, including libraries
 
 ## Credits
 
