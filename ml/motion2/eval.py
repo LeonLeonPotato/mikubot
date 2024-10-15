@@ -51,11 +51,11 @@ with torch.inference_mode():
             last_preds.pop(0)
             last_futures.pop(0)
 
-        plt.scatter(last_is, last_preds, label='Predicted', c='r')
-        plt.plot(last_is, last_futures, label='Actual', c='b')
-        plt.draw()
-        plt.pause(0.02)
-        plt.clf()
+        # plt.scatter(last_is, last_preds, label='Predicted', c='r')
+        # plt.plot(last_is, last_futures, label='Actual', c='b')
+        # plt.draw()
+        # plt.pause(0.02)
+        # plt.clf()
 
 import numpy as np
 

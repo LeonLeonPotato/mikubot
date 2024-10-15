@@ -70,7 +70,7 @@ def do_train(model, criterion, optimizer, evaluate=True, output_console=True, ma
                         eval_plot_y.append(eval_loss)
 
                         if output_console:
-                            print(f"step {total_steps} eval loss: {eval_loss:.4f} train loss: {loss.item():.4f}")
+                            print(f"step {total_steps} eval loss: {eval_loss:.6f} train loss: {loss.item():.6f}")
                     else:
                         if output_console:
                             print(f"step {total_steps} train loss: {loss.item():.4f}")
@@ -121,8 +121,8 @@ if __name__ == "__main__":
         len(RobotDataset.FUTURE_COLS)
     ).to(device)
 
-    criterion = nn.SmoothL1Loss(reduction='mean')
-    optimizer = th.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.01)
+    criterion = nn.L1Loss(reduction='mean')
+    optimizer = th.optim.AdamW(model.parameters(), lr=learning_rate)
 
     train_plot_x, train_plot_y, eval_plot_x, eval_plot_y = do_train(model, criterion, optimizer, evaluate=True, output_console=True, max_steps=10000)
 

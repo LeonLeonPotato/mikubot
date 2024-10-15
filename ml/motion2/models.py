@@ -12,6 +12,8 @@ class FutureModel(nn.Module):
             nn.LeakyReLU(),
             nn.Linear(psize, psize),
             nn.LeakyReLU(),
+            nn.Linear(psize, psize),
+            nn.LeakyReLU(),
             nn.Linear(psize, output_size)
         )
     

@@ -48,22 +48,22 @@ class Robot:
         self.theta += dtheta
 
         if abs(dtheta) < 0.017:
-            self.x += left_travel * np.sin(self.theta)
-            self.y += left_travel * np.cos(self.theta)
+            self.x += left_travel * np.sin(self.theta) / 2 # ?
+            self.y += left_travel * np.cos(self.theta) / 2 # ?
             return
 
         r = right_travel / dtheta + self.args.width / 2
-        chord = 2 * r * np.sin(dtheta / 2)
+        chord = r * np.sin(dtheta / 2)
         dx = chord * np.sin(self.theta)
         dy = chord * np.cos(self.theta)
         self.x += dx
         self.y += dy
 
     @torch.inference_mode()
-    def update(self, left_volt, right_volt):
+    def update(self, left_volt, right_volt, dt=-1):
         t_left_volt = RobotDataset.TRANSFORMER(left_volt, 'volt')
         t_right_volt = RobotDataset.TRANSFORMER(right_volt, 'volt')
-        dt = time.time() - self.last_time
+        if dt == -1: dt = time.time() - self.last_time
         self.last_time = time.time()
 
         past = th.stack(self.left_state, dim=0)
@@ -92,7 +92,7 @@ class Robot:
 
 if __name__ == "__main__":
     R = Robot(
-        0, 0, 0, RobotArgs(4.1275, 21)
+        0, 0, 0, RobotArgs(5.08, 98.4375)
     )
 
     pygame.init()
@@ -108,12 +108,12 @@ if __name__ == "__main__":
                 quit()
 
         if pygame.key.get_pressed()[pygame.K_UP]:
-            left = 10000
-            right = 10000
+            left = 12000
+            right = 12000
 
         if pygame.key.get_pressed()[pygame.K_DOWN]:
-            left = -10000
-            right = -10000
+            left = -12000
+            right = -12000
 
         if pygame.key.get_pressed()[pygame.K_RIGHT]:
             left = 0
