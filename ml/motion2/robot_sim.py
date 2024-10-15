@@ -39,23 +39,26 @@ class Robot:
         self.left_state = make_initial_state()
         self.right_state = make_initial_state()
 
-    def _pos_update(self, dt):
+    def _dummy_update(self, left_velo, right_velo, dt):
         rpm2rad = 2 * np.pi / 60
-        right_travel = self.right_velo * self.args.wheel_radius * rpm2rad * dt
-        left_travel = self.left_velo * self.args.wheel_radius * rpm2rad * dt
+        right_travel = right_velo * rpm2rad * self.args.wheel_radius * dt
+        left_travel = left_velo * rpm2rad* self.args.wheel_radius * dt
 
         dtheta = (left_travel - right_travel) / self.args.width
-        self.theta += dtheta
-
-        if abs(dtheta) < 0.017:
-            self.x += left_travel * np.sin(self.theta) / 2 # ?
-            self.y += left_travel * np.cos(self.theta) / 2 # ?
-            return
+        flags = dtheta.abs().lt(0.017)
+        dtheta[dtheta == 0] = 0.00000001
 
         r = right_travel / dtheta + self.args.width / 2
-        chord = r * np.sin(dtheta / 2)
-        dx = chord * np.sin(self.theta)
-        dy = chord * np.cos(self.theta)
+        chord = (r * torch.sin(dtheta / 2))*~flags + left_travel*flags
+
+        dx = chord * torch.sin(self.theta + dtheta)
+        dy = chord * torch.cos(self.theta + dtheta)
+        
+        return dx, dy, dtheta
+
+    def _pos_update(self, dt):
+        dx, dy, dtheta = self._dummy_update(self.left_velo, self.right_velo, dt)
+        self.theta += dtheta
         self.x += dx
         self.y += dy
 
@@ -90,56 +93,94 @@ class Robot:
         
         self._pos_update(dt)
 
+    @torch.inference_mode()
+    def best(self, func, dt, low_left=-12000, high_left=12000, low_right=-12000, high_right=12000, n_left=20, n_right=20):
+        past = th.stack(self.left_state, dim=0).broadcast_to((n_left, lookback, len(RobotDataset.PAST_COLS)))
+        present = th.linspace(low_left, high_left, n_left, device=device)
+        present = present.view(-1, len(RobotDataset.PRESENT_COLS))
+
+        present = RobotDataset.TRANSFORMER(present, 'volt')
+        left_velos = self.model(past, present).view(n_left)
+        left_velos = RobotDataset.INVERSE_TRANSFORMER(left_velos, 'velo')
+
+        past = th.stack(self.right_state, dim=0).broadcast_to((n_right, lookback, len(RobotDataset.PAST_COLS)))
+        present = th.linspace(low_right, high_right, n_right, device=device)
+        present = present.view(-1, len(RobotDataset.PRESENT_COLS))
+
+        present = RobotDataset.TRANSFORMER(present, 'volt')
+        right_velos = self.model(past, present).view(n_right)
+        right_velos = RobotDataset.INVERSE_TRANSFORMER(right_velos, 'velo')
+
+        combs = th.cartesian_prod(left_velos, right_velos)
+        dx, dy, dtheta = self._dummy_update(combs[:, 0], combs[:, 1], dt)
+
+        scores = func(self, dx, dy, dtheta, left_velos, right_velos)
+        best = th.argmin(scores).cpu().numpy()
+        i, j = best // n_right, best % n_right
+
+        best_left = (high_left - low_left) / n_left * i + low_left
+        best_right = (high_right - low_right) / n_right * j + low_right
+        return best_left, best_right
+
 if __name__ == "__main__":
     R = Robot(
         0, 0, 0, RobotArgs(5.08, 98.4375)
     )
 
-    pygame.init()
-    pygame.font.init()
+    def func(robot, dx, dy, dtheta, left_velo, right_velo):
+        theta = robot.theta + dtheta
+        return (1.57 - theta).abs()
 
-    screen = pygame.display.set_mode((800, 800))
+    t = time.time()
+    best = R.best(func, 0.02, n_left=100, n_right=100)
+    print(time.time() - t)
+    print(best)
 
-    while True:
-        left, right = 0, 0
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+    # pygame.init()
+    # pygame.font.init()
 
-        if pygame.key.get_pressed()[pygame.K_UP]:
-            left = 12000
-            right = 12000
+    # screen = pygame.display.set_mode((800, 800))
 
-        if pygame.key.get_pressed()[pygame.K_DOWN]:
-            left = -12000
-            right = -12000
+    # while True:
+    #     left, right = 0, 0
+    #     for event in pygame.event.get():
+    #         if event.type == pygame.QUIT:
+    #             pygame.quit()
+    #             quit()
 
-        if pygame.key.get_pressed()[pygame.K_RIGHT]:
-            left = 0
+    #     if pygame.key.get_pressed()[pygame.K_UP]:
+    #         left = 12000
+    #         right = 12000
+
+    #     if pygame.key.get_pressed()[pygame.K_DOWN]:
+    #         left = -12000
+    #         right = -12000
+
+    #     if pygame.key.get_pressed()[pygame.K_RIGHT]:
+    #         left = 0
         
-        if pygame.key.get_pressed()[pygame.K_LEFT]:
-            right = 0
+    #     if pygame.key.get_pressed()[pygame.K_LEFT]:
+    #         right = 0
 
-        left = min(max(-12000, left), 12000)
-        right = min(max(-12000, right), 12000)
+    #     left = min(max(-12000, left), 12000)
+    #     right = min(max(-12000, right), 12000)
 
-        R.update(left, right)
-        R.x = min(max(-400, R.x), 400)
-        R.y = min(max(-400, R.y), 400)
+    #     R.update(left, right)
+    #     R.x = min(max(-400, R.x), 400)
+    #     R.y = min(max(-400, R.y), 400)
 
-        screen.fill((0, 0, 0))
+    #     screen.fill((0, 0, 0))
 
-        Rx, Ry = 400 + R.x, 400 + R.y
-        print(Rx, Ry)
-        pygame.draw.circle(screen, (255, 255, 255), (Rx, Ry), 10)
-        pygame.draw.line(screen, (255, 255, 255), (Rx, Ry), (Rx + 20 * np.sin(R.theta), Ry + 20 * np.cos(R.theta)))
+    #     Rx, Ry = 400 + R.x, 400 + R.y
+    #     print(Rx, Ry)
+    #     pygame.draw.circle(screen, (255, 255, 255), (Rx, Ry), 10)
+    #     pygame.draw.line(screen, (255, 255, 255), (Rx, Ry), (Rx + 20 * np.sin(R.theta), Ry + 20 * np.cos(R.theta)))
 
-        surf = pygame.font.SysFont('Arial', 30).render(f"L: {left}, R: {right}", True, (255, 255, 255))
-        screen.blit(surf, (0, 0))
+    #     surf = pygame.font.SysFont('Arial', 30).render(f"L: {left}, R: {right}", True, (255, 255, 255))
+    #     screen.blit(surf, (0, 0))
 
-        surf = pygame.font.SysFont('Arial', 30).render(f"Lv: {R.left_velo}, Rv: {R.right_velo}", True, (255, 255, 255))
-        screen.blit(surf, (0, 90))
+    #     surf = pygame.font.SysFont('Arial', 30).render(f"Lv: {R.left_velo}, Rv: {R.right_velo}", True, (255, 255, 255))
+    #     screen.blit(surf, (0, 90))
 
-        pygame.display.update()
-        time.sleep(0.02)
+    #     pygame.display.update()
+    #     time.sleep(0.02)

@@ -27,12 +27,17 @@ class MotionModel(nn.Module):
         self.future_processor = FutureModel(hs + present_size, future_size, psize=psize)
 
     def forward(self, past, present):
-        if len(past.shape) == 2:
+        single_past = len(past.shape) == 2
+        single_present = len(present.shape) == 1
+        if single_past:
             past = past.unsqueeze(0)
-        
-        if len(present.shape) == 1:
+        if single_present:
             present = present.unsqueeze(0)
 
         past = self.past_encoder(past)[0][:, -1, :]
         future = self.future_processor(th.cat([past, present], dim=-1))
+
+        if single_past or single_present:
+            future = future.squeeze(0)
+
         return future
