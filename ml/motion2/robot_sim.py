@@ -43,7 +43,6 @@ class Robot:
         rpm2rad = 2 * np.pi / 60
         right_travel = self.right_velo * self.args.wheel_radius * rpm2rad * dt
         left_travel = self.left_velo * self.args.wheel_radius * rpm2rad * dt
-        print(dt, left_travel, right_travel)
 
         dtheta = (left_travel - right_travel) / self.args.width
         self.theta += dtheta
@@ -93,32 +92,34 @@ class Robot:
 
 if __name__ == "__main__":
     R = Robot(
-        0, 0, 0, RobotArgs(7.25, 50)
+        0, 0, 0, RobotArgs(4.1275, 21)
     )
 
     pygame.init()
     pygame.font.init()
 
     screen = pygame.display.set_mode((800, 800))
-    left, right = 0, 0
 
     while True:
+        left, right = 0, 0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
 
         if pygame.key.get_pressed()[pygame.K_UP]:
-            left += 100
+            left = 10000
+            right = 10000
 
         if pygame.key.get_pressed()[pygame.K_DOWN]:
-            left -= 100
+            left = -10000
+            right = -10000
 
-        if pygame.key.get_pressed()[pygame.K_w]:
-            right += 100
+        if pygame.key.get_pressed()[pygame.K_RIGHT]:
+            left = 0
         
-        if pygame.key.get_pressed()[pygame.K_s]:
-            right -= 100
+        if pygame.key.get_pressed()[pygame.K_LEFT]:
+            right = 0
 
         left = min(max(-12000, left), 12000)
         right = min(max(-12000, right), 12000)

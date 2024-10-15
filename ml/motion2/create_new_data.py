@@ -3,7 +3,7 @@ import numpy as np
 
 df_stats = pd.DataFrame(columns=['volt', 'velo'])
 
-def create_new_data(name):
+def create_new_data(name, split):
     global df_stats
     idx = 0
     df = pd.read_csv(f"ml/motion2/datasets/pure/{name}").dropna()
@@ -16,26 +16,27 @@ def create_new_data(name):
     copy = df.copy()[['left_voltage', 'left_velo']]
     copy.columns = ['volt', 'velo']
 
-    copy.to_csv(f"ml/motion2/datasets/{lognum}{idx}.csv", index=False); idx += 1
+    copy.to_csv(f"ml/motion2/datasets/{split}/{lognum}{idx}.csv", index=False); idx += 1
     df_stats = pd.concat([df_stats, copy], axis=0)
 
     copy[['volt', 'velo']] *= -1
 
-    copy.to_csv(f"ml/motion2/datasets/{lognum}{idx}.csv", index=False); idx += 1
+    copy.to_csv(f"ml/motion2/datasets/{split}/{lognum}{idx}.csv", index=False); idx += 1
     df_stats = pd.concat([df_stats, copy], axis=0)
 
     copy = df.copy()[['right_voltage', 'right_velo']]
     copy.columns = ['volt', 'velo']
 
-    copy.to_csv(f"ml/motion2/datasets/{lognum}{idx}.csv", index=False); idx += 1
+    copy.to_csv(f"ml/motion2/datasets/{split}/{lognum}{idx}.csv", index=False); idx += 1
     df_stats = pd.concat([df_stats, copy], axis=0)
 
     copy[['volt', 'velo']] *= -1
 
-    copy.to_csv(f"ml/motion2/datasets/{lognum}{idx}.csv", index=False); idx += 1
+    copy.to_csv(f"ml/motion2/datasets/{split}/{lognum}{idx}.csv", index=False); idx += 1
     df_stats = pd.concat([df_stats, copy], axis=0)
 
-create_new_data("driving_logs_0.csv")
-create_new_data("driving_logs_1.csv")
+create_new_data("driving_logs_0.csv", "test")
+create_new_data("driving_logs_1.csv", "train")
+create_new_data("driving_logs_9.csv", "train")
 
 print(df_stats.describe())

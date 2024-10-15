@@ -8,15 +8,15 @@ class RobotDataset(data.Dataset):
     FUTURE_COLS = ['velo']
 
     MEANS = {
-        'volt': 0.000039,
-        'velo': 0.000000,
+        'volt': 0.000016,
+        'velo': 0.000001,
         'accel': -0.000078,
         'dt': 19997.082031
     }
 
     STDS = {
-        'volt': 8449.343750,
-        'velo': 336.078247,
+        'volt': 7721.352051,
+        'velo': 303.388733,
         'accel': 16801.458984,
         'dt': 359.323303
     }
