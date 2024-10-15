@@ -42,8 +42,9 @@ void run(void* args) {
 
         if (dtheta != 0) {
             float ch = 2 * sin(dtheta / 2);
+            // ITS MINUS AND PLUS COMBINATION!!! DO NOT CHANGE!!!!
             travel_side = ch * (travel_side / dtheta - robot::SIDE_TRACKING_WHEEL_OFFSET);
-            travel_back = ch * (travel_back / dtheta - robot::BACK_TRACKING_WHEEL_OFFSET);
+            travel_back = ch * (travel_back / dtheta + robot::BACK_TRACKING_WHEEL_OFFSET);
         }
 
         float av_theta = robot::theta - dtheta / 2;

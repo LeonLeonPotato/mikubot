@@ -10,7 +10,7 @@ from dataset import RobotDataset
 def make_initial_state():
     return [th.tensor([
         RobotDataset.INVERSE_TRANSFORMER(0, 'velo')
-    ], device='cuda') for i in range(lookback)]
+    ], device=device) for i in range(lookback)]
 
 class RobotArgs:
     def __init__(self, wheel_radius, width):
@@ -34,26 +34,27 @@ class Robot:
             len(RobotDataset.PRESENT_COLS),
             len(RobotDataset.FUTURE_COLS)
         ).to(device).eval()
-        self.model.load_state_dict(th.load(f"ml/motion2/{save_name}"))
+        self.model.load_state_dict(th.load(f"ml/motion2/{save_name}", map_location=device))
 
         self.left_state = make_initial_state()
         self.right_state = make_initial_state()
 
     def _pos_update(self, dt):
-        right_velo = self.right_velo * 2 * np.pi / 60 * self.args.wheel_radius
-        left_velo = self.left_velo * 2 * np.pi / 60 * self.args.wheel_radius
+        rpm2rad = 2 * np.pi / 60
+        right_travel = self.right_velo * self.args.wheel_radius * rpm2rad * dt
+        left_travel = self.left_velo * self.args.wheel_radius * rpm2rad * dt
+        print(dt, left_travel, right_travel)
 
-        if self.left_velo == self.right_velo:
-            speed = left_velo * dt
-            self.x += speed * np.sin(self.theta)
-            self.y += speed * np.cos(self.theta)
+        dtheta = (left_travel - right_travel) / self.args.width
+        self.theta += dtheta
+
+        if abs(dtheta) < 0.017:
+            self.x += left_travel * np.sin(self.theta)
+            self.y += left_travel * np.cos(self.theta)
             return
-    
-        angular_velo = (right_velo - left_velo) / (self.args.width / 2)
-        self.theta += angular_velo * dt
 
-        r = self.args.width * (self.left_velo + self.right_velo) / (2 * (self.right_velo - self.left_velo))
-        chord = 2 * r * np.sin(angular_velo * dt / 2)
+        r = right_travel / dtheta + self.args.width / 2
+        chord = 2 * r * np.sin(dtheta / 2)
         dx = chord * np.sin(self.theta)
         dy = chord * np.cos(self.theta)
         self.x += dx
@@ -92,7 +93,7 @@ class Robot:
 
 if __name__ == "__main__":
     R = Robot(
-        0, 0, 0, RobotArgs(50, 1)
+        0, 0, 0, RobotArgs(7.25, 50)
     )
 
     pygame.init()
