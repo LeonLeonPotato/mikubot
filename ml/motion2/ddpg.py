@@ -46,7 +46,7 @@ class Args:
     # Algorithm specific arguments
     env_id: str = "Hopper-v4"
     """the environment id of the Atari game"""
-    total_timesteps: int = 300000
+    total_timesteps: int = 100000
     """total timesteps of the experiments"""
     learning_rate: float = 3e-4
     """the learning rate of the optimizer"""
@@ -72,7 +72,7 @@ def make_env(env_id, seed, idx, capture_video, run_name):
     def thunk():
         env = environment.PathFollowingEnv(
             environment.Args(
-                10, 0.02, 5000
+                10, 0.02, 1000
             )
         )
         return env

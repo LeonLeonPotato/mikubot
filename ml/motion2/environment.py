@@ -60,7 +60,7 @@ class PathFollowingEnv(gym.Env):
         return obs, {}
 
     def step(self, action):
-        left_velo, right_velo = action * 12000
+        left_velo, right_velo = action * 24000
 
         dt = RobotDataset.TRANSFORMER(self.args.dt * 1e6, 'dt')
         self.robot.update(12000 + left_velo, 12000 + right_velo, dt)
@@ -70,13 +70,12 @@ class PathFollowingEnv(gym.Env):
         done = done or self.robot.dist(*self.target_locs[-1]) < self.args.robot_radius
 
         cur_score = self.compute_score()
-        reward = cur_score - self.last_score
+        reward = cur_score - self.last_score - 0.5
         self.total_reward += reward
         self.last_score = cur_score
 
-        self.target_theta_acc = np.random.random() * 0.2 - 0.1
+        self.target_theta_acc = np.random.random() * 0.02 - 0.01
         self.target_theta_velo += self.target_theta_acc
-        self.target_theta_velo /= 1.1
         self.target_theta += self.target_theta_velo
 
         ntx = self.target_locs[-1][0] + np.sin(self.target_theta) * 2
@@ -119,7 +118,7 @@ if __name__ == "__main__":
 
         action = env.robot.angle_to(*env.target_locs[-1])
         print(env.robot.left_velo, env.robot.right_velo)
-        obs, reward, done, trunc, info = env.step(np.array([action, -action]))
+        obs, reward, done, trunc, info = env.step(np.array([action, -action]) * 0.5)
 
         screen.fill((0, 0, 0))
         tx, ty = env.target_locs[-1]
