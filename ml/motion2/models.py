@@ -41,3 +41,45 @@ class MotionModel(nn.Module):
             future = future.squeeze(0)
 
         return future
+    
+class RLPolicyModel(nn.Module):
+    def __init__(self, env):
+        super(RLPolicyModel, self).__init__()
+        self.fc = nn.Sequential(
+            nn.Linear(env.observation_space.shape[-1], 32),
+            nn.LeakyReLU(),
+            nn.Linear(32, 16),
+            nn.LeakyReLU(),
+            nn.Linear(16, env.action_space.shape[-1])
+        )
+
+        self.register_buffer(
+            "action_scale", torch.tensor((env.action_space.high - env.action_space.low) / 2.0, dtype=torch.float32)
+        )
+        self.register_buffer(
+            "action_bias", torch.tensor((env.action_space.high + env.action_space.low) / 2.0, dtype=torch.float32)
+        )
+    
+    def forward(self, x):
+        single = len(x.shape) == 1
+        if single:
+            x = x.unsqueeze(0)
+        x = self.fc(x)
+        if single:
+            x = x.squeeze(0)
+        return th.tanh(x * self.action_scale + self.action_bias)
+    
+class RLCriticModel(nn.Module):
+    def __init__(self, env):
+        super(RLCriticModel, self).__init__()
+        self.fc = nn.Sequential(
+            nn.Linear(env.observation_space.shape[-1] + env.action_space.shape[-1], 64),
+            nn.LeakyReLU(),
+            nn.Linear(64, 16),
+            nn.LeakyReLU(),
+            nn.Linear(16, 1)
+        )
+    
+    def forward(self, x, action):
+        x = self.fc(torch.cat([x, action], dim=-1))
+        return x

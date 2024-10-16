@@ -1,0 +1,265 @@
+diff --git a/README.md b/README.md
+index a2d93a1..1719f61 100644
+--- a/README.md
++++ b/README.md
+@@ -27,4 +27,4 @@ Header files. Put yo includes there, including libraries
+ 
+ ## :3
+ 
+-:3
+\ No newline at end of file
++:3
+diff --git a/ml/motion2/environment.py b/ml/motion2/environment.py
+index 1355af5..4717854 100644
+--- a/ml/motion2/environment.py
++++ b/ml/motion2/environment.py
+@@ -2,30 +2,129 @@ import gymnasium as gym
+ import numpy as np
+ import torch as th
+ import matplotlib as plt
++from robot_sim import Robot, RobotArgs
++from dataset import RobotDataset
++import quintic_spline as qs
++
++class Args:
++    def __init__(self, robot_radius,
++                 dt, max_steps):
++        self.robot_radius = robot_radius
++        self.dt = dt
++        self.max_steps = max_steps
+ 
+ class PathFollowingEnv(gym.Env):
+-    def __init__(self):
+-        self.robot = Robot(0, 0, 0, RobotArgs(0.1, 0.1))
+-        self.target = (1, 1)
+-        self.dt = 0.1
+-        self.max_steps = 100
++    def __init__(self, args):
++        self.action_space = gym.spaces.Box(-1, 1, (2,))
++        self.observation_space = gym.spaces.Box(-1, 1, (9,))
++
++        self.args = args
++        self.robot = Robot(0, 0, 0, Robot.DEFAULT_ARGS)
++
++        self.target_locs = [
++            np.array((0, 0), dtype=float) for _ in range(9)
++        ] + [np.random.rand(2) * 800 - 400]
++        self.target_theta = 0
++        self.target_theta_velo = 0
++        self.target_theta_acc = 0
+         self.steps = 0
++        self.last_score = self.compute_score()
++        self.total_reward = 0
+ 
+-    def reset(self):
+-        self.robot = Robot(0, 0, 0, RobotArgs(0.1, 0.1))
+-        self.target = (1, 1)
++    def compute_score(self):
++        a = self.robot.dist(*self.target_locs[-1])
++        c = abs(self.robot.angle_to(*self.target_locs[-1]))
++        return -(a + c)
++    
++    def make_obs(self, action):
++        return np.array([
++            (self.target_locs[-3][0] - self.robot.x) / 400,
++            (self.target_locs[-3][1] - self.robot.y) / 400,
++            (self.target_locs[-2][0] - self.robot.x) / 400,
++            (self.target_locs[-2][1] - self.robot.y) / 400,
++            (self.target_locs[-1][0] - self.robot.x) / 400,
++            (self.target_locs[-1][1] - self.robot.y) / 400,
++            self.robot.angle_to(*self.target_locs[-1]) / np.pi,
++            action[0], action[1]
++        ])
++
++    def reset(self, seed=0):
++        self.robot = Robot(0, 0, 0, Robot.DEFAULT_ARGS)
++        self.target = np.random.rand(2) * 800 - 400
+         self.steps = 0
+-        return self.robot.x, self.robot.y, self.robot.theta
++        self.last_score = self.compute_score()
++        self.total_reward = 0
++
++        obs = self.make_obs([0, 0])
++
++        return obs, {}
+ 
+     def step(self, action):
+-        left_velo, right_velo = action
+-        self.robot._dummy_update(left_velo, right_velo, self.dt)
++        left_velo, right_velo = action * 12000
++
++        dt = RobotDataset.TRANSFORMER(self.args.dt * 1e6, 'dt')
++        self.robot.update(12000 + left_velo, 12000 + right_velo, dt)
++
+         self.steps += 1
+-        done = self.steps >= self.max_steps
+-        reward = -self.robot.angle_to(*self.target)
+-        return self.robot.x, self.robot.y, self.robot.theta, reward, done
+-
+-    def render(self):
+-        plt.plot(self.robot.x, self.robot.y, 'ro')
+-        plt.plot(*self.target, 'bo')
+-        plt.show()
+\ No newline at end of file
++        done = self.steps >= self.args.max_steps
++        done = done or self.robot.dist(*self.target_locs[-1]) < self.args.robot_radius
++
++        cur_score = self.compute_score()
++        reward = cur_score - self.last_score
++        self.total_reward += reward
++        self.last_score = cur_score
++
++        self.target_theta_acc = np.random.random() * 0.2 - 0.1
++        self.target_theta_velo += self.target_theta_acc
++        self.target_theta_velo /= 1.1
++        self.target_theta += self.target_theta_velo
++
++        ntx = self.target_locs[-1][0] + np.sin(self.target_theta) * 2
++        nty = self.target_locs[-1][1] + np.cos(self.target_theta) * 2
++        ntx = np.clip(ntx, -400, 400)
++        nty = np.clip(nty, -400, 400)
++        self.target_locs.append(np.array((ntx, nty), dtype=float))
++        if len(self.target_locs) > 10:
++            self.target_locs.pop(0)
++
++        obs = self.make_obs(action)
++
++        info = {
++            "episode": {
++                'r': self.total_reward,
++                'l': self.steps
++            },
++            "total_rwd": self.total_reward
++        }
++
++        return obs, reward, done, False, info
++    
++
++if __name__ == "__main__":
++    env = PathFollowingEnv(Args(10, 0.02, 1000))
++
++    import pygame
++
++    pygame.init()
++    pygame.font.init()
++
++    screen = pygame.display.set_mode((800, 800))
++
++    done = False
++    while not done:
++        for event in pygame.event.get():
++            if event.type == pygame.QUIT:
++                pygame.quit()
++                quit()
++
++        action = env.robot.angle_to(*env.target_locs[-1])
++        print(env.robot.left_velo, env.robot.right_velo)
++        obs, reward, done, trunc, info = env.step(np.array([action, -action]))
++
++        screen.fill((0, 0, 0))
++        tx, ty = env.target_locs[-1]
++        pygame.draw.circle(screen, (255, 0, 0), (int(env.robot.x) + 400, int(env.robot.y) + 400), 10)
++        pygame.draw.line(screen, (255, 0, 0), (int(env.robot.x) + 400, int(env.robot.y) + 400), (int(env.robot.x + 20 * np.sin(env.robot.theta)) + 400, int(env.robot.y + 20 * np.cos(env.robot.theta)) + 400))
++        pygame.draw.circle(screen, (0, 255, 0), (int(tx) + 400, int(ty) + 400), 10)
++        pygame.display.flip()
++        pygame.time.delay(20)
+\ No newline at end of file
+diff --git a/ml/motion2/models.py b/ml/motion2/models.py
+index 5085ad2..4decac7 100644
+--- a/ml/motion2/models.py
++++ b/ml/motion2/models.py
+@@ -40,4 +40,46 @@ class MotionModel(nn.Module):
+         if single_past or single_present:
+             future = future.squeeze(0)
+ 
+-        return future
+\ No newline at end of file
++        return future
++    
++class RLPolicyModel(nn.Module):
++    def __init__(self, env):
++        super(RLPolicyModel, self).__init__()
++        self.fc = nn.Sequential(
++            nn.Linear(env.observation_space.shape[-1], 32),
++            nn.LeakyReLU(),
++            nn.Linear(32, 16),
++            nn.LeakyReLU(),
++            nn.Linear(16, env.action_space.shape[-1])
++        )
++
++        self.register_buffer(
++            "action_scale", torch.tensor((env.action_space.high - env.action_space.low) / 2.0, dtype=torch.float32)
++        )
++        self.register_buffer(
++            "action_bias", torch.tensor((env.action_space.high + env.action_space.low) / 2.0, dtype=torch.float32)
++        )
++    
++    def forward(self, x):
++        single = len(x.shape) == 1
++        if single:
++            x = x.unsqueeze(0)
++        x = self.fc(x)
++        if single:
++            x = x.squeeze(0)
++        return th.tanh(x * self.action_scale + self.action_bias)
++    
++class RLCriticModel(nn.Module):
++    def __init__(self, env):
++        super(RLCriticModel, self).__init__()
++        self.fc = nn.Sequential(
++            nn.Linear(env.observation_space.shape[-1] + env.action_space.shape[-1], 64),
++            nn.LeakyReLU(),
++            nn.Linear(64, 16),
++            nn.LeakyReLU(),
++            nn.Linear(16, 1)
++        )
++    
++    def forward(self, x, action):
++        x = self.fc(torch.cat([x, action], dim=-1))
++        return x
+\ No newline at end of file
+diff --git a/ml/motion2/robot_sim.py b/ml/motion2/robot_sim.py
+index 4b30c1d..a7f2da5 100644
+--- a/ml/motion2/robot_sim.py
++++ b/ml/motion2/robot_sim.py
+@@ -18,6 +18,8 @@ class RobotArgs:
+         self.width = width
+ 
+ class Robot:
++    DEFAULT_ARGS = RobotArgs(5.08, 35)
++
+     def __init__(self, x, y, theta, robot_args):
+         self.x = x
+         self.y = y
+@@ -40,8 +42,11 @@ class Robot:
+         self.right_state = make_initial_state()
+ 
+     def angle_to(self, x, y, dtheta=0):
+-        da = np.arctan2(y - self.y, x - self.x)
+-        return (da + dtheta + np.pi) % (2 * np.pi) - np.pi
++        da = np.arctan2(x - self.x, y - self.y)
++        return (da + dtheta - self.theta + np.pi) % (2 * np.pi) - np.pi
++    
++    def dist(self, x, y):
++        return np.sqrt((self.x - x) * (self.x - x) + (self.y - y) * (self.y - y))
+ 
+     def _dummy_update(self, left_velo, right_velo, dt):
+         if isinstance(left_velo, float):
+@@ -54,6 +59,7 @@ class Robot:
+         left_travel = left_velo * rpm2rad* self.args.wheel_radius * dt
+ 
+         dtheta = (left_travel - right_travel) / self.args.width
++        if isinstance(dtheta, float): dtheta = th.tensor([dtheta], device='cpu')
+         flags = dtheta.abs().lt(0.017)
+         dtheta[dtheta == 0] = 0.00000001
+ 
+@@ -73,6 +79,9 @@ class Robot:
+ 
+     @torch.inference_mode()
+     def update(self, left_volt, right_volt, dt=-1):
++        left_volt = min(max(-12000, left_volt), 12000)
++        right_volt = min(max(-12000, right_volt), 12000)
++
+         t_left_volt = RobotDataset.TRANSFORMER(left_volt, 'volt')
+         t_right_volt = RobotDataset.TRANSFORMER(right_volt, 'volt')
+         if dt == -1: dt = time.time() - self.last_time

@@ -1,0 +1,97 @@
+wandb_version: 1
+
+exp_name:
+  desc: null
+  value: ddpg
+seed:
+  desc: null
+  value: 1
+torch_deterministic:
+  desc: null
+  value: true
+cuda:
+  desc: null
+  value: true
+track:
+  desc: null
+  value: true
+wandb_project_name:
+  desc: null
+  value: cleanRL
+wandb_entity:
+  desc: null
+  value: null
+capture_video:
+  desc: null
+  value: false
+save_model:
+  desc: null
+  value: true
+upload_model:
+  desc: null
+  value: false
+hf_entity:
+  desc: null
+  value: ''
+env_id:
+  desc: null
+  value: Hopper-v4
+total_timesteps:
+  desc: null
+  value: 300000
+learning_rate:
+  desc: null
+  value: 0.0003
+buffer_size:
+  desc: null
+  value: 1000000
+gamma:
+  desc: null
+  value: 0.99
+tau:
+  desc: null
+  value: 0.005
+batch_size:
+  desc: null
+  value: 256
+exploration_noise:
+  desc: null
+  value: 0.1
+learning_starts:
+  desc: null
+  value: 25000.0
+policy_frequency:
+  desc: null
+  value: 2
+noise_clip:
+  desc: null
+  value: 0.5
+_wandb:
+  desc: null
+  value:
+    code_path: code/ml/motion2/ddpg.py
+    python_version: 3.12.2
+    cli_version: 0.17.3
+    framework: huggingface
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1729095723
+    t:
+      1:
+      - 1
+      - 55
+      2:
+      - 1
+      - 11
+      - 49
+      - 55
+      3:
+      - 13
+      - 16
+      - 23
+      - 35
+      4: 3.12.2
+      5: 0.17.3
+      8:
+      - 5
+      13: linux-x86_64

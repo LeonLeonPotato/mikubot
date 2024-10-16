@@ -18,6 +18,8 @@ class RobotArgs:
         self.width = width
 
 class Robot:
+    DEFAULT_ARGS = RobotArgs(5.08, 35)
+
     def __init__(self, x, y, theta, robot_args):
         self.x = x
         self.y = y
@@ -40,8 +42,11 @@ class Robot:
         self.right_state = make_initial_state()
 
     def angle_to(self, x, y, dtheta=0):
-        da = np.arctan2(y - self.y, x - self.x)
-        return (da + dtheta + np.pi) % (2 * np.pi) - np.pi
+        da = np.arctan2(x - self.x, y - self.y)
+        return (da + dtheta - self.theta + np.pi) % (2 * np.pi) - np.pi
+    
+    def dist(self, x, y):
+        return np.sqrt((self.x - x) * (self.x - x) + (self.y - y) * (self.y - y))
 
     def _dummy_update(self, left_velo, right_velo, dt):
         if isinstance(left_velo, float):
@@ -54,6 +59,7 @@ class Robot:
         left_travel = left_velo * rpm2rad* self.args.wheel_radius * dt
 
         dtheta = (left_travel - right_travel) / self.args.width
+        if isinstance(dtheta, float): dtheta = th.tensor([dtheta], device='cpu')
         flags = dtheta.abs().lt(0.017)
         dtheta[dtheta == 0] = 0.00000001
 
@@ -73,6 +79,9 @@ class Robot:
 
     @torch.inference_mode()
     def update(self, left_volt, right_volt, dt=-1):
+        left_volt = min(max(-12000, left_volt), 12000)
+        right_volt = min(max(-12000, right_volt), 12000)
+
         t_left_volt = RobotDataset.TRANSFORMER(left_volt, 'volt')
         t_right_volt = RobotDataset.TRANSFORMER(right_volt, 'volt')
         if dt == -1: dt = time.time() - self.last_time

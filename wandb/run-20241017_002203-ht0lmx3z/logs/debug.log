@@ -1,0 +1,30 @@
+2024-10-17 00:22:03,581 INFO    MainThread:561953 [wandb_setup.py:_flush():76] Current SDK version is 0.17.3
+2024-10-17 00:22:03,581 INFO    MainThread:561953 [wandb_setup.py:_flush():76] Configure stats pid to 561953
+2024-10-17 00:22:03,581 INFO    MainThread:561953 [wandb_setup.py:_flush():76] Loading settings from /home/leon/.config/wandb/settings
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_setup.py:_flush():76] Loading settings from /home/leon/Desktop/projects/mikubot/wandb/settings
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'ml/motion2/ddpg.py', 'program_abspath': '/home/leon/Desktop/projects/mikubot/ml/motion2/ddpg.py', 'program': '/home/leon/Desktop/projects/mikubot/ml/motion2/ddpg.py'}
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_setup.py:_flush():76] Applying login settings: {}
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_init.py:_log_setup():520] Logging user logs to /home/leon/Desktop/projects/mikubot/wandb/run-20241017_002203-ht0lmx3z/logs/debug.log
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_init.py:_log_setup():521] Logging internal logs to /home/leon/Desktop/projects/mikubot/wandb/run-20241017_002203-ht0lmx3z/logs/debug-internal.log
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_init.py:init():560] calling init triggers
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_init.py:init():567] wandb.init called with sweep_config: {}
+config: {'exp_name': 'ddpg', 'seed': 1, 'torch_deterministic': True, 'cuda': True, 'track': True, 'wandb_project_name': 'cleanRL', 'wandb_entity': None, 'capture_video': False, 'save_model': True, 'upload_model': False, 'hf_entity': '', 'env_id': 'Hopper-v4', 'total_timesteps': 300000, 'learning_rate': 0.0003, 'buffer_size': 1000000, 'gamma': 0.99, 'tau': 0.005, 'batch_size': 256, 'exploration_noise': 0.1, 'learning_starts': 25000.0, 'policy_frequency': 2, 'noise_clip': 0.5}
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_init.py:init():610] starting backend
+2024-10-17 00:22:03,582 INFO    MainThread:561953 [wandb_init.py:init():614] setting up manager
+2024-10-17 00:22:03,584 INFO    MainThread:561953 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2024-10-17 00:22:03,586 INFO    MainThread:561953 [wandb_init.py:init():622] backend started and connected
+2024-10-17 00:22:03,589 INFO    MainThread:561953 [wandb_init.py:init():711] updated telemetry
+2024-10-17 00:22:03,596 INFO    MainThread:561953 [wandb_init.py:init():744] communicating run to backend with 90.0 second timeout
+2024-10-17 00:22:04,393 INFO    MainThread:561953 [wandb_run.py:_on_init():2402] communicating current version
+2024-10-17 00:22:05,160 INFO    MainThread:561953 [wandb_run.py:_on_init():2411] got version response upgrade_message: "wandb version 0.18.3 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2024-10-17 00:22:05,161 INFO    MainThread:561953 [wandb_init.py:init():795] starting run threads in backend
+2024-10-17 00:22:06,893 INFO    MainThread:561953 [wandb_run.py:_console_start():2380] atexit reg
+2024-10-17 00:22:06,893 INFO    MainThread:561953 [wandb_run.py:_redirect():2235] redirect: wrap_raw
+2024-10-17 00:22:06,893 INFO    MainThread:561953 [wandb_run.py:_redirect():2300] Wrapping output streams.
+2024-10-17 00:22:06,894 INFO    MainThread:561953 [wandb_run.py:_redirect():2325] Redirects installed.
+2024-10-17 00:22:06,894 INFO    MainThread:561953 [wandb_init.py:init():838] run started, returning control to user process
+2024-10-17 00:22:06,895 INFO    MainThread:561953 [wandb_run.py:_tensorboard_callback():1544] tensorboard callback: runs/Hopper-v4__ddpg__1__1729095722, True
+2024-10-17 00:31:06,602 WARNING MsgRouterThr:561953 [router.py:message_loop():77] message_loop has been closed
