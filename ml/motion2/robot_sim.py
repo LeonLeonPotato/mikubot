@@ -39,7 +39,16 @@ class Robot:
         self.left_state = make_initial_state()
         self.right_state = make_initial_state()
 
+    def angle_to(self, x, y, dtheta=0):
+        da = np.arctan2(y - self.y, x - self.x)
+        return (da + dtheta + np.pi) % (2 * np.pi) - np.pi
+
     def _dummy_update(self, left_velo, right_velo, dt):
+        if isinstance(left_velo, float):
+            left_velo = th.tensor([left_velo], device='cpu')
+        if isinstance(right_velo, float):
+            right_velo = th.tensor([right_velo], device='cpu')
+
         rpm2rad = 2 * np.pi / 60
         right_travel = right_velo * rpm2rad * self.args.wheel_radius * dt
         left_travel = left_velo * rpm2rad* self.args.wheel_radius * dt
@@ -58,9 +67,9 @@ class Robot:
 
     def _pos_update(self, dt):
         dx, dy, dtheta = self._dummy_update(self.left_velo, self.right_velo, dt)
-        self.theta += dtheta
-        self.x += dx
-        self.y += dy
+        self.theta += dtheta.cpu().item()
+        self.x += dx.cpu().item()
+        self.y += dy.cpu().item()
 
     @torch.inference_mode()
     def update(self, left_volt, right_volt, dt=-1):
@@ -115,72 +124,59 @@ class Robot:
         dx, dy, dtheta = self._dummy_update(combs[:, 0], combs[:, 1], dt)
 
         scores = func(self, dx, dy, dtheta, left_velos, right_velos)
-        best = th.argmin(scores).cpu().numpy()
+        best = th.argmin(scores).cpu().item()
         i, j = best // n_right, best % n_right
 
         best_left = (high_left - low_left) / n_left * i + low_left
         best_right = (high_right - low_right) / n_right * j + low_right
-        return best_left, best_right
+        return best_left, best_right, scores[best].item()
 
 if __name__ == "__main__":
     R = Robot(
         0, 0, 0, RobotArgs(5.08, 98.4375)
     )
 
+    tx, ty = 50, 100
+
     def func(robot, dx, dy, dtheta, left_velo, right_velo):
-        theta = robot.theta + dtheta
-        return (1.57 - theta).abs()
+        tangle = robot.angle_to(tx, ty, dtheta)
+        return abs(tangle)
 
     t = time.time()
-    best = R.best(func, 0.02, n_left=100, n_right=100)
-    print(time.time() - t)
-    print(best)
+    left, right, score = R.best(func, 0.02, n_left=100, n_right=100)
 
-    # pygame.init()
-    # pygame.font.init()
+    pygame.init()
+    pygame.font.init()
 
-    # screen = pygame.display.set_mode((800, 800))
+    screen = pygame.display.set_mode((800, 800))
 
-    # while True:
-    #     left, right = 0, 0
-    #     for event in pygame.event.get():
-    #         if event.type == pygame.QUIT:
-    #             pygame.quit()
-    #             quit()
+    while True:
+        left, right, score = R.best(func, 0.02, n_left=100, n_right=100)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
 
-    #     if pygame.key.get_pressed()[pygame.K_UP]:
-    #         left = 12000
-    #         right = 12000
+        R.update(left, right, 0.02)
+        R.x = min(max(-400, R.x), 400)
+        R.y = min(max(-400, R.y), 400)
 
-    #     if pygame.key.get_pressed()[pygame.K_DOWN]:
-    #         left = -12000
-    #         right = -12000
+        screen.fill((0, 0, 0))
 
-    #     if pygame.key.get_pressed()[pygame.K_RIGHT]:
-    #         left = 0
-        
-    #     if pygame.key.get_pressed()[pygame.K_LEFT]:
-    #         right = 0
+        Rx, Ry = 400 + R.x, 400 + R.y
+        print(R.x, R.y, score)
+        pygame.draw.circle(screen, (255, 255, 255), (Rx, Ry), 10)
+        pygame.draw.line(screen, (255, 255, 255), (Rx, Ry), (Rx + 20 * np.sin(R.theta), Ry + 20 * np.cos(R.theta)))
+        pygame.draw.circle(screen, (255, 255, 255), (400 + tx, 400 + ty), 10)
 
-    #     left = min(max(-12000, left), 12000)
-    #     right = min(max(-12000, right), 12000)
+        surf = pygame.font.SysFont('Arial', 30).render(f"L: {left}, R: {right}", True, (255, 255, 255))
+        screen.blit(surf, (0, 0))
 
-    #     R.update(left, right)
-    #     R.x = min(max(-400, R.x), 400)
-    #     R.y = min(max(-400, R.y), 400)
+        surf = pygame.font.SysFont('Arial', 30).render(f"Lv: {R.left_velo}, Rv: {R.right_velo}", True, (255, 255, 255))
+        screen.blit(surf, (0, 30))
 
-    #     screen.fill((0, 0, 0))
+        sur = pygame.font.SysFont('Arial', 30).render(f"Score: {score}", True, (255, 255, 255))
+        screen.blit(sur, (0, 60))
 
-    #     Rx, Ry = 400 + R.x, 400 + R.y
-    #     print(Rx, Ry)
-    #     pygame.draw.circle(screen, (255, 255, 255), (Rx, Ry), 10)
-    #     pygame.draw.line(screen, (255, 255, 255), (Rx, Ry), (Rx + 20 * np.sin(R.theta), Ry + 20 * np.cos(R.theta)))
-
-    #     surf = pygame.font.SysFont('Arial', 30).render(f"L: {left}, R: {right}", True, (255, 255, 255))
-    #     screen.blit(surf, (0, 0))
-
-    #     surf = pygame.font.SysFont('Arial', 30).render(f"Lv: {R.left_velo}, Rv: {R.right_velo}", True, (255, 255, 255))
-    #     screen.blit(surf, (0, 90))
-
-    #     pygame.display.update()
-    #     time.sleep(0.02)
+        pygame.display.update()
+        time.sleep(0.02)
