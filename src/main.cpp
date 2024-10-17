@@ -62,17 +62,19 @@ void opcontrol(void) {
 	// competition_initialize();
 	// autonrunner::init();
 	std::cout << "Opcontrol started" << std::endl;
-	test_strategy::run();
-	driving::run();
+	// test_strategy::run();
+	// driving::run();
 
-	// auto targ = Eigen::Vector2f(50, 50);
-	// while (true) {
-	// 	float dtheta = robot::angular_diff(targ);
-	// 	robot::velo((int) (dtheta * 100), (int) (-dtheta * 100));
-	// 	printf("dtheta = %f, robot theta = %f\n", dtheta, robot::theta);
-
-	// 	pros::delay(20);
-	// }
+	while (true) {
+		pros::vision_object_s_t obj = robot::vision.get_by_sig(0, robot::signatures::red_ring_id);
+		if (obj.signature == 0) {
+			robot::volt(0, 0);
+		} else {
+			int turn = obj.x_middle_coord - 158;
+			robot::volt(127 + turn, 127 - turn);
+		}
+		pros::delay(20);
+	}
 	// test_strategy::run();
 	
 }

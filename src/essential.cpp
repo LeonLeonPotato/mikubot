@@ -44,7 +44,7 @@ pros::MotorGroup right_motors({11, 17, 15}, pros::MotorGearset::blue);
 pros::adi::Pneumatics excluder('B', false);
 pros::Optical classifier(13);
 
-pros::Vision vision(10);
+pros::Vision vision(1);
 
 void init(void) {
     inertial.reset(true);

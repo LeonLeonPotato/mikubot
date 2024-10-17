@@ -3,6 +3,44 @@
 
 #include "api.h"
 
+namespace pathing {
+namespace variables {
+    float turning_coeff = 80.8507;
+    float distance_coeff = 5.0;
+};
+
+void goto_pos_tick(const Eigen::Vector2f& point) {
+    float theta_diff = robot::angular_diff(point);
+    float dist = robot::distance(point);
+    float dist_vel = fmin(dist * variables::distance_coeff, 127);
+    robot::velo(
+        dist_vel + theta_diff * variables::turning_coeff, 
+        dist_vel - theta_diff * variables::turning_coeff
+    );
+}
+
+void turn_towards_tick(float angle) {
+    float theta_diff = robot::angular_diff(angle);
+    robot::volt(
+        theta_diff * variables::turning_coeff, 
+        -theta_diff * variables::turning_coeff
+    );
+}
+
+void goto_pos(const Eigen::Vector2f& point, float threshold) {
+    while (robot::distance(point) > threshold) {
+        goto_pos_tick(point);
+        pros::delay(20);
+    }
+}
+
+void turn_towards(float angle, float threshold) {
+    while (fabs(robot::angular_diff(angle)) > threshold) {
+        turn_towards_tick(angle);
+        pros::delay(20);
+    }
+}
+
 namespace pure_pursuit {
 std::pair<float, float> compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius,
                             float guess, float start_bound, float end_bound, int iterations, float threshold) 
@@ -22,11 +60,10 @@ std::pair<float, float> compute_intersections(spline::AbstractSpline& spline, Ei
     }
 
     float dist = fabs((spline.compute(guess) - point).norm() - radius);
-    // if (dist > threshold) return -1;
     return {guess, dist};
 }
 
-float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius,
+std::pair<float, float> compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& point, float radius,
                             Eigen::VectorXf guess, float start_bound, float end_bound, int iterations, float threshold) 
 {
     while (iterations--) {
@@ -50,4 +87,5 @@ float compute_intersections(spline::AbstractSpline& spline, Eigen::Vector2f& poi
 
     return max_guess;
 }
+} // namespace pure_pursuit
 } // namespace pathing
