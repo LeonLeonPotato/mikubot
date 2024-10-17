@@ -99,7 +99,7 @@ void print_logs(void) {
 
 void run() {
 	int it = 0;
-	pros::Task::create(print_logs);
+	// pros::Task::create(print_logs);
 	float left_last_velo = robot::left_motors.get_actual_velocity();
 	float right_last_velo = robot::right_motors.get_actual_velocity();
 	long long cur_time = pros::micros();

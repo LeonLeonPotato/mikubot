@@ -7,7 +7,7 @@
 
 namespace test_strategy {
 spline::QuinticSpline sp;
-const float mult = 400;
+const float mult = 150;
 const float radius = 30;
 const float recalculate_velo_mult = 0;
 
@@ -31,7 +31,8 @@ void run(void) {
     sp = spline::QuinticSpline();
     sp.points.emplace_back(robot::x, robot::y);
     sp.points.emplace_back(robot::x, robot::y + 100);
-    sp.points.emplace_back(robot::x - 50, robot::y + 100);
+    sp.points.emplace_back(robot::x - 50, robot::y + 200);
+    sp.points.emplace_back(robot::x - 200, robot::y + 200);
     Eigen::Vector2f back = sp.points.back();
 
     std::vector<Eigen::Vector2f> tracker_res;
@@ -64,7 +65,7 @@ void run(void) {
 
         float dtheta = robot::angular_diff(res);
         float dist = robot::distance(res);
-        dist = fmin(dist * 5, radius) / radius * 50;
+        dist = fmin(dist * 5, radius) / radius * 127;
 
         int left = (int) (dist + mult * dtheta);
         int right = (int) (dist - mult * dtheta);
