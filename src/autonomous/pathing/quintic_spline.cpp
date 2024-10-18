@@ -1,42 +1,11 @@
-#include "autonomous/spline.h"
-
-#include "api.h"
+#include "autonomous/pathing/quintic_spline.h"
 
 #include "Eigen/Sparse"
 
-namespace spline {
-Eigen::Matrix<float, 6, 6> differential_matrix_1;
-Eigen::Matrix<float, 6, 6> differential_matrix_0;
+#include <vector>
+#include <iostream>
 
-template <int N>
-void Polynomial<N>::compute(Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv) const {
-    Eigen::VectorXf t_pow = Eigen::VectorXf::Ones(t.size());
-    for (int i = deriv; i < N; i++) {
-        res += coeffs(i).cwiseProduct(t_pow) * differential_matrix_1(deriv, i);
-        t_pow = t_pow.cwiseProduct(t);
-    }
-}
-
-template <int N>
-float Polynomial<N>::compute(float t, int deriv) const {
-    float result = 0;
-    float t_pow = 1;
-    for (int i = deriv; i < N; i++) {
-        result += coeffs(i) * t_pow * differential_matrix_1(deriv, i);
-        t_pow *= t;
-    }
-    return result;
-}
-
-template <int N>
-std::string Polynomial<N>::debug_out(void) const {
-    std::string result = "";
-    for (int i = 0; i < N; i++) {
-        result += std::to_string(coeffs(i)) + "t^" + std::to_string(i) + " + ";
-    }
-    return result;
-}
-
+namespace pathing {
 void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1) {
     int n = 6 * segments.size();
     std::vector<Eigen::Triplet<float>> triplets;
@@ -123,22 +92,4 @@ std::string QuinticSpline::debug_out(void) const {
     }
     return result;
 }
-
-void init(void) {
-    differential_matrix_1 <<
-        1, 1, 1, 1, 1, 1,
-        0, 1, 2, 3, 4, 5,
-        0, 0, 2, 6, 12, 20,
-        0, 0, 0, 6, 24, 60,
-        0, 0, 0, 0, 24, 120,
-        0, 0, 0, 0, 0, 120;
-
-    differential_matrix_0 <<
-        1, 0, 0, 0, 0, 0,
-        0, 1, 0, 0, 0, 0,
-        0, 0, 2, 0, 0, 0,
-        0, 0, 0, 6, 0, 0,
-        0, 0, 0, 0, 24, 0,
-        0, 0, 0, 0, 0, 120;
-}
-}
+} // namespace pathing

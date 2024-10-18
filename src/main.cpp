@@ -2,7 +2,7 @@
 #include "essential.h"
 #include "opcontrol/driving.h"
 #include "autonomous/odometry.h"
-#include "autonomous/spline.h"
+#include "autonomous/pathing.h"
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
 #include "gui/utils.h"
@@ -13,7 +13,7 @@
 void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
-	spline::init();
+	pathing::init();
 	robot::init();
 	odometry::init();
 	renderer::init();

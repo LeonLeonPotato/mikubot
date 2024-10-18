@@ -10,7 +10,7 @@ float PID::get(void) {
         integral = fmax(integral_min, fmin(integral_max, integral));
     }
 
-    float derivative = error - last_error;
+    float derivative = (error - last_error) * (int) registered;
 
     return kp * error + ki * integral - kd * derivative;
 }

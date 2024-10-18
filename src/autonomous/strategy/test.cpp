@@ -1,12 +1,12 @@
 #include "autonomous/strategy/test.h"
-#include "autonomous/spline.h"
-#include "autonomous/pathing.h"
+#include "autonomous/movement.h"
+#include "autonomous/pathing/quintic_spline.h"
 #include "essential.h"
 
 #include "api.h"
 
 namespace test_strategy {
-spline::QuinticSpline sp;
+pathing::QuinticSpline sp;
 const float mult = 150;
 const float radius = 30;
 const float recalculate_velo_mult = 0;
@@ -21,14 +21,14 @@ float recompute_full() {
     Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
     Eigen::VectorXf guesses = Eigen::VectorXf(20);
     guesses.setLinSpaced(20, 0.1, sp.points.size()-1.1);
-    return pure_pursuit::compute_intersections(
+    return movement::pure_pursuit::compute_intersections(
         sp, point, radius, guesses, 0, sp.points.size()-1, 15
-    );
+    ).first;
 }
 
 void run(void) {
     long long it = 0;
-    sp = spline::QuinticSpline();
+    sp = pathing::QuinticSpline();
     sp.points.emplace_back(robot::x, robot::y);
     sp.points.emplace_back(robot::x, robot::y + 100);
     sp.points.emplace_back(robot::x - 50, robot::y + 200);
@@ -48,7 +48,7 @@ void run(void) {
         }
 
         Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
-        auto intersect = pure_pursuit::compute_intersections(
+        auto intersect = movement::pure_pursuit::compute_intersections(
             sp, point, radius, t, t, sp.points.size()-1, 5
         );
         t = intersect.first;

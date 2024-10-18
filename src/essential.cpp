@@ -25,7 +25,7 @@ pros::vision_signature_s_t goal = pros::Vision::signature_from_utility(
 } // namespace signatures
 
 namespace config {
-const bool velo_based = true;
+const bool velo_based_driving = true;
 const pros::motor_brake_mode_e_t default_brake_mode = pros::E_MOTOR_BRAKE_COAST;
 } // namespace config
 

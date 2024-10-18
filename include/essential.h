@@ -58,7 +58,7 @@ namespace signatures {
 } // namespace signatures
 
 namespace config {
-    extern const bool velo_based;
+    extern const bool velo_based_driving;
     extern const pros::motor_brake_mode_e_t default_brake_mode;
 } // namespace config
 
@@ -103,6 +103,15 @@ inline void velo(int left, int right) {
     int max = max_speed();
     int lv = (int) (std::clamp(left, -127, 127) / 127.0f * max);
     int rv = (int) (std::clamp(right, -127, 127) / 127.0f * max);
+    braking = false;
+    left_motors.move_velocity(left);
+    right_motors.move_velocity(right);
+}
+
+inline void velo(float left, float right) {
+    int max = max_speed();
+    int lv = (int) (std::clamp(left, -1.0f, 1.0f) * max);
+    int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
     braking = false;
     left_motors.move_velocity(left);
     right_motors.move_velocity(right);
