@@ -13,12 +13,15 @@ class PID {
         float disable_integral_upper, disable_integral_lower;
 
     public:
-        PID(float kp, float ki, float kd, float integral_min, float integral_max, float disable_integral_lower, float disable_integral_upper):
-            kp(kp), ki(ki), kd(kd), integral_min(integral_min), integral_max(integral_max), disable_integral_lower(disable_integral_lower), disable_integral_upper(disable_integral_upper) {
+        PID() {
             error = 0;
             integral = 0;
             last_error = 0;
             registered = false;
+        }
+        PID(float kp, float ki, float kd, float integral_min, float integral_max, float disable_integral_lower, float disable_integral_upper):
+            kp(kp), ki(ki), kd(kd), integral_min(integral_min), integral_max(integral_max), disable_integral_lower(disable_integral_lower), disable_integral_upper(disable_integral_upper) {
+            PID();
         }
         void reset(void) {
             error = 0;
