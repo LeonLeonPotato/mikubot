@@ -27,7 +27,13 @@ inline namespace state {
     }
 
     inline float angular_diff(float desired) {
-        return fmod(desired - fmod(theta, M_TWOPI) + M_PI, M_TWOPI) - M_PI;
+
+
+
+
+        asm("nop");
+        // return fmod(desired - fmod(theta, M_TWOPI) + M_PI, M_TWOPI) - M_PI;
+        return 0;
     }
 
     inline float angular_diff(float desired_x, float desired_y) {

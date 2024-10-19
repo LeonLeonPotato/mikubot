@@ -1,6 +1,6 @@
 #include "autonomous/strategy/test.h"
 #include "autonomous/movement.h"
-#include "autonomous/pathing/quintic_spline.h"
+#include "autonomous/pathing.h"
 #include "essential.h"
 
 #include "api.h"
@@ -33,26 +33,24 @@ void run(void) {
     sp.points.emplace_back(robot::x, robot::y + 100);
     sp.points.emplace_back(robot::x - 50, robot::y + 200);
     sp.points.emplace_back(robot::x - 200, robot::y + 200);
-    Eigen::Vector2f back = sp.points.back();
 
     std::vector<Eigen::Vector2f> tracker_res;
     std::vector<Eigen::Vector2f> tracker_pos;
 
     float t = recompute_full();
-    std::cout << sp.debug_out() << std::endl;
 
     while (true) {
-        float fdist = robot::distance(back);
+        float fdist = robot::distance(sp.points.back());
         if (fdist < 10) {
             break;
         }
 
         Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
         auto intersect = movement::pure_pursuit::compute_intersections(
-            sp, point, radius, t, t, sp.points.size()-1, 5
+            sp, point, radius, t, t, sp.points.size()-1
         );
         t = intersect.first;
-        if (intersect.second > radius + 5) {
+        if (intersect.second > radius + 1) {
             sp.points[0] = point;
             for (auto& p : sp.points) {
                 std::cout << p(0) << " " << p(1) << std::endl;

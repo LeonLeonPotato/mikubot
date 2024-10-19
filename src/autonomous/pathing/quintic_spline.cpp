@@ -5,7 +5,8 @@
 #include <vector>
 #include <iostream>
 
-namespace pathing {
+using namespace pathing;
+
 void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1) {
     int n = 6 * segments.size();
     std::vector<Eigen::Triplet<float>> triplets;
@@ -68,28 +69,12 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     }
 }
 
-void QuinticSpline::solve_lengths(int resolution) {
-    lengths.clear();
-    resolution *= segments.size();
-    lengths.reserve(resolution + 1);
-    Eigen::Vector2f prev = points[0];
-    float length = 0;
-    for (int i = 1; i <= resolution; i++) {
-        float t = (float) i / resolution * segments.size();
-        auto current = compute(t);
-        length += (current - prev).norm();
-        lengths.push_back(length);
-        prev = current;
-    }
-}
-
 std::string QuinticSpline::debug_out(void) const {
-    std::string result = "";
+    std::stringstream result;
     for (int i = 0; i < segments.size(); i++) {
-        result += "Segment " + std::to_string(i) + "\n";
-        result += "X: " + segments[i].x_poly.debug_out() + "\n";
-        result += "Y: " + segments[i].y_poly.debug_out() + "\n";
+        char buf[4096];
+        int n = sprintf(buf, "P_%d(t) = (%s, %s)\n", i, segments[i].x_poly.debug_out().c_str(), segments[i].y_poly.debug_out().c_str());
+        result << buf;
     }
-    return result;
+    return result.str();
 }
-} // namespace pathing

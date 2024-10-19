@@ -13,30 +13,9 @@
 void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
-	pathing::init();
 	robot::init();
 	odometry::init();
 	renderer::init();
-	// spline::QuinticSpline sp;
-	// sp.points.emplace_back(0, 0);
-	// sp.points.emplace_back(0, 1);
-	// sp.points.emplace_back(1, 1);
-	// sp.points.emplace_back(1, 0);
-	// sp.solve_coeffs(0, 0, 0, 0, 0, 0, 0, 0);
-	// std::cout << sp.debug_out() << std::endl;
-
-	// Eigen::Vector2f point(0.5, 0.5);
-	// float t = pure_pursuit::compute_intersections(
-	// 	sp, point, 0.7, 0.9, 0, 3, 15, 1e-1
-	// );
-	// std::cout << "test one computed: " << t << std::endl;
-
-	// Eigen::VectorXf guess(10);
-	// guess.setLinSpaced(10, 0, 1.5);
-	// t = pure_pursuit::compute_intersections(
-	// 	sp, point, 0.7, guess, 0, 3, 15, 1e-1
-	// );
-	// std::cout << "test two computed: " << t << std::endl;
 }
 
 void disabled(void) {
@@ -59,22 +38,42 @@ void autonomous(void) {
 }
 
 void opcontrol(void) {
-	// competition_initialize();
-	// autonrunner::init();
 	std::cout << "Opcontrol started" << std::endl;
-	// test_strategy::run();
-	// driving::run();
 
-	while (true) {
-		pros::vision_object_s_t obj = robot::vision.get_by_sig(0, robot::signatures::red_ring_id);
-		if (obj.signature == 0) {
-			robot::volt(0, 0);
-		} else {
-			int turn = obj.x_middle_coord - 158;
-			robot::volt(127 + turn, 127 - turn);
-		}
-		pros::delay(20);
-	}
+	// pathing::QuinticSpline sp;
+	// sp.points.emplace_back(0, 0);
+	// sp.points.emplace_back(0, 100);
+	// sp.points.emplace_back(-50, 200);
+	// sp.points.emplace_back(-200, 200);
+	// sp.solve_coeffs(0, 0, 0, 0);
+
+	// std::cout << sp.debug_out() << std::endl;
+
+	// Eigen::Vector2f test_1 = sp.compute(0.5, 0);
+	// printf("Test 1: (%f, %f)\n", test_1(0), test_1(1));
+
+	// Eigen::Vector2f test_2 = sp.compute(0.7, 1);
+	// printf("Test 2: (%f, %f)\n", test_2(0), test_2(1));
+
+	// Eigen::Vector2f test_3 = sp.compute(1.2, 4);
+	// printf("Test 3: (%f, %f)\n", test_3(0), test_3(1));
+
+	pathing::PolygonPath pp;
+	pp.points.emplace_back(0, 0);
+	pp.points.emplace_back(0, 100);
+	pp.points.emplace_back(-50, 200);
+	pp.points.emplace_back(-200, 200);
+
+	// while (true) {
+	// 	pros::vision_object_s_t obj = robot::vision.get_by_sig(0, robot::signatures::red_ring_id);
+	// 	if (obj.signature == 0) {
+	// 		robot::volt(0, 0);
+	// 	} else {
+	// 		int turn = obj.x_middle_coord - 158;
+	// 		robot::volt(127 + turn, 127 - turn);
+	// 	}
+	// 	pros::delay(20);
+	// }
 	// test_strategy::run();
 	
 }
