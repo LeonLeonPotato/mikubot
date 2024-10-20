@@ -17,7 +17,7 @@ namespace variables {
     float turning_I_max = 50;
 };
 
-inline void init_pid(controllers::PID& pid) {
+void init_pid(controllers::PID& pid) {
     pid = controllers::PID(
         variables::turning_kP, 
         variables::turning_kI, 
