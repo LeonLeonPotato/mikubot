@@ -41,7 +41,15 @@ void autonomous(void) {
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
 
-	competition_initialize();
+	// competition_initialize();
+	auto start = pros::micros();
+	double sum = 0;
+	for (int i = 0; i < 1e6; i++) {
+		sum += sqrtf(i);
+	}
+	auto end = pros::micros();
+	printf("Time taken: %f\n", (end - start) / 1e6);
+	printf("Sum: %f\n", sum);
 	// test_strategy::run();
 
 	// pathing::QuinticSpline sp;
