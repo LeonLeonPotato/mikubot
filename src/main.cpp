@@ -41,7 +41,8 @@ void autonomous(void) {
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
 
-	test_strategy::run();
+	competition_initialize();
+	// test_strategy::run();
 
 	// pathing::QuinticSpline sp;
 	// sp.points.emplace_back(0, 0);
