@@ -41,7 +41,20 @@ void autonomous(void) {
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
 
-	test_strategy::run();
+	auto start = pros::micros();
+	double sum = 0;
+	for (int i = 0; i < 1e4; i++) {
+		pathing::QuinticSpline sp;
+		sp.points.emplace_back(0, i);
+		sp.points.emplace_back(0, -i + 100);
+		sp.points.emplace_back(-50, 200);
+		sp.points.emplace_back(-sqrtf(i), 200);
+		sp.solve_coeffs(0, 0, 0, 0);
+		sum += sp.compute(0.5, 0)(0);
+	}
+	auto end = pros::micros();
+	printf("Time taken: %f\n", (end - start) / 1e6);
+	printf("Sum: %f\n", sum);
 
 	// pathing::QuinticSpline sp;
 	// sp.points.emplace_back(0, 0);
@@ -49,7 +62,6 @@ void opcontrol(void) {
 	// sp.points.emplace_back(-50, 200);
 	// sp.points.emplace_back(-200, 200);
 	// sp.solve_coeffs(0, 0, 0, 0);
-
 	// std::cout << sp.debug_out() << std::endl;
 
 	// Eigen::Vector2f test_1 = sp.compute(0.5, 0);
