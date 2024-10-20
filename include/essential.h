@@ -27,13 +27,7 @@ inline namespace state {
     }
 
     inline float angular_diff(float desired) {
-
-
-
-
-        asm("nop");
-        // return fmod(desired - fmod(theta, M_TWOPI) + M_PI, M_TWOPI) - M_PI;
-        return 0;
+        return fmod(desired - fmod(theta, M_TWOPI) + M_PI, M_TWOPI) - M_PI;
     }
 
     inline float angular_diff(float desired_x, float desired_y) {
@@ -110,18 +104,18 @@ inline void velo(int left, int right) {
     int lv = (int) (std::clamp(left, -127, 127) / 127.0f * max);
     int rv = (int) (std::clamp(right, -127, 127) / 127.0f * max);
     braking = false;
-    left_motors.move_velocity(left);
-    right_motors.move_velocity(right);
+    left_motors.move_velocity(lv);
+    right_motors.move_velocity(rv);
 }
 
-inline void velo(float left, float right) {
-    int max = max_speed();
-    int lv = (int) (std::clamp(left, -1.0f, 1.0f) * max);
-    int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
-    braking = false;
-    left_motors.move_velocity(left);
-    right_motors.move_velocity(right);
-}
+// inline void velo(float left, float right) {
+//     int max = max_speed();
+//     int lv = (int) (std::clamp(left, -1.0f, 1.0f) * max);
+//     int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
+//     braking = false;
+//     left_motors.move_velocity(left);
+//     right_motors.move_velocity(right);
+// }
 
 inline void brake(void) {
     braking = true;

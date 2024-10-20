@@ -2,9 +2,9 @@
 #include "autonomous/movement/base_movement.h"
 #include "essential.h"
 
-using namespace movement::pure_pursuit;
+using namespace movement;
 
-std::pair<float, float> compute_intersections(pathing::BasePath& path, const Eigen::Vector2f& point, float radius,
+std::pair<float, float> pure_pursuit::compute_intersections(pathing::BasePath& path, const Eigen::Vector2f& point, float radius,
                             float guess, float start_bound, float end_bound, int iterations, float threshold) 
 {
     float dist;
@@ -25,7 +25,7 @@ std::pair<float, float> compute_intersections(pathing::BasePath& path, const Eig
     return {guess, dist};
 }
 
-std::pair<float, float> compute_intersections(pathing::BasePath& path, const Eigen::Vector2f& point, float radius,
+std::pair<float, float> pure_pursuit::compute_intersections(pathing::BasePath& path, const Eigen::Vector2f& point, float radius,
                             Eigen::VectorXf guess, float start_bound, float end_bound, int iterations, float threshold) 
 {
     while (iterations--) {
@@ -54,7 +54,7 @@ std::pair<float, float> compute_intersections(pathing::BasePath& path, const Eig
 
 float follow_path_tick(pathing::BasePath& path, controllers::PID& pid, float t, float radius, int iterations) {
     Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
-    auto intersect = compute_intersections(path, point, radius, t, 0, path.points.size() - 1, iterations);
+    auto intersect = pure_pursuit::compute_intersections(path, point, radius, t, 0, path.points.size() - 1, iterations);
     t = intersect.first;
 
     Eigen::Vector2f res = path.compute(t);

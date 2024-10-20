@@ -7,6 +7,7 @@
 #include "gui/autonrunner.h"
 #include "gui/utils.h"
 #include "autonomous/strategy/test.h"
+#include "autonomous/movement.h"
 
 #include "api.h"
 
@@ -40,6 +41,8 @@ void autonomous(void) {
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
 
+	test_strategy::run();
+
 	// pathing::QuinticSpline sp;
 	// sp.points.emplace_back(0, 0);
 	// sp.points.emplace_back(0, 100);
@@ -57,12 +60,7 @@ void opcontrol(void) {
 
 	// Eigen::Vector2f test_3 = sp.compute(1.2, 4);
 	// printf("Test 3: (%f, %f)\n", test_3(0), test_3(1));
-
-	pathing::PolygonPath pp;
-	pp.points.emplace_back(0, 0);
-	pp.points.emplace_back(0, 100);
-	pp.points.emplace_back(-50, 200);
-	pp.points.emplace_back(-200, 200);
+	// I know what you are
 
 	// while (true) {
 	// 	pros::vision_object_s_t obj = robot::vision.get_by_sig(0, robot::signatures::red_ring_id);
@@ -75,5 +73,4 @@ void opcontrol(void) {
 	// 	pros::delay(20);
 	// }
 	// test_strategy::run();
-	
 }

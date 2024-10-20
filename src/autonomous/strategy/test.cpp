@@ -19,8 +19,8 @@ float recompute_full() {
     sp.solve_coeffs(dir_x, 0, dir_y, 0, 0, 0, 0, 0);
 
     Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
-    Eigen::VectorXf guesses = Eigen::VectorXf(20);
-    guesses.setLinSpaced(20, 0.1, sp.points.size()-1.1);
+    Eigen::VectorXf guesses = Eigen::VectorXf(30);
+    guesses.setLinSpaced(30, 0.05, sp.points.size()-1.05);
     return movement::pure_pursuit::compute_intersections(
         sp, point, radius, guesses, 0, sp.points.size()-1, 15
     ).first;
@@ -31,15 +31,17 @@ void run(void) {
     sp = pathing::QuinticSpline();
     sp.points.emplace_back(robot::x, robot::y);
     sp.points.emplace_back(robot::x, robot::y + 100);
-    sp.points.emplace_back(robot::x - 50, robot::y + 200);
-    sp.points.emplace_back(robot::x - 200, robot::y + 200);
+    sp.points.emplace_back(robot::x + 50, robot::y + 200);
+    sp.points.emplace_back(robot::x + 200, robot::y + 200);
 
     std::vector<Eigen::Vector2f> tracker_res;
     std::vector<Eigen::Vector2f> tracker_pos;
+    controllers::PID pid; movement::init_pid(pid);
 
     float t = recompute_full();
+    long long start = pros::micros();
 
-    while (true) {
+    while (pros::micros() - start < 10 * 1e6) {
         float fdist = robot::distance(sp.points.back());
         if (fdist < 10) {
             break;
@@ -50,7 +52,7 @@ void run(void) {
             sp, point, radius, t, t, sp.points.size()-1
         );
         t = intersect.first;
-        if (intersect.second > radius + 1) {
+        if (intersect.second > radius + 5) {
             sp.points[0] = point;
             for (auto& p : sp.points) {
                 std::cout << p(0) << " " << p(1) << std::endl;
@@ -61,33 +63,10 @@ void run(void) {
 
         Eigen::Vector2f res = sp.compute(t);
 
-        float dtheta = robot::angular_diff(res);
-        float dist = robot::distance(res);
-        dist = fmin(dist * 5, radius) / radius * 127;
-
-        int left = (int) (dist + mult * dtheta);
-        int right = (int) (dist - mult * dtheta);
-
-        if (it % 5 == 0) {
-            printf("t = %f, Robot = [%f, %f], fdist = %f, res = [%f, %f], dtheta = %f, dist = %f, velo = [%d, %d]\n", 
-                    t, point(0), point(1), fdist, res(0), res(1), dtheta, dist, left, right);
-
-            tracker_res.push_back(res);
-            tracker_pos.push_back(point);
-
-            std::cout << "[";
-            for (int i = 0; i < tracker_res.size(); i++) {
-                std::cout << "(" << tracker_res[i](0) << ", " << tracker_res[i](1) << "), ";
-            }
-            std::cout << "]\n";
-            std::cout << "[";
-            for (int i = 0; i < tracker_res.size(); i++) {
-                std::cout << "(" << tracker_pos[i](0) << ", " << tracker_pos[i](1) << "), ";
-            }
-            std::cout << "]\n";
-        }
-
-        robot::volt(left, right);
+        movement::goto_pos_tick(res, pid);
+        tracker_pos.push_back(point);
+        tracker_res.push_back(res);
+        printf("Robot pos: (%f, %f) | Res: (%f, %f)\n", robot::x, robot::y, res(0), res(1));
 
         pros::delay(20);
         it++;
@@ -95,5 +74,16 @@ void run(void) {
     robot::brake();
 
     printf("Finished\n");
+
+    printf("P = [");
+    for (int i = 0; i < tracker_pos.size(); i++) {
+        printf("(%f, %f), ", tracker_pos[i](0), tracker_pos[i](1));
+    }
+    printf("]\n");
+    printf("R = [");
+    for (int i = 0; i < tracker_res.size(); i++) {
+        printf("(%f, %f), ", tracker_res[i](0), tracker_res[i](1));
+    }
+    printf("]\n");
 }
 }

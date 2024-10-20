@@ -7,14 +7,14 @@ namespace movement {
 namespace variables {
     float distance_coeff = 5.0;
 
-    float turning_kP = 80.8507;
-    float turning_kI = 0;
-    float turning_kD = 10.0;
+    float turning_kP = 300;
+    float turning_kI = 1;
+    float turning_kD = 0;
 
-    float turning_I_disable_min = 0;
-    float turning_I_disable_max = 0;
-    float turning_I_max = 0;
-    float turning_I_min = 0;
+    float turning_I_disable_min = -1;
+    float turning_I_disable_max = 1;
+    float turning_I_min = -50;
+    float turning_I_max = 50;
 };
 
 inline void init_pid(controllers::PID& pid) {
@@ -51,16 +51,13 @@ void turn_towards_tick(float angle, controllers::PID& pid) {
     );
 }
 
-void goto_pos(const Eigen::Vector2f& point, float threshold, bool correct_theta) {
+void goto_pos(const Eigen::Vector2f& point, float threshold) {
     controllers::PID pid;
     init_pid(pid);
     
     while (robot::distance(point) > threshold) {
         goto_pos_tick(point, pid);
         pros::delay(20);
-    }
-    if (correct_theta) {
-        turn_towards(robot::angular_diff(point), 1);
     }
 }
 
@@ -72,5 +69,23 @@ void turn_towards(float angle, float threshold) {
         turn_towards_tick(angle, pid);
         pros::delay(20);
     }
+}
+
+void goto_pose(const Eigen::Vector2f& point, float angle, float threshold, float theta_threshold) {
+    controllers::PID pid;
+    init_pid(pid);
+
+    while (robot::distance(point) > threshold) {
+        goto_pos_tick(point, pid);
+        pros::delay(20);
+    }
+    pid.reset();
+    printf("Angle: %f\n", robot::angular_diff(angle));
+    while (fabs(robot::angular_diff(angle)) > theta_threshold) {
+        turn_towards_tick(angle, pid);
+        printf("Angle: %f\n", robot::angular_diff(angle));
+        pros::delay(20);
+    }
+    robot::brake();
 }
 } // namespace pathing

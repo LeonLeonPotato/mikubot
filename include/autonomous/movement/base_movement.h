@@ -26,4 +26,5 @@ void goto_pos_tick(const Eigen::Vector2f& point, controllers::PID& pid);
 void turn_towards_tick(float angle, controllers::PID& pid);
 void goto_pos(const Eigen::Vector2f& point, float threshold, bool correct_theta = false);
 void turn_towards(float angle, float threshold);
+void goto_pose(const Eigen::Vector2f& point, float angle, float threshold, float theta_threshold);
 } // namespace movement
