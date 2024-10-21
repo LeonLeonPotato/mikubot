@@ -12,18 +12,19 @@ const float radius = 30;
 const float recalculate_velo_mult = 0;
 
 float recompute_full() {
-    // DO NOT CHANGE SIN AND COS
-    // This is because (0, 1) is defined as theta = 0, which means we MUST have sin = x and cos = y
-    float dir_x = sinf(robot::theta) * recalculate_velo_mult;
-    float dir_y = cosf(robot::theta) * recalculate_velo_mult;
-    sp.solve_coeffs(dir_x, 0, dir_y, 0, 0, 0, 0, 0);
+    // // DO NOT CHANGE SIN AND COS
+    // // This is because (0, 1) is defined as theta = 0, which means we MUST have sin = x and cos = y
+    // float dir_x = sinf(robot::theta) * recalculate_velo_mult;
+    // float dir_y = cosf(robot::theta) * recalculate_velo_mult;
+    // sp.solve_coeffs(dir_x, 0, dir_y, 0, 0, 0, 0, 0);
 
-    Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
-    Eigen::VectorXf guesses = Eigen::VectorXf(30);
-    guesses.setLinSpaced(30, 0.05, sp.points.size()-1.05);
-    return movement::pure_pursuit::compute_intersections(
-        sp, point, radius, guesses, 0, sp.points.size()-1, 15
-    ).first;
+    // Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
+    // Eigen::VectorXf guesses = Eigen::VectorXf(30);
+    // guesses.setLinSpaced(30, 0.05, sp.points.size()-1.05);
+    // return movement::pure_pursuit::newton_intersect(
+    //     sp, point, radius, guesses, 0, sp.points.size()-1, 15
+    // ).first;
+    return 0;
 }
 
 void run(void) {
@@ -48,11 +49,12 @@ void run(void) {
         }
 
         Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
-        auto intersect = movement::pure_pursuit::compute_intersections(
-            sp, point, radius, t, t, sp.points.size()-1
-        );
+        // auto intersect = movement::pure_pursuit::newton_intersect(
+        //     sp, point, radius, t, t, sp.points.size()-1
+        // );
+        auto intersect = std::make_pair(0, 0);
         t = intersect.first;
-        if (intersect.second > radius + 5) {
+        if (intersect.second > 1) {
             sp.points[0] = point;
             for (auto& p : sp.points) {
                 std::cout << p(0) << " " << p(1) << std::endl;

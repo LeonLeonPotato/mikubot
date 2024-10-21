@@ -6,8 +6,8 @@
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
 #include "gui/utils.h"
-#include "autonomous/strategy/test.h"
 #include "autonomous/movement.h"
+#include "autonomous/movement/numerical_solvers.h"
 
 #include "api.h"
 
@@ -41,37 +41,56 @@ void autonomous(void) {
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
 
-	auto start = pros::micros();
-	double sum = 0;
-	for (int i = 0; i < 1e4; i++) {
-		pathing::QuinticSpline sp;
-		sp.points.emplace_back(0, i);
-		sp.points.emplace_back(0, -i + 100);
-		sp.points.emplace_back(-50, 200);
-		sp.points.emplace_back(-sqrtf(i), 200);
-		sp.solve_coeffs(0, 0, 0, 0);
-		sum += sp.compute(0.5, 0)(0);
+	// auto start = pros::micros();
+	// double sum = 0;
+	// for (int i = 0; i < 1e4; i++) {
+	// 	pathing::QuinticSpline sp;
+	// 	sp.points.emplace_back(0, i);
+	// 	sp.points.emplace_back(0, -i + 100);
+	// 	sp.points.emplace_back(-50, 200);
+	// 	sp.points.emplace_back(-sqrtf(i), 200);
+	// 	sp.solve_coeffs(0, 0, 0, 0);
+	// 	sum += sp.compute(0.5, 0)(0);
+	// }
+	// auto end = pros::micros();
+	// printf("Time taken: %f\n", (end - start) / 1e6);
+	// printf("Sum: %f\n", sum);
+
+	pathing::QuinticSpline sp;
+	sp.points.emplace_back(0, 0);
+	sp.points.emplace_back(0, 100);
+	sp.points.emplace_back(-50, 200);
+	sp.points.emplace_back(-200, 200);
+	sp.solve_coeffs(0, 0, 0, 0);
+	std::cout << sp.debug_out() << std::endl;
+
+	auto pos = Eigen::Vector2f(0, 0);
+	float radius = 10;
+
+	auto func = [=](float t) {
+		return (sp.compute(t) - pos).norm() - radius;
+	};
+	auto deriv = [=](float t) {
+		const auto rel = sp.compute(t) - pos;
+		return rel.dot(sp.compute(t, 1) - pos) / rel.norm();
+	};
+
+	auto start = pros::millis();
+	float sum = 0;
+	for (int i = 0; i < 1e5; i++) {
+		auto res = movement::solvers::newton(
+			func, deriv, (float) i / 1e4, 0, 3, 10, 1e-9
+		);
+		sum += res.first;
 	}
-	auto end = pros::micros();
-	printf("Time taken: %f\n", (end - start) / 1e6);
+	auto end = pros::millis();
+	printf("Time taken: %f\n", (end - start) / 1e3);
 	printf("Sum: %f\n", sum);
 
-	// pathing::QuinticSpline sp;
-	// sp.points.emplace_back(0, 0);
-	// sp.points.emplace_back(0, 100);
-	// sp.points.emplace_back(-50, 200);
-	// sp.points.emplace_back(-200, 200);
-	// sp.solve_coeffs(0, 0, 0, 0);
-	// std::cout << sp.debug_out() << std::endl;
-
-	// Eigen::Vector2f test_1 = sp.compute(0.5, 0);
-	// printf("Test 1: (%f, %f)\n", test_1(0), test_1(1));
-
-	// Eigen::Vector2f test_2 = sp.compute(0.7, 1);
-	// printf("Test 2: (%f, %f)\n", test_2(0), test_2(1));
-
-	// Eigen::Vector2f test_3 = sp.compute(1.2, 4);
-	// printf("Test 3: (%f, %f)\n", test_3(0), test_3(1));
+	// auto res2 = movement::pure_pursuit::secant_intersect(
+	// 	sp, Eigen::Vector2f(0, 0), 50, 0, 1, 0, 3, 15, 1e-1
+	// );
+	// printf("Secant intersect at %f with %f dist\n", res2.first, res2.second);
 	// I know what you are
 
 	// while (true) {
