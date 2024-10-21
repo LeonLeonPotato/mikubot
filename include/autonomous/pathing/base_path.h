@@ -7,12 +7,15 @@
 #include "Eigen/Dense"
 
 namespace pathing {
+
 class BasePath {
     protected:
         std::vector<float> lengths;
 
     public:
         std::vector<Eigen::Vector2f> points;
+        
+        virtual void solve_coeffs(void* params); // spooky!
 
         virtual void solve_lengths(int resolution = 150);
         virtual inline float time_parameter(const float s) const;
