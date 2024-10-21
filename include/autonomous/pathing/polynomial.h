@@ -9,12 +9,7 @@ namespace pathing {
 template <int N>
 class Polynomial {
     private:
-        static int falling_factorial(int i, int n) {
-            if (i < n) return 0;
-            int result = 1;
-            for (int j = i; j > i - n; j--) result *= j;
-            return result;
-        }
+        static int falling_factorial(int i, int n);
 
     public:
         Eigen::Vector<float, N> coeffs;
@@ -58,6 +53,14 @@ class Polynomial2D {
         inline Eigen::Vector2f operator()(float t, int deriv = 0) const { return compute(t, deriv); }
 };
 } // namespace pathing
+
+template <int N>
+inline int pathing::Polynomial<N>::falling_factorial(int i, int n) {
+    if (i < n) return 0;
+    int result = 1;
+    for (int j = i; j > i - n; j--) result *= j;
+    return result;
+}
 
 template <int N>
 inline void pathing::Polynomial<N>::compute(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv) const {
