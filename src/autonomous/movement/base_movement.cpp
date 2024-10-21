@@ -18,15 +18,13 @@ namespace variables {
 };
 
 void init_pid(controllers::PID& pid) {
-    pid = controllers::PID(
-        variables::turning_kP, 
-        variables::turning_kI, 
-        variables::turning_kD, 
-        variables::turning_I_min, 
-        variables::turning_I_max, 
-        variables::turning_I_disable_min, 
-        variables::turning_I_disable_max
-    );
+    pid.kp = variables::turning_kP;
+    pid.ki = variables::turning_kI;
+    pid.kd = variables::turning_kD;
+    pid.integral_min = variables::turning_I_min;
+    pid.integral_max = variables::turning_I_max;
+    pid.disable_integral_lower = variables::turning_I_disable_min;
+    pid.disable_integral_upper = variables::turning_I_disable_max;
 }
 
 void goto_pos_tick(const Eigen::Vector2f& point, controllers::PID& pid) {
