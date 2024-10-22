@@ -66,19 +66,20 @@ void opcontrol(void) {
 		return rel.cwiseProduct(sp.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 	};
 
-	auto start = pros::micros();
-	float sum = 0;
-	Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(32, 0.05, sp.points.size() - 1.1);
-	Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(32, 0.1, sp.points.size() - 1.05);
-	for (int i = 0; i < 1e4; i++) {
-		auto res = solvers::newton_vec(
-			vec_func, vec_deriv, t1, 0, sp.points.size() - 1, 5
-		);
-		sum += res.second;
+	for (int L = 4; L <= 32; L += 2) {
+		auto start = pros::micros();
+		float sum = 0;
+		Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(L, 0.05, sp.points.size() - 1.1);
+		Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(L, 0.1, sp.points.size() - 1.05);
+		for (int i = 0; i < 1e3; i++) {
+			auto res = solvers::newton_vec(
+				vec_func, vec_deriv, t1, 0, sp.points.size() - 1, 5
+			);
+			sum += res.second;
+		}
+		auto end = pros::micros();
+		printf("Time taken: %f | L: %d | sum: %f\n", (end - start) / 1e6, L, sum);
 	}
-	auto end = pros::micros();
-	printf("Time taken: %f\n", (end - start) / 1e6);
-	printf("Sum: %f\n", sum);
 
 	// auto res2 = movement::pure_pursuit::secant_intersect(
 	// 	sp, Eigen::Vector2f(0, 0), 50, 0, 1, 0, 3, 15, 1e-1

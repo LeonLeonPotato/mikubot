@@ -5,13 +5,13 @@
         "target": "v5",
         "templates": {
             "Eigen": {
-                "location": "C:\\Users\\leon\\AppData\\Roaming\\PROS\\templates\\Eigen@3.4.90",
+                "location": "/home/leon/.config/pros/templates/Eigen@3.4.90",
                 "metadata": {
                     "origin": "local"
                 },
                 "name": "Eigen",
                 "py/object": "pros.conductor.templates.local_template.LocalTemplate",
-                "supported_kernels": "^4.0.6",
+                "supported_kernels": "4.1.0",
                 "system_files": [
                     "include/Eigen/QtAlignedMalloc",
                     "include/Eigen/src/Eigenvalues/RealSchur.h",
