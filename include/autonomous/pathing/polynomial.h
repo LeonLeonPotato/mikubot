@@ -1,14 +1,20 @@
 #pragma once
 
 #include "Eigen/Dense"
+#include <map>
 
 namespace pathing {
 template <int N>
 class Polynomial {
     private:
-        static int falling_factorial(int i, int n);
+        static std::map<int, Eigen::MatrixXi*> differentials;
+        static Eigen::MatrixXi* build_differential_matrix(int n);
+        static Eigen::MatrixXi* get_differential(int n);
 
+        static int falling_factorial(int i, int n);
     public:
+        static void clear_cache();
+
         Eigen::Vector<float, N> coeffs;
 
         Polynomial(void) { }
@@ -51,6 +57,38 @@ class Polynomial2D {
 };
 
 template <int N>
+inline std::map<int, Eigen::MatrixXi*> Polynomial<N>::differentials;
+
+template <int N>
+inline Eigen::MatrixXi* Polynomial<N>::build_differential_matrix(int n) {
+    Eigen::MatrixXi* diff = new Eigen::MatrixXi(n, n);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            (*diff)(i, j) = falling_factorial(i, j);
+        }
+    }
+    return diff;
+}
+
+template <int N>
+inline Eigen::MatrixXi* Polynomial<N>::get_differential(int n) {
+    if (differentials.find(n) == differentials.end()) {
+        Eigen::MatrixXi* diff = build_differential_matrix(n);
+        differentials[n] = diff;
+        return diff;
+    }
+    return differentials[n];
+}
+
+template <int N>
+inline void Polynomial<N>::clear_cache() {
+    for (auto& i : differentials) {
+        delete i.second;
+    }
+    differentials.clear();
+}
+
+template <int N>
 inline int Polynomial<N>::falling_factorial(int i, int n) {
     if (i < n) return 0;
     int result = 1;
@@ -61,8 +99,9 @@ inline int Polynomial<N>::falling_factorial(int i, int n) {
 template <int N>
 inline void Polynomial<N>::compute(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv) const {
     Eigen::VectorXf t_pow = Eigen::VectorXf::Ones(t.size());
+    Eigen::MatrixXi* diff = get_differential(N);
     for (int i = deriv; i < N; i++) {
-        res += coeffs(i).cwiseProduct(t_pow) * falling_factorial(i, deriv);
+        res += coeffs(i).cwiseProduct(t_pow) * diff->coeffRef(i, deriv);
         t_pow = t_pow.cwiseProduct(t);
     }
 }
@@ -78,8 +117,9 @@ template <int N>
 inline float Polynomial<N>::compute(float t, int deriv) const {
     float result = 0;
     float t_pow = 1;
+    Eigen::MatrixXi* diff = get_differential(N);
     for (int i = deriv; i < N; i++) {
-        result += coeffs(i) * t_pow * falling_factorial(i, deriv);
+        result += coeffs(i) * t_pow * diff->coeffRef(i, deriv);
         t_pow *= t;
     }
     return result;

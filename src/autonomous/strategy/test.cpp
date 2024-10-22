@@ -5,7 +5,7 @@
 
 #include "api.h"
 
-using namespace auton_strategies;
+using namespace strategies;
 
 pathing::QuinticSpline sp;
 

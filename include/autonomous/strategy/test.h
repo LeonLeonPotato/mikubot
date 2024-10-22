@@ -2,7 +2,7 @@
 
 #include "autonomous/pathing/polynomial.h"
 
-namespace auton_strategies {
+namespace strategies {
 namespace test_strategy {
 void run(void);
 } // namespace test_strategy

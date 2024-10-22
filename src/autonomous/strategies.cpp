@@ -1,11 +1,11 @@
-#include "autonomous/autonconfig.h"
+#include "autonomous/strategies.h"
 #include "autonomous/strategy/playback.h"
 #include "autonomous/strategy/test.h"
 
 #include <unordered_map>
 #include <string>
 
-namespace auton_strategies {
+namespace strategies {
 const std::unordered_map<Strategy, std::string> names = {
     {Strategy::Playback, "Playback"},
     {Strategy::Skills, "Skills"},
@@ -25,10 +25,11 @@ const std::unordered_map<Strategy, void (*)()> functions = {
 };
 
 const Strategy default_strategy = Strategy::TEST_1;
-} // namespace strategies
 
-namespace auton_config {
-auton_strategies::Strategy chosen_strategy = auton_strategies::default_strategy;
+namespace config {
+strategies::Strategy chosen_strategy = strategies::default_strategy;
 char team = 'R';
 int side = 1;
-}
+} // namespace config
+
+} // namespace strategies

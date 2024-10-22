@@ -50,7 +50,7 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
         B(r) = points[i](axis);
 
         for (int k = 0; k < 6; k++) {
-            triplets.emplace_back(r+1, k+r, differential_matrix_1(0, k));
+            triplets.emplace_back(r+1, k+r, differential_matrix_1.coeffRef(0, k));
         }
         B(r+1) = points[i+1](axis);
 
@@ -58,18 +58,18 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
 
         for (int j = 2; j < 6; j++) {
             for (int k = 0; k < 6; k++) {
-                triplets.emplace_back(r+j, k+r, differential_matrix_1(j-1, k));
-                triplets.emplace_back(r+j, k+r+6, -differential_matrix_0(j-1, k));
+                triplets.emplace_back(r+j, k+r, differential_matrix_1.coeffRef(j-1, k));
+                triplets.emplace_back(r+j, k+r+6, -differential_matrix_0.coeffRef(j-1, k));
             }
             B(r+j) = 0;
         }
     }
 
     for (int i = 0; i < 6; i++) {
-        triplets.emplace_back(n-4, i, differential_matrix_0(1, i));
-        triplets.emplace_back(n-3, i, differential_matrix_0(2, i));
-        triplets.emplace_back(n-2, i+n-6, differential_matrix_1(1, i));
-        triplets.emplace_back(n-1, i+n-6, differential_matrix_1(2, i));
+        triplets.emplace_back(n-4, i, differential_matrix_0.coeffRef(1, i));
+        triplets.emplace_back(n-3, i, differential_matrix_0.coeffRef(2, i));
+        triplets.emplace_back(n-2, i+n-6, differential_matrix_1.coeffRef(1, i));
+        triplets.emplace_back(n-1, i+n-6, differential_matrix_1.coeffRef(2, i));
     }
 
     B(n-4) = ic_0;

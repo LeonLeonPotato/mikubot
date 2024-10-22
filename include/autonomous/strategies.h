@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <string>
 
-namespace auton_strategies {
+namespace strategies {
 enum class Strategy {
     Playback,
     Skills,
@@ -17,10 +17,9 @@ extern const std::unordered_map<Strategy, std::string> names;
 extern const std::unordered_map<std::string, Strategy> values;
 extern const std::unordered_map<Strategy, void (*)()> functions;
 extern const Strategy default_strategy;
-} // namespace strategies
 
-namespace auton_config {
-extern auton_strategies::Strategy chosen_strategy;
+namespace config {
+extern strategies::Strategy chosen_strategy;
 extern char team;
 extern int side;
 
@@ -35,4 +34,5 @@ inline std::string get_team_name(void) {
 inline std::string get_side_name(void) {
     return side == 1 ? "left" : "right";
 }
-} // namespace auton_config
+}
+} // namespace strategies

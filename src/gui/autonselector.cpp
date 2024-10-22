@@ -1,7 +1,7 @@
 #include "gui/autonselector.h"
 #include "gui/utils.h"
 #include "gui/gif-pros/gifclass.hpp"
-#include "autonomous/autonconfig.h"
+#include "autonomous/strategies.h"
 #include "version.h"
 #include "essential.h"
 
@@ -24,7 +24,7 @@ renderer::NamedButton* side_button;
 
 renderer::Text* auton_selection_text;
 int current_selected_idx;
-std::vector<std::pair<auton_strategies::Strategy, renderer::NamedButton*>> auton_buttons;
+std::vector<std::pair<strategies::Strategy, renderer::NamedButton*>> auton_buttons;
 lv_obj_t* selected_auton_box;
 lv_style_t* selected_auton_box_style;
 
@@ -55,19 +55,19 @@ inline void create_logo(void) {
 }
 
 void team_switch_callback(lv_event_t* e) {
-    if (auton_config::team == 'R') {
-        auton_config::team = 'B';
+    if (strategies::config::team == 'R') {
+        strategies::config::team = 'B';
         team_button->bg_color(0x0000FF);
     } else {
-        auton_config::team = 'R';
+        strategies::config::team = 'R';
         team_button->bg_color(0xFF0000);
     }
-    team_button->rename(auton_config::get_team_name());
+    team_button->rename(strategies::config::get_team_name());
 }
 
 void side_switch_callback(lv_event_t* e) {
-    auton_config::side = -auton_config::side;
-    side_button->rename(auton_config::get_side_name());
+    strategies::config::side = -strategies::config::side;
+    side_button->rename(strategies::config::get_side_name());
 }
 
 inline void team_selector(void) {
@@ -77,13 +77,13 @@ inline void team_selector(void) {
         10, 70
     );
     team_button = new renderer::NamedButton(
-        auton_config::get_team_name(), 
+        strategies::config::get_team_name(), 
         roboto_regular_bold_16, 
         110, 60, 120, 50, 
         0xFF0000
     );
     side_button = new renderer::NamedButton(
-        auton_config::get_side_name(), 
+        strategies::config::get_side_name(), 
         roboto_regular_bold_16, 
         240, 60, 120, 50,
         0x838482
@@ -120,7 +120,7 @@ inline void auton_strategy(void) {
     int x = 115;
     int y = 120;
     int i = 0;
-    for (const auto& strat : auton_strategies::names) {
+    for (const auto& strat : strategies::names) {
         auto* btn = new renderer::NamedButton(
             strat.second, 
             roboto_regular_16, 
@@ -130,7 +130,7 @@ inline void auton_strategy(void) {
 
         auton_buttons.emplace_back(strat.first, btn);
 
-        if (strat.first == auton_strategies::default_strategy) {
+        if (strat.first == strategies::default_strategy) {
             btn->set_font(roboto_regular_bold_16);
 
             selected_auton_box = lv_obj_create(lv_scr_act());

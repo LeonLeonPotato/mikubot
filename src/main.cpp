@@ -71,8 +71,8 @@ void opcontrol(void) {
 	Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(32, 0.05, sp.points.size() - 1.1);
 	Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(32, 0.1, sp.points.size() - 1.05);
 	for (int i = 0; i < 1e4; i++) {
-		auto res = solvers::secant_vec(
-			vec_func, t0, t1, 0, sp.points.size() - 1, 15
+		auto res = solvers::newton_vec(
+			vec_func, vec_deriv, t1, 0, sp.points.size() - 1, 5
 		);
 		sum += res.second;
 	}

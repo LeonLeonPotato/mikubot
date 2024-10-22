@@ -1,6 +1,6 @@
 #pragma once
 
-namespace auton_strategies {
+namespace strategies {
 namespace playback {
 void run(void);
 } // namespace playback
