@@ -13,6 +13,9 @@ class PolygonPath : public BasePath {
             points = vertices;
         }
 
+        bool need_solve() const override { return false; }
+        solver::Solver get_solver() const override { return solver::Solver::Secant; }
+
         inline void compute(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const override;
         inline Eigen::Matrix<float, 2, -1> compute(const Eigen::VectorXf& t, int deriv = 0) const override;
         inline void compute(float t, Eigen::Vector2f& res, int deriv = 0) const override;
