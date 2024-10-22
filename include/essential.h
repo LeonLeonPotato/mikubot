@@ -1,8 +1,5 @@
 #pragma once
 
-#define PROS_USE_SIMPLE_NAMES 
-#define PROS_USE_LITERALS 
-
 #include "api.h"
 
 #include "Eigen/Dense"
@@ -129,4 +126,4 @@ inline void set_brake_mode(pros::motor_brake_mode_e_t mode) {
 }
 
 void init(void);
-}
+} // namespace robot

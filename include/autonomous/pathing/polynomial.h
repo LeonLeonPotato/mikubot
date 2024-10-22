@@ -1,8 +1,5 @@
 #pragma once
 
-#define PROS_USE_SIMPLE_NAMES 
-#define PROS_USE_LITERALS 
-
 #include "Eigen/Dense"
 
 namespace pathing {
@@ -21,9 +18,9 @@ class Polynomial {
         Eigen::VectorXf compute(const Eigen::VectorXf& t, int deriv = 0) const;
         float compute(float t, int deriv = 0) const;
 
-        inline void operator()(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv = 0) const { compute(t, res, deriv); }
-        inline Eigen::VectorXf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
-        inline float operator()(float t, int deriv = 0) const { return compute(t, deriv); }
+        void operator()(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv = 0) const { compute(t, res, deriv); }
+        Eigen::VectorXf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
+        float operator()(float t, int deriv = 0) const { return compute(t, deriv); }
 
         std::string debug_out() const;
 };
@@ -37,25 +34,24 @@ class Polynomial2D {
         Polynomial2D(void) {}
         Polynomial2D(const Polynomial<N>& x_poly, const Polynomial<N>& y_poly) : x_poly(x_poly), y_poly(y_poly) {}
 
-        inline void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const;
-        inline Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const;
-        inline void compute(float t, Eigen::Vector2f& res, int deriv = 0) const;
-        inline Eigen::Vector2f compute(float t, int deriv = 0) const;
+        void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const;
+        Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const;
+        void compute(float t, Eigen::Vector2f& res, int deriv = 0) const;
+        Eigen::Vector2f compute(float t, int deriv = 0) const;
 
-        inline Eigen::Vector2f normal(float t) const;
-        inline float angle(float t) const;
-        inline float angular_velocity(float t) const;
-        inline float curvature(float t) const;
+        Eigen::Vector2f normal(float t) const;
+        float angle(float t) const;
+        float angular_velocity(float t) const;
+        float curvature(float t) const;
 
-        inline void operator()(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const { compute(t, res, deriv); }
-        inline Eigen::Matrix2Xf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
-        inline void operator()(float t, Eigen::Vector2f& res, int deriv = 0) const { compute(t, res, deriv); }
-        inline Eigen::Vector2f operator()(float t, int deriv = 0) const { return compute(t, deriv); }
+        void operator()(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const { compute(t, res, deriv); }
+        Eigen::Matrix2Xf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
+        void operator()(float t, Eigen::Vector2f& res, int deriv = 0) const { compute(t, res, deriv); }
+        Eigen::Vector2f operator()(float t, int deriv = 0) const { return compute(t, deriv); }
 };
-} // namespace pathing
 
 template <int N>
-inline int pathing::Polynomial<N>::falling_factorial(int i, int n) {
+inline int Polynomial<N>::falling_factorial(int i, int n) {
     if (i < n) return 0;
     int result = 1;
     for (int j = i; j > i - n; j--) result *= j;
@@ -63,23 +59,23 @@ inline int pathing::Polynomial<N>::falling_factorial(int i, int n) {
 }
 
 template <int N>
-inline void pathing::Polynomial<N>::compute(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv) const {
+inline void Polynomial<N>::compute(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv) const {
     Eigen::VectorXf t_pow = Eigen::VectorXf::Ones(t.size());
     for (int i = deriv; i < N; i++) {
         res += coeffs(i).cwiseProduct(t_pow) * falling_factorial(i, deriv);
-        t_pow.array() *= t.array();
+        t_pow = t_pow.cwiseProduct(t);
     }
 }
 
 template <int N>
-inline Eigen::VectorXf pathing::Polynomial<N>::compute(const Eigen::VectorXf& t, int deriv) const {
+inline Eigen::VectorXf Polynomial<N>::compute(const Eigen::VectorXf& t, int deriv) const {
     Eigen::VectorXf x(t.size());
     compute(t, x, deriv);
     return x;
 }
 
 template <int N>
-inline float pathing::Polynomial<N>::compute(float t, int deriv) const {
+inline float Polynomial<N>::compute(float t, int deriv) const {
     float result = 0;
     float t_pow = 1;
     for (int i = deriv; i < N; i++) {
@@ -90,7 +86,7 @@ inline float pathing::Polynomial<N>::compute(float t, int deriv) const {
 }
 
 template <int N>
-inline std::string pathing::Polynomial<N>::debug_out() const {
+inline std::string Polynomial<N>::debug_out() const {
     std::string result = "";
     for (int i = 0; i < N; i++) {
         result += std::to_string(coeffs(i)) + "t^" + std::to_string(i) + " + ";
@@ -99,50 +95,52 @@ inline std::string pathing::Polynomial<N>::debug_out() const {
 }
 
 template <int N>
-inline void pathing::Polynomial2D<N>::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
+inline void Polynomial2D<N>::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
     x_poly.compute(t, res(0), deriv);
     y_poly.compute(t, res(1), deriv);
 }
 
 template <int N>
-inline Eigen::Matrix2Xf pathing::Polynomial2D<N>::compute(const Eigen::VectorXf& t, int deriv) const {
+inline Eigen::Matrix2Xf Polynomial2D<N>::compute(const Eigen::VectorXf& t, int deriv) const {
     Eigen::Matrix2Xf x;
     compute(t, x, deriv);
     return x;
 }
 
 template <int N>
-inline void pathing::Polynomial2D<N>::compute(float t, Eigen::Vector2f& res, int deriv) const {
+inline void Polynomial2D<N>::compute(float t, Eigen::Vector2f& res, int deriv) const {
     res(0) = x_poly.compute(t, deriv);
     res(1) = y_poly.compute(t, deriv);
 }
 
 template <int N>
-inline Eigen::Vector2f pathing::Polynomial2D<N>::compute(float t, int deriv) const {
+inline Eigen::Vector2f Polynomial2D<N>::compute(float t, int deriv) const {
     return Eigen::Vector2f(x_poly(t, deriv), y_poly(t, deriv));
 }
 
 template <int N>
-inline Eigen::Vector2f pathing::Polynomial2D<N>::normal(float t) const {
+inline Eigen::Vector2f Polynomial2D<N>::normal(float t) const {
     Eigen::Vector2f d = compute(t, 1);
     return Eigen::Vector2f(-d(1), d(0));
 }
 
 template <int N>
-inline float pathing::Polynomial2D<N>::angle(float t) const {
+inline float Polynomial2D<N>::angle(float t) const {
     Eigen::Vector2f d = compute(t, 1);
     return atan2(d(1), d(0));
 }
 
 template <int N>
-inline float pathing::Polynomial2D<N>::angular_velocity(float t) const {
+inline float Polynomial2D<N>::angular_velocity(float t) const {
     Eigen::Vector2f d1 = compute(t, 1);
     Eigen::Vector2f d2 = compute(t, 2);
     return (d1(0) * d2(1) - d1(1) * d2(0)) / d1.dot(d1);
 }
 
 template <int N>
-inline float pathing::Polynomial2D<N>::curvature(float t) const {
+inline float Polynomial2D<N>::curvature(float t) const {
     float n = compute(t, 1).norm();
     return compute(t, 2).norm() / pow(1 + n * n, 1.5);
 }
+
+} // namespace pathing

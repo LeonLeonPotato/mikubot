@@ -1,8 +1,5 @@
 #pragma once
 
-#define PROS_USE_SIMPLE_NAMES 
-#define PROS_USE_LITERALS 
-
 #include <string>
 #include "liblvgl/lvgl.h"
 
@@ -89,4 +86,4 @@ class NamedButton : LVGLObject {
 
 void init(void);
 void destroy(void);
-}
+} // namespace renderer

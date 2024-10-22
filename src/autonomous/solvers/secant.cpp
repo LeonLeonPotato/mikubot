@@ -12,7 +12,10 @@ std::pair<float, float> solvers::secant_single(
 
         if (fabs(ft1) < threshold) break;
 
-        float t2 = t1 - ft1 * (t1 - t0) / (ft1 - ft0);
+        float diff = ft1 - ft0;
+        diff += (diff == 0) * 1e-6;
+
+        float t2 = t1 - ft1 * (t1 - t0) / diff;
         t2 = std::clamp(t2, start_bound, end_bound);
         t0 = t1; t1 = t2;
     }
@@ -22,7 +25,6 @@ std::pair<float, float> solvers::secant_single(
     return {t1, ft1};
 }
 
-#include <iostream>
 std::pair<float, float> solvers::secant_vec(
     func_vec_t func,
     Eigen::VectorXf t0, Eigen::VectorXf t1, float start_bound, float end_bound, int iterations, float threshold

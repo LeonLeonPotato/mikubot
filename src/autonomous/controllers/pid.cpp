@@ -19,3 +19,15 @@ void PID::register_error(float error) {
     }
     this->error = error;
 }
+
+void PID::reset() {
+    error = 0;
+    integral = 0;
+    last_error = 0;
+    registered = false;
+}
+
+float PID::get(void) {
+    float derivative = (error - last_error) * (int) registered;
+    return kp * error + ki * integral - kd * derivative;
+}

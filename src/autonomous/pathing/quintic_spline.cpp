@@ -2,10 +2,41 @@
 
 #include "Eigen/Sparse"
 
-#include <vector>
 #include <iostream>
 
 using namespace pathing;
+
+std::pair<float, float> QuinticSplineParams::start_accel_cartesian(void) const {
+    return std::make_pair(
+        start_accel_magnitude * sinf(start_accel_heading),
+        start_accel_magnitude * cosf(start_accel_heading)
+    );
+}
+
+std::pair<float, float> QuinticSplineParams::end_accel_cartesian(void) const {
+    return std::make_pair(
+        end_accel_magnitude * sinf(end_accel_heading),
+        end_accel_magnitude * cosf(end_accel_heading)
+    );
+}
+
+const Eigen::Matrix<float, 6, 6> QuinticSpline::differential_matrix_1 {
+    {1, 1, 1, 1, 1, 1},
+    {0, 1, 2, 3, 4, 5},
+    {0, 0, 2, 6, 12, 20},
+    {0, 0, 0, 6, 24, 60},
+    {0, 0, 0, 0, 24, 120},
+    {0, 0, 0, 0, 0, 120}
+};
+
+const Eigen::Matrix<float, 6, 6> QuinticSpline::differential_matrix_0 {
+    {1, 0, 0, 0, 0, 0},
+    {0, 1, 0, 0, 0, 0},
+    {0, 0, 2, 0, 0, 0},
+    {0, 0, 0, 6, 0, 0},
+    {0, 0, 0, 0, 24, 0},
+    {0, 0, 0, 0, 0, 120}
+};
 
 void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1) {
     int n = 6 * segments.size();
@@ -67,6 +98,71 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
             segments[i].y_poly.coeffs = X.segment(6 * i, 6);
         }
     }
+}
+
+void QuinticSpline::solve_coeffs(const QuinticSplineParams& params) {
+    segments.clear(); 
+    segments.resize(points.size() - 1);
+
+    auto [icx0, icy0] = params.start_cartesian();
+    auto [bcx0, bcy0] = params.end_cartesian();
+    auto [icx1, icy1] = params.start_accel_cartesian();
+    auto [bcx1, bcy1] = params.end_accel_cartesian();
+    solve_spline(0, icx0, icx1, bcx0, bcx1);
+    solve_spline(1, icy0, icy1, bcy0, bcy1); 
+}
+
+void QuinticSpline::solve_coeffs(const BaseParams& params) {
+    segments.clear(); 
+    segments.resize(points.size() - 1);
+
+    auto [icx0, icy0] = params.start_cartesian();
+    auto [bcx0, bcy0] = params.end_cartesian();
+    solve_spline(0, icx0, 0, bcx0, 0);
+    solve_spline(1, icy0, 0, bcy0, 0);
+}
+
+void QuinticSpline::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
+    for (int i = 0; i < t.size(); i++) {
+        res.col(i) = compute(t(i), deriv);
+    }
+}
+
+Eigen::Matrix2Xf QuinticSpline::compute(const Eigen::VectorXf& t, int deriv) const {
+    Eigen::Matrix2Xf x;
+    x.resize(2, t.size());
+    compute(t, x, deriv);
+    return x;
+}
+
+void QuinticSpline::compute(float t, Eigen::Vector2f& res, int deriv) const {
+    int i = (int) t - (int) (t == segments.size()); t = t - i;
+    segments[i](t, res, deriv);
+}
+
+Eigen::Vector2f QuinticSpline::compute(float t, int deriv) const {
+    int i = (int) t - (int) (t == segments.size()); t = t - i;
+    return segments[i](t, deriv);
+}
+
+Eigen::Vector2f QuinticSpline::normal(float t) const {
+    int i = (int) t - (int) (t == segments.size()); t = t - i;
+    return segments[i].normal(t);
+}
+
+float QuinticSpline::angle(float t) const {
+    int i = (int) t - (int) (t == segments.size()); t = t - i;
+    return segments[i].angle(t);
+}
+
+float QuinticSpline::angular_velocity(float t) const {
+    int i = (int) t - (int) (t == segments.size()); t = t - i;
+    return segments[i].angular_velocity(t);
+}
+
+float QuinticSpline::curvature(float t) const {
+    int i = (int) t - (int) (t == segments.size()); t = t - i;
+    return segments[i].curvature(t);
 }
 
 std::string QuinticSpline::debug_out(void) const {

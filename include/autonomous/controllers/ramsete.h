@@ -1,8 +1,5 @@
 #pragma once
 
-#define PROS_USE_SIMPLE_NAMES 
-#define PROS_USE_LITERALS 
-
 #include <utility>
 
 namespace controllers {
@@ -13,7 +10,8 @@ class Ramsete {
         float desired_v, desired_w;
     
         Ramsete(float beta, float zeta):
-            beta(beta), zeta(zeta) {
+            beta(beta), zeta(zeta) 
+        {
             desired_x = 0;
             desired_y = 0;
             desired_theta = 0;
@@ -24,4 +22,4 @@ class Ramsete {
     static std::pair<float, float> quick_ramsete(float beta, float zeta, float x, float y, float theta, float v, float w);
     static std::pair<float, float> quick_ramsete(float beta, float zeta, float x, float y, float theta);
 };
-}
+} // namespace controllers

@@ -19,6 +19,9 @@
 #ifndef _PROS_API_H_
 #define _PROS_API_H_
 
+#define PROS_USE_SIMPLE_NAMES 
+#define PROS_USE_LITERALS 
+
 #ifdef __cplusplus
 #include <cerrno>
 #include <cmath>

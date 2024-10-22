@@ -6,7 +6,6 @@
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
 #include "gui/utils.h"
-#include "autonomous/movement.h"
 #include "autonomous/solvers.h"
 
 #include "api.h"
@@ -73,7 +72,7 @@ void opcontrol(void) {
 	Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(32, 0.1, sp.points.size() - 1.05);
 	for (int i = 0; i < 1e4; i++) {
 		auto res = solvers::secant_vec(
-			vec_func, t0, t1, 0, sp.points.size() - 1.01, 2
+			vec_func, t0, t1, 0, sp.points.size() - 1, 15
 		);
 		sum += res.second;
 	}
