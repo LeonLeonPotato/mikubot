@@ -30,7 +30,7 @@ compute_updated_t_newton(pathing::BasePath& path, solvers::func_t func, solvers:
 
 inline std::pair<float, float> 
 compute_updated_t_secant(pathing::BasePath& path, solvers::func_t func, float t, int iterations) {
-    return solvers::secant_single(func, t, t, path.points.size() - 1, iterations);
+    return solvers::secant_single(func, t, t + 0.05, t, path.points.size() - 1, iterations);
 }
 
 std::pair<float, float>
@@ -116,20 +116,21 @@ float pure_pursuit::follow_path(pathing::BasePath& path, float radius, int itera
     controllers::PID pid; init_pid(pid);
     Eigen::Vector2f point;
 
-    auto func = [&path, &radius, &point](float t) { 
+    // VERY IMPORTANT TYPE YOUR LAMBDAS!!!!!!!!
+    auto func = [&path, &radius, &point](float t) -> float { 
         return (point - path.compute(t)).norm() - radius; 
     };
-    auto deriv = [&path, &radius, &point](float t) {
+    auto deriv = [&path, &radius, &point](float t) -> float {
         Eigen::Vector2f diff = point - path.compute(t);
         return diff.dot(path.compute(t, 1)) / diff.norm();
     };
-    auto vec_func = [&path, &radius, &point](Eigen::VectorXf& t) {
+    auto vec_func = [&path, &radius, &point](Eigen::VectorXf& t) -> Eigen::VectorXf {
         return (path.compute(t).colwise() - point).colwise().norm().array() - radius;
     };
-    auto vec_deriv = [&path, &radius, &point](Eigen::VectorXf& t) {
-        Eigen::Matrix2Xf diff = path.compute(t).colwise() - point;
-        return (diff.array() * path.compute(t, 1).array()).colwise().sum().transpose().array() / diff.colwise().norm().array();
-    };
+    auto vec_deriv = [&path, &radius, &point](Eigen::VectorXf& t) -> Eigen::VectorXf {
+		const Eigen::Matrix2Xf rel = path.compute(t).colwise() - point;
+		return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
+	};
 
     long long start = pros::millis();
     float t;

@@ -9,10 +9,6 @@ double theta = 0, angular_velocity = 0, angular_acceleration = 0;
 } // namespace state
 
 namespace signatures {
-const int blue_ring_id = 0;
-const int red_ring_id = 1;
-const int goal_id = 2;
-
 pros::vision_signature_s_t blue_ring = pros::Vision::signature_from_utility(
     blue_ring_id, -3407, -3069, -3238, 9197, 10055, 9626, 4.300, 0
 );
@@ -25,7 +21,6 @@ pros::vision_signature_s_t goal = pros::Vision::signature_from_utility(
 } // namespace signatures
 
 namespace config {
-const bool velo_based_driving = true;
 const pros::motor_brake_mode_e_t default_brake_mode = pros::E_MOTOR_BRAKE_COAST;
 } // namespace config
 

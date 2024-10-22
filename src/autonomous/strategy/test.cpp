@@ -5,10 +5,11 @@
 
 #include "api.h"
 
-namespace test_strategy {
+using namespace auton_strategies;
+
 pathing::QuinticSpline sp;
 
-void run(void) {
+void test_strategy::run(void) {
     sp = pathing::QuinticSpline();
     sp.points.emplace_back(robot::x, robot::y);
     sp.points.emplace_back(robot::x, robot::y + 100);
@@ -16,5 +17,4 @@ void run(void) {
     sp.points.emplace_back(robot::x + 200, robot::y + 200);
 
     movement::pure_pursuit::follow_path(sp, 30);
-}
 }

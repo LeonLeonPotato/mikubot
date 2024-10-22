@@ -14,10 +14,10 @@ class PolygonPath : public BasePath {
         }
 
         bool need_solve() const override { return false; }
-        solver::Solver get_solver() const override { return solver::Solver::Secant; }
+        solvers::Solver get_solver() const override { return solvers::Solver::Secant; }
 
-        inline void compute(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const override;
-        inline Eigen::Matrix<float, 2, -1> compute(const Eigen::VectorXf& t, int deriv = 0) const override;
+        inline void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const override;
+        inline Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const override;
         inline void compute(float t, Eigen::Vector2f& res, int deriv = 0) const override;
         inline Eigen::Vector2f compute(float t, int deriv = 0) const override;
 
@@ -25,14 +25,14 @@ class PolygonPath : public BasePath {
         inline float angle(float t) const override;
 };
 
-inline void PolygonPath::compute(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv) const {
+inline void PolygonPath::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
     for (int i = 0; i < t.size(); i++) {
         res.col(i) = compute(t(i), deriv);
     }
 }
 
-inline Eigen::Matrix<float, 2, -1> PolygonPath::compute(const Eigen::VectorXf& t, int deriv) const {
-    Eigen::Matrix<float, 2, -1> x;
+inline Eigen::Matrix2Xf PolygonPath::compute(const Eigen::VectorXf& t, int deriv) const {
+    Eigen::Matrix2Xf x;
     x.resize(2, t.size());
     compute(t, x, deriv);
     return x;

@@ -14,8 +14,8 @@ struct BaseParams {
     float end_heading;
     float end_magnitude;
 
-    std::pair<float, float> start_cartesian();
-    std::pair<float, float> end_cartesian();
+    std::pair<float, float> start_cartesian() const;
+    std::pair<float, float> end_cartesian() const;
 };
 
 class BasePath {
@@ -25,7 +25,7 @@ class BasePath {
     public:
         std::vector<Eigen::Vector2f> points;
         
-        virtual void solve_coeffs(BaseParams& params) {}
+        virtual void solve_coeffs(const BaseParams& params) {}
         virtual bool need_solve() const = 0;
 
         virtual solvers::Solver get_solver() const { return solvers::Solver::Newton; }
@@ -34,8 +34,8 @@ class BasePath {
         virtual inline float time_parameter(const float s) const;
         virtual inline float arc_parameter(const float t) const;
 
-        virtual inline void compute(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const = 0;
-        virtual inline Eigen::Matrix<float, 2, -1> compute(const Eigen::VectorXf& t, int deriv = 0) const = 0;
+        virtual inline void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const = 0;
+        virtual inline Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const = 0;
         virtual inline void compute(float t, Eigen::Vector2f& res, int deriv = 0) const = 0;
         virtual inline Eigen::Vector2f compute(float t, int deriv = 0) const = 0;
 
@@ -44,20 +44,20 @@ class BasePath {
         virtual inline float angular_velocity(float t) const { return -1.0f; }
         virtual inline float curvature(float t) const { return -1.0f; }
 
-        inline void operator()(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const { compute(t, res, deriv); }
-        inline Eigen::Matrix<float, 2, -1> operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
+        inline void operator()(const Eigen::VectorXf& t,Eigen::Matrix2Xf& res, int deriv = 0) const { compute(t, res, deriv); }
+        inline Eigen::Matrix2Xf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
         inline void operator()(float t, Eigen::Vector2f& res, int deriv = 0) const { compute(t, res, deriv); }
         inline Eigen::Vector2f operator()(float t, int deriv = 0) const { return compute(t, deriv); }
 };
 
-inline std::pair<float, float> BaseParams::start_cartesian() {
+inline std::pair<float, float> BaseParams::start_cartesian() const {
     return std::make_pair(
         start_magnitude * sinf(start_heading), 
         start_magnitude * cosf(start_heading)
     );
 }
 
-inline std::pair<float, float> BaseParams::end_cartesian() {
+inline std::pair<float, float> BaseParams::end_cartesian() const {
     return std::make_pair(
         end_magnitude * sinf(end_heading), 
         end_magnitude * cosf(end_heading)
@@ -68,7 +68,7 @@ inline void BasePath::solve_lengths(int resolution) {
     Eigen::VectorXf t = Eigen::VectorXf::LinSpaced(resolution, 0, points.size() - 1);
     lengths.resize(resolution + 1);
     lengths[0] = 0;
-    Eigen::Matrix<float, 2, -1> res; compute(t, res);
+    Eigen::Matrix2Xf res; compute(t, res);
     for (int i = 1; i < resolution + 1; i++) {
         lengths[i] = lengths[i - 1] + (res.col(i) - res.col(i - 1)).norm();
     }

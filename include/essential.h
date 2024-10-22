@@ -8,9 +8,9 @@
 #include "Eigen/Dense"
 
 namespace robot {
-const float TRACKING_WHEEL_RADIUS = 4.1275f;
-const float BACK_TRACKING_WHEEL_OFFSET = 7.075f;
-const float SIDE_TRACKING_WHEEL_OFFSET = 10.5f;
+constexpr float TRACKING_WHEEL_RADIUS = 4.1275f;
+constexpr float BACK_TRACKING_WHEEL_OFFSET = 7.075f;
+constexpr float SIDE_TRACKING_WHEEL_OFFSET = 10.5f;
 
 inline namespace state {
     extern bool braking;
@@ -48,9 +48,9 @@ inline namespace state {
 } // namespace state
 
 namespace signatures {
-    extern const int blue_ring_id;
-    extern const int red_ring_id;
-    extern const int goal_id;
+    constexpr int blue_ring_id = 0;
+    constexpr int red_ring_id = 1;
+    constexpr int goal_id = 2;
 
     extern pros::vision_signature_s_t blue_ring;
     extern pros::vision_signature_s_t red_ring;
@@ -58,7 +58,7 @@ namespace signatures {
 } // namespace signatures
 
 namespace config {
-    extern const bool velo_based_driving;
+    constexpr bool velo_based_driving = true;
     extern const pros::motor_brake_mode_e_t default_brake_mode;
 } // namespace config
 
@@ -108,14 +108,14 @@ inline void velo(int left, int right) {
     right_motors.move_velocity(rv);
 }
 
-// inline void velo(float left, float right) {
-//     int max = max_speed();
-//     int lv = (int) (std::clamp(left, -1.0f, 1.0f) * max);
-//     int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
-//     braking = false;
-//     left_motors.move_velocity(left);
-//     right_motors.move_velocity(right);
-// }
+inline void velo(float left, float right) {
+    int max = max_speed();
+    int lv = (int) (std::clamp(left, -1.0f, 1.0f) * max);
+    int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
+    braking = false;
+    left_motors.move_velocity(left);
+    right_motors.move_velocity(right);
+}
 
 inline void brake(void) {
     braking = true;

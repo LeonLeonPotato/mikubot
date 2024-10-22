@@ -13,8 +13,8 @@ struct QuinticSplineParams : BaseParams {
     float end_accel_heading;
     float end_accel_magnitude;
 
-    std::pair<float, float> start_accel_cartesian();
-    std::pair<float, float> end_accel_cartesian();
+    std::pair<float, float> start_accel_cartesian() const;
+    std::pair<float, float> end_accel_cartesian() const;
 };
 
 class QuinticSpline : public BasePath {
@@ -32,11 +32,11 @@ class QuinticSpline : public BasePath {
         QuinticSpline(const std::vector<Eigen::Vector2f>& verts) { points = verts; }
 
         bool need_solve() const override { return true; }
-        void solve_coeffs(QuinticSplineParams& params);
-        void solve_coeffs(BaseParams& params) override;
+        void solve_coeffs(const QuinticSplineParams& params);
+        void solve_coeffs(const BaseParams& params) override;
 
-        void compute(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv = 0) const override;
-        Eigen::Matrix<float, 2, -1> compute(const Eigen::VectorXf& t, int deriv = 0) const override;
+        void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const override;
+        Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const override;
         void compute(float t, Eigen::Vector2f& res, int deriv = 0) const override;
         Eigen::Vector2f compute(float t, int deriv = 0) const override;
 
@@ -48,14 +48,14 @@ class QuinticSpline : public BasePath {
         std::string debug_out(void) const;
 };
 
-inline std::pair<float, float> QuinticSplineParams::start_accel_cartesian(void) {
+inline std::pair<float, float> QuinticSplineParams::start_accel_cartesian(void) const {
     return std::make_pair(
         start_accel_magnitude * sinf(start_accel_heading),
         start_accel_magnitude * cosf(start_accel_heading)
     );
 }
 
-inline std::pair<float, float> QuinticSplineParams::end_accel_cartesian(void) {
+inline std::pair<float, float> QuinticSplineParams::end_accel_cartesian(void) const {
     return std::make_pair(
         end_accel_magnitude * sinf(end_accel_heading),
         end_accel_magnitude * cosf(end_accel_heading)
@@ -80,8 +80,7 @@ inline const Eigen::Matrix<float, 6, 6> QuinticSpline::differential_matrix_0 {
     {0, 0, 0, 0, 0, 120}
 };
 
-inline void QuinticSpline::solve_coeffs(QuinticSplineParams& params)
-{
+inline void QuinticSpline::solve_coeffs(const QuinticSplineParams& params) {
     segments.clear(); 
     segments.resize(points.size() - 1);
 
@@ -90,10 +89,10 @@ inline void QuinticSpline::solve_coeffs(QuinticSplineParams& params)
     auto [icx1, icy1] = params.start_accel_cartesian();
     auto [bcx1, bcy1] = params.end_accel_cartesian();
     solve_spline(0, icx0, icx1, bcx0, bcx1);
-    solve_spline(1, icy0, icy1, bcy0, bcy1);
+    solve_spline(1, icy0, icy1, bcy0, bcy1); 
 }
 
-inline void QuinticSpline::solve_coeffs(BaseParams& params) {
+inline void QuinticSpline::solve_coeffs(const BaseParams& params) {
     segments.clear(); 
     segments.resize(points.size() - 1);
 
@@ -103,14 +102,14 @@ inline void QuinticSpline::solve_coeffs(BaseParams& params) {
     solve_spline(1, icy0, 0, bcy0, 0);
 }
 
-inline void QuinticSpline::compute(const Eigen::VectorXf& t, Eigen::Matrix<float, 2, -1>& res, int deriv) const {
+inline void QuinticSpline::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
     for (int i = 0; i < t.size(); i++) {
         res.col(i) = compute(t(i), deriv);
     }
 }
 
-inline Eigen::Matrix<float, 2, -1> QuinticSpline::compute(const Eigen::VectorXf& t, int deriv) const {
-    Eigen::Matrix<float, 2, -1> x;
+inline Eigen::Matrix2Xf QuinticSpline::compute(const Eigen::VectorXf& t, int deriv) const {
+    Eigen::Matrix2Xf x;
     x.resize(2, t.size());
     compute(t, x, deriv);
     return x;

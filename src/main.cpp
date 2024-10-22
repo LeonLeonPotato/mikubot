@@ -7,7 +7,7 @@
 #include "gui/autonrunner.h"
 #include "gui/utils.h"
 #include "autonomous/movement.h"
-#include "autonomous/movement/numerical_solvers.h"
+#include "autonomous/solvers.h"
 
 #include "api.h"
 
@@ -41,50 +41,44 @@ void autonomous(void) {
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
 
-	// auto start = pros::micros();
-	// double sum = 0;
-	// for (int i = 0; i < 1e4; i++) {
-	// 	pathing::QuinticSpline sp;
-	// 	sp.points.emplace_back(0, i);
-	// 	sp.points.emplace_back(0, -i + 100);
-	// 	sp.points.emplace_back(-50, 200);
-	// 	sp.points.emplace_back(-sqrtf(i), 200);
-	// 	sp.solve_coeffs(0, 0, 0, 0);
-	// 	sum += sp.compute(0.5, 0)(0);
-	// }
-	// auto end = pros::micros();
-	// printf("Time taken: %f\n", (end - start) / 1e6);
-	// printf("Sum: %f\n", sum);
-
 	pathing::QuinticSpline sp;
 	sp.points.emplace_back(0, 0);
 	sp.points.emplace_back(0, 100);
 	sp.points.emplace_back(-50, 200);
 	sp.points.emplace_back(-200, 200);
-	sp.solve_coeffs(0, 0, 0, 0);
+	sp.solve_coeffs(pathing::BaseParams {0, 0, 0, 0});
 	std::cout << sp.debug_out() << std::endl;
 
 	auto pos = Eigen::Vector2f(0, 0);
 	float radius = 10;
 
-	auto func = [=](float t) {
+	auto func = [=](float t) -> float {
 		return (sp.compute(t) - pos).norm() - radius;
 	};
-	auto deriv = [=](float t) {
-		const auto rel = sp.compute(t) - pos;
-		return rel.dot(sp.compute(t, 1) - pos) / rel.norm();
+	auto deriv = [=](float t) -> float {
+		const Eigen::Vector2f rel = sp.compute(t) - pos;
+		return rel.dot(sp.compute(t, 1)) / rel.norm();
+	};
+	auto vec_func = [=](Eigen::VectorXf& t) -> Eigen::VectorXf {
+		return (sp.compute(t).colwise() - pos).colwise().norm().array() - radius;
+	};
+	auto vec_deriv = [=](Eigen::VectorXf& t) -> Eigen::VectorXf {
+		const Eigen::Matrix2Xf rel = sp.compute(t).colwise() - pos;
+		return rel.cwiseProduct(sp.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 	};
 
-	auto start = pros::millis();
+	auto start = pros::micros();
 	float sum = 0;
-	for (int i = 0; i < 1e5; i++) {
-		auto res = movement::solvers::newton(
-			func, deriv, (float) i / 1e4, 0, 3, 10, 1e-9
+	Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(32, 0.05, sp.points.size() - 1.1);
+	Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(32, 0.1, sp.points.size() - 1.05);
+	for (int i = 0; i < 1e4; i++) {
+		auto res = solvers::secant_vec(
+			vec_func, t0, t1, 0, sp.points.size() - 1.01, 2
 		);
-		sum += res.first;
+		sum += res.second;
 	}
-	auto end = pros::millis();
-	printf("Time taken: %f\n", (end - start) / 1e3);
+	auto end = pros::micros();
+	printf("Time taken: %f\n", (end - start) / 1e6);
 	printf("Sum: %f\n", sum);
 
 	// auto res2 = movement::pure_pursuit::secant_intersect(
