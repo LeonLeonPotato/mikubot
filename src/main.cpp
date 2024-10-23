@@ -41,7 +41,21 @@ void autonomous(void) {
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
 
-	strategies::test_strategy::run();
+	auto path = pathing::BoomerangPath(
+		Eigen::Vector2f(0, 0), Eigen::Vector2f(50, 50)
+	);
+
+	path.solve_coeffs(M_PI/2, 1 / sqrtf(2));
+
+	printf("P = [");
+	for (float t = 0; t <= 1; t += 0.01) {
+		Eigen::Vector2f res = path.compute(t);
+		printf("(%f, %f), ", res(0), res(1));
+	}
+	printf("]\n");
+
+
+	// strategies::test_strategy::run();
 
 	// pathing::QuinticSpline sp;
 	// sp.points.emplace_back(0, 0);

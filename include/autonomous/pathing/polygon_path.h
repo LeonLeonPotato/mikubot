@@ -17,8 +17,5 @@ class PolygonPath : public BasePath {
         Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const override;
         void compute(float t, Eigen::Vector2f& res, int deriv = 0) const override;
         Eigen::Vector2f compute(float t, int deriv = 0) const override;
-
-        Eigen::Vector2f normal(float t) const override;
-        float angle(float t) const override;
 };
 } // namespace pathing

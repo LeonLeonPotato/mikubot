@@ -34,13 +34,3 @@ Eigen::Vector2f PolygonPath::compute(float t, int deriv) const {
     else
         return Eigen::Vector2f(0, 0);
 }
-
-Eigen::Vector2f PolygonPath::normal(float t) const {
-    Eigen::Vector2f d = compute(t, 1);
-    return Eigen::Vector2f(-d(1), d(0));
-}
-
-float PolygonPath::angle(float t) const {
-    Eigen::Vector2f d = compute(t, 1);
-    return atan2(d(1), d(0));
-}

@@ -34,3 +34,24 @@ float BasePath::time_parameter(const float s) const {
 float BasePath::arc_parameter(const float t) const {
     return lengths[(int) (t / (points.size() - 1) * lengths.size())];
 }
+
+Eigen::Vector2f BasePath::normal(float t) const {
+    Eigen::Vector2f d = compute(t, 1);
+    return Eigen::Vector2f(-d(1), d(0));
+}
+
+float BasePath::angle(float t) const {
+    Eigen::Vector2f d = compute(t, 1);
+    return atan2(d(1), d(0));
+}
+
+float BasePath::angular_velocity(float t) const {
+    Eigen::Vector2f d1 = compute(t, 1);
+    Eigen::Vector2f d2 = compute(t, 2);
+    return (d1(0) * d2(1) - d1(1) * d2(0)) / d1.dot(d1);
+}
+
+float BasePath::curvature(float t) const {
+    float n = compute(t, 1).norm();
+    return compute(t, 2).norm() / powf(1 + n * n, 1.5);
+}
