@@ -16,5 +16,5 @@ void test_strategy::run(void) {
     sp.points.emplace_back(robot::x + 50, robot::y + 200);
     sp.points.emplace_back(robot::x + 200, robot::y + 200);
 
-    movement::pure_pursuit::follow_path(sp, 30);
+    movement::stanley::follow_path(sp);
 }

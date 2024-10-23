@@ -31,8 +31,9 @@ std::pair<float, float> solvers::newton_vec(
         Eigen::VectorXf den = deriv(guess);
         den.array() += (den.array() == 0).cast<float>() * 1e-6;
 
-        guess -= num.cwiseQuotient(den);
-        guess = guess.cwiseMax(start_bound).cwiseMin(end_bound);
+        guess.noalias() = guess - num.cwiseQuotient(den);
+        guess.noalias() = guess.cwiseMax(start_bound);
+        guess.noalias() = guess.cwiseMin(end_bound);
     }
 
     Eigen::VectorXf f_guess = func(guess);

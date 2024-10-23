@@ -21,30 +21,71 @@ namespace movement::variables {
 std::pair<float, float> 
 utils::compute_initial_t_newton(pathing::BasePath& path, solvers::func_vec_t func, solvers::func_vec_t deriv) 
 {
-    Eigen::VectorXf guesses = Eigen::VectorXf(32);
-    guesses.LinSpaced(32, 0.05, path.points.size() - 1.05);
+    Eigen::VectorXf guesses = Eigen::VectorXf::LinSpaced(32, 0.05, path.points.size() - 1.05);
     return solvers::newton_vec(func, deriv, guesses, 0, path.points.size() - 1, 15);
 }
 
 std::pair<float, float> 
 utils::compute_initial_t_secant(pathing::BasePath& path, solvers::func_vec_t func) {
-    Eigen::VectorXf guesses = Eigen::VectorXf(32);
-    guesses.LinSpaced(32, 0.05, path.points.size() - 1.10);
+    Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(32, 0.05, path.points.size() - 1.1);
+    Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(32, 0.10, path.points.size() - 1.05);
 
-    Eigen::VectorXf guesses2 = Eigen::VectorXf(32);
-    guesses2.LinSpaced(32, 0.10, path.points.size() - 1.05);
-
-    return solvers::secant_vec(func, guesses, guesses2, 0, path.points.size() - 1, 10);
+    return solvers::secant_vec(func, t0, t1, 0, path.points.size() - 1, 10);
 }
 
-inline std::pair<float, float> 
+std::pair<float, float> 
 utils::compute_updated_t_newton(pathing::BasePath& path, solvers::func_t func, solvers::func_t deriv, float t, int iterations) {
     return solvers::newton_single(func, deriv, t, t, path.points.size() - 1, iterations);
 }
 
-inline std::pair<float, float> 
+std::pair<float, float> 
 utils::compute_updated_t_secant(pathing::BasePath& path, solvers::func_t func, float t, int iterations) {
-    return solvers::secant_single(func, t, t + 0.05, t, path.points.size() - 1, iterations);
+    return solvers::secant_single(func, t, t + 1, t, path.points.size() - 1, iterations);
+}
+
+float
+utils::compute_updated_t_grad_desc(pathing::BasePath& path, solvers::func_t func, float t, float step_size, int iterations) {
+    return solvers::gradient_descent_single(func, t, t, path.points.size() - 1, step_size, iterations);
+}
+
+std::pair<float, float>
+utils::recompute_path(pathing::BasePath& path, 
+                solvers::func_vec_t func, solvers::func_vec_t deriv, 
+                solvers::Solver solver,
+                int goal_i, bool dont_solve_t)
+{
+    if (goal_i > 1) {
+        for (int i = goal_i; i < path.points.size(); i++) {
+            path.points[i - goal_i + 1] = path.points[i];
+        }
+        for (int i = 0; i < goal_i - 1; i++) {
+            path.points.pop_back();
+        }
+    }
+
+    path.points[0] = Eigen::Vector2f(robot::x, robot::y);
+
+    if (path.need_solve()) {
+        pathing::BaseParams params;
+        params.start_heading = robot::theta;
+        params.start_magnitude = 10;
+        params.end_heading = 0;
+        params.end_magnitude = 0;
+        path.solve_coeffs(params);
+    }
+
+    if (dont_solve_t) {
+        return {0, 0};
+    }
+
+    switch (solver) {
+        case solvers::Solver::Newton:
+            return utils::compute_initial_t_newton(path, func, deriv);
+        case solvers::Solver::Secant:
+            return utils::compute_initial_t_secant(path, func);
+        default:
+            return {-1, -1};
+    }
 }
 
 void movement::init_pid(controllers::PID& pid) {

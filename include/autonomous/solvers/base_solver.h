@@ -3,6 +3,6 @@
 #include "Eigen/Dense"
 
 namespace solvers {
-typedef std::function<float(float)> func_t;
-typedef std::function<Eigen::VectorXf(Eigen::VectorXf&)> func_vec_t;
+using func_t = std::function<float(float)>;
+using func_vec_t = std::function<Eigen::VectorXf(Eigen::VectorXf&)>;
 } // namespace solvers

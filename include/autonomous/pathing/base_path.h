@@ -45,5 +45,7 @@ class BasePath {
         Eigen::Matrix2Xf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
         void operator()(float t, Eigen::Vector2f& res, int deriv = 0) const { compute(t, res, deriv); }
         Eigen::Vector2f operator()(float t, int deriv = 0) const { return compute(t, deriv); }
+
+        virtual std::string debug_out() const { return ""; }
 };
 } // namespace pathing

@@ -12,7 +12,10 @@ float follow_path_tick(pathing::BasePath& path, controllers::PID& pid, float t, 
                         solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv, 
                         int iterations = 5);
 
-float follow_path(pathing::BasePath& path, float radius, int iterations = 5, long long timeout = 5000);
+float follow_path(pathing::BasePath& path,
+                float radius,
+                controllers::PID* pid = nullptr,
+                int iterations = 5, long long timeout = 5000);
 
 } // namespace pure_pursuit
 } // namespace movement

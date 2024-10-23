@@ -5,6 +5,7 @@
 
 namespace movement {
 namespace stanley {
+
 namespace variables {
     extern float kP;
     extern float kI;
@@ -14,14 +15,16 @@ namespace variables {
     extern float I_disable_max;
     extern float I_max;
     extern float I_min;
-};
+} // namespace variables
 
-float follow_path_tick(pathing::BasePath& path, controllers::PID& pid, float t, float radius,
-                        solvers::func_t func, solvers::func_t deriv, 
-                        solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv, 
+float follow_path_tick(pathing::BasePath& path, 
+                        controllers::PID& turn_pid, controllers::PID& track_pid, 
+                        solvers::func_t deriv, float t,
                         int iterations = 5);
 
 float follow_path(pathing::BasePath& path,
+                controllers::PID* turn_pid = nullptr,
+                controllers::PID* track = nullptr,
                 int iterations = 5, long long timeout = 5000);
 
 } // namespace stanley

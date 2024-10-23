@@ -42,6 +42,6 @@ class QuinticSpline : public BasePath {
         float angular_velocity(float t) const override;
         float curvature(float t) const override;
 
-        std::string debug_out(void) const;
+        std::string debug_out(void) const override;
 };
 } // namespace pathing

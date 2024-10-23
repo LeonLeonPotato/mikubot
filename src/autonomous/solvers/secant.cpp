@@ -16,6 +16,7 @@ std::pair<float, float> solvers::secant_single(
         diff += (diff == 0) * 1e-6;
 
         float t2 = t1 - ft1 * (t1 - t0) / diff;
+        // printf("iterations: %d, t0: %f, t1: %f, ft0: %f, ft1: %f, t2: %f\n", iterations, t0, t1, ft0, ft1, t2);
         t2 = std::clamp(t2, start_bound, end_bound);
         t0 = t1; t1 = t2;
     }
@@ -33,7 +34,7 @@ std::pair<float, float> solvers::secant_vec(
         Eigen::VectorXf ft0 = func(t0);
         Eigen::VectorXf ft1 = func(t1);
         Eigen::VectorXf diff = ft1 - ft0;
-        diff = diff.array() + (diff.array() == 0).cast<float>() * 1e-6;
+        diff.array() += (diff.array() == 0).cast<float>() * 1e-6;
 
         Eigen::VectorXf t2 = t1 - ft1.cwiseProduct(t1 - t0).cwiseQuotient(diff);
         t2 = t2.cwiseMax(start_bound).cwiseMin(end_bound);

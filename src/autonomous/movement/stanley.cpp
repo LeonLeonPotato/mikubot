@@ -4,113 +4,94 @@
 
 using namespace movement;
 
-std::pair<float, float>
-recompute_path(pathing::BasePath& path, int goal_i, solvers::func_vec_t func, solvers::func_vec_t deriv) {
-    if (goal_i > 1) {
-        for (int i = goal_i; i < path.points.size(); i++) {
-            path.points[i - goal_i + 1] = path.points[i];
-        }
-        for (int i = 0; i < goal_i - 1; i++) {
-            path.points.pop_back();
-        }
-    }
+namespace movement::stanley::variables {
+    float kP = 0.1;
+    float kI = 0.01;
+    float kD = 0.01;
 
-    path.points[0] = Eigen::Vector2f(robot::x, robot::y);
+    float I_disable_min = -999;
+    float I_disable_max = 10;
+    float I_max = 999;
+    float I_min = -999;
+};
 
-    if (path.need_solve()) {
-        pathing::BaseParams params;
-        params.start_heading = robot::theta;
-        params.start_magnitude = 10;
-        params.end_heading = 0;
-        params.end_magnitude = 0;
-        path.solve_coeffs(params);
-    }
-
-    switch (path.get_solver()) {
-        case solvers::Solver::Newton:
-            return compute_initial_t_newton(path, func, deriv);
-        case solvers::Solver::Secant:
-            return compute_initial_t_secant(path, func);
-        default:
-            return {0, 0};
-    }
+void stanley_init_pid(controllers::PID& pid) {
+    pid.kp = stanley::variables::kP;
+    pid.ki = stanley::variables::kI;
+    pid.kd = stanley::variables::kD;
+    pid.disable_integral_lower = stanley::variables::I_disable_min;
+    pid.disable_integral_upper = stanley::variables::I_disable_max;
+    pid.integral_min = stanley::variables::I_min;
+    pid.integral_max = stanley::variables::I_max;
 }
 
-// TODO: add curvature based adaptive base speed
-float pure_pursuit::follow_path_tick(pathing::BasePath& path, controllers::PID& pid, float t, float radius,
-                        solvers::func_t func, solvers::func_t deriv, 
-                        solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv, 
-                        int iterations) 
+float stanley::follow_path_tick(pathing::BasePath& path, 
+                                        controllers::PID& turn_pid, controllers::PID& track_pid, 
+                                        solvers::func_t deriv, float t,
+                                        int iterations)
 {
     Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
+    Eigen::Vector2f& last_point = path.points.back();
 
-    float error;
-    switch (path.get_solver()) {
-        case solvers::Solver::Newton:
-            std::tie(t, error) = compute_updated_t_newton(path, func, deriv, t, iterations);
-            break;
-        case solvers::Solver::Secant:
-            std::tie(t, error) = compute_updated_t_secant(path, func, t, iterations);
-            break;
-        default:
-            return -1;
-    }
-
-    if ((t < 0 || error > 1) && fabs(t - path.points.size() + 1) > 1e-3) {
-        int goal = (int) ceilf(t);
-        goal = std::clamp(goal, 0, (int) path.points.size() - 1);
-        std::tie(t, error) = recompute_path(path, goal, vec_func, vec_deriv);
-    }
-
-    if (error > 1) {
-        return -1;
-    }
+    t = utils::compute_updated_t_grad_desc(path, deriv, t, 0.0001, iterations);
 
     Eigen::Vector2f res = path.compute(t);
+    Eigen::Vector2f tangent = path.compute(t, 1);
+    float theta = atan2(tangent(1), tangent(0));
 
-    float dtheta = robot::angular_diff(res);
-    pid.register_error(fabs(dtheta));
+    float dtheta = robot::angular_diff(theta);
+    turn_pid.register_error(fabs(dtheta));
 
-    float dist = robot::distance(res);
-    dist = fmin(dist * movement::variables::distance_coeff, radius) / radius * 127;
+    float track_error = robot::distance(res);
+    float dtheta_track = robot::angular_diff(res);
+    track_pid.register_error(track_error);
 
-    float ctrl = pid.get();
+    float speed = fminf(robot::distance(last_point) * movement::variables::distance_coeff, 127);
+    float turn_amount = turn_pid.get();
+    float track_amount = track_pid.get();
 
     robot::volt(
-        (int) (dist + ctrl * dtheta),
-        (int) (dist - ctrl * dtheta)
+        (int) (speed + turn_amount * dtheta + track_amount * dtheta_track),
+        (int) (speed - turn_amount * dtheta - track_amount * dtheta_track)
     );
     return t;
 }
 
-float pure_pursuit::follow_path(pathing::BasePath& path, float radius, int iterations, long long timeout) {
-    controllers::PID pid; init_pid(pid);
+float stanley::follow_path(pathing::BasePath& path,
+                                    controllers::PID* turn,
+                                    controllers::PID* track,
+                                    int iterations, long long timeout)
+{
+    bool delete_turn = turn == nullptr;
+    bool delete_track = track == nullptr;
+
+    if (delete_turn) {
+        turn = new controllers::PID();
+        stanley_init_pid(*turn);
+    }
+
+    if (delete_track) {
+        track = new controllers::PID();
+        stanley_init_pid(*track);
+    }
+
     Eigen::Vector2f point;
 
-    // VERY IMPORTANT TYPE YOUR LAMBDAS!!!!!!!!
-    auto func = [&path, &radius, &point](float t) -> float { 
-        return (point - path.compute(t)).norm() - radius; 
-    };
-    auto deriv = [&path, &radius, &point](float t) -> float {
-        Eigen::Vector2f diff = point - path.compute(t);
+    auto deriv = [&path, &point](float t) -> float {
+        Eigen::Vector2f diff = path.compute(t) - point;
         return diff.dot(path.compute(t, 1)) / diff.norm();
     };
-    auto vec_func = [&path, &radius, &point](Eigen::VectorXf& t) -> Eigen::VectorXf {
-        return (path.compute(t).colwise() - point).colwise().norm().array() - radius;
-    };
-    auto vec_deriv = [&path, &radius, &point](Eigen::VectorXf& t) -> Eigen::VectorXf {
-		const Eigen::Matrix2Xf rel = path.compute(t).colwise() - point;
-		return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
-	};
+
+    utils::recompute_path(path, nullptr, nullptr, solvers::Solver::GradientDescent, 1, true);
+    std::cout << path.debug_out() << std::endl;
 
     long long start = pros::millis();
-    float t;
+    float t = 0.000;
     while (true) {
-        point = Eigen::Vector2f(robot::x, robot::y);
-        t = pure_pursuit::follow_path_tick(
-            path, pid, 0, radius, 
-            func, deriv, vec_func, vec_deriv,
-            iterations
+        point.noalias() = Eigen::Vector2f(99, 99);
+        t = stanley::follow_path_tick(
+            path, *turn, *track, deriv, t,
+            20
         );
 
         if (t < 0 || pros::millis() - start > timeout) {
@@ -118,7 +99,12 @@ float pure_pursuit::follow_path(pathing::BasePath& path, float radius, int itera
         }
     }
 
+    printf("Stanley pathing finished at %f\n", t);
+
     robot::brake();
+
+    if (delete_turn) delete turn;
+    if (delete_track) delete track;
 
     return t;
 }
