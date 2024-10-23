@@ -18,6 +18,20 @@ namespace variables {
     extern float turning_I_min;
 };
 
+namespace utils {
+std::pair<float, float> 
+compute_initial_t_newton(pathing::BasePath& path, solvers::func_vec_t func, solvers::func_vec_t deriv);
+
+std::pair<float, float> 
+compute_initial_t_secant(pathing::BasePath& path, solvers::func_vec_t func);
+
+inline std::pair<float, float> 
+compute_updated_t_newton(pathing::BasePath& path, solvers::func_t func, solvers::func_t deriv, float t, int iterations);
+
+inline std::pair<float, float> 
+compute_updated_t_secant(pathing::BasePath& path, solvers::func_t func, float t, int iterations);
+};
+
 void init_pid(controllers::PID& pid);
 void goto_pos_tick(const Eigen::Vector2f& point, controllers::PID& pid);
 void turn_towards_tick(float angle, controllers::PID& pid);
