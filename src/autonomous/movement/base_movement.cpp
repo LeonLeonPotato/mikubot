@@ -8,9 +8,9 @@ using namespace movement;
 namespace movement::variables {
     float distance_coeff = 5.0;
 
-    float turning_kP = 300;
-    float turning_kI = 1;
-    float turning_kD = 0;
+    float turning_kP = 800;
+    float turning_kI = 0.0;
+    float turning_kD = 100;
 
     float turning_I_disable_min = -999;
     float turning_I_disable_max = 1;
@@ -52,7 +52,9 @@ std::pair<float, float>
 utils::recompute_path(pathing::BasePath& path, 
                 solvers::func_vec_t func, solvers::func_vec_t deriv, 
                 solvers::Solver solver,
-                int goal_i, bool dont_solve_t)
+                int goal_i,
+                float end_heading, float end_magnitude,
+                bool dont_solve_t)
 {
     if (goal_i > 1) {
         for (int i = goal_i; i < path.points.size(); i++) {
@@ -69,8 +71,8 @@ utils::recompute_path(pathing::BasePath& path,
         pathing::BaseParams params;
         params.start_heading = robot::theta;
         params.start_magnitude = 10;
-        params.end_heading = 0;
-        params.end_magnitude = 0;
+        params.end_heading = end_heading;
+        params.end_magnitude = end_magnitude;
         path.solve_coeffs(params);
     }
 

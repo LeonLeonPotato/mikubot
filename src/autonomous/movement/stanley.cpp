@@ -43,7 +43,10 @@ float stanley::follow_path_tick(pathing::BasePath& path,
     turn_pid.register_error(fabs(dtheta));
 
     float track_error = robot::distance(res);
-    float dtheta_track = robot::angular_diff(res);
+    float dtheta_track = 0;
+    if (track_error != 0) {
+        dtheta_track = robot::angular_diff(res);
+    }
     track_pid.register_error(track_error);
 
     float speed = fminf(robot::distance(last_point) * movement::variables::distance_coeff, 127);
@@ -58,9 +61,10 @@ float stanley::follow_path_tick(pathing::BasePath& path,
 }
 
 float stanley::follow_path(pathing::BasePath& path,
-                                    controllers::PID* turn,
-                                    controllers::PID* track,
-                                    int iterations, long long timeout)
+                            controllers::PID* turn,
+                            controllers::PID* track,
+                            float end_heading, float end_magnitude,
+                            int iterations, long long timeout)
 {
     bool delete_turn = turn == nullptr;
     bool delete_track = track == nullptr;
@@ -82,7 +86,7 @@ float stanley::follow_path(pathing::BasePath& path,
         return diff.dot(path.compute(t, 1)) / diff.norm();
     };
 
-    utils::recompute_path(path, nullptr, nullptr, solvers::Solver::GradientDescent, 1, true);
+    utils::recompute_path(path, nullptr, nullptr, solvers::Solver::GradientDescent, 1, end_heading, end_magnitude, true);
     std::cout << path.debug_out() << std::endl;
 
     long long start = pros::millis();

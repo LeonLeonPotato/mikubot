@@ -8,6 +8,7 @@ using namespace movement;
 float pure_pursuit::follow_path_tick(pathing::BasePath& path, controllers::PID& pid, float t, float radius,
                                     solvers::func_t func, solvers::func_t deriv, 
                                     solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv, 
+                                    float end_heading, float end_magnitude,
                                     int iterations) 
 {
     Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
@@ -16,7 +17,7 @@ float pure_pursuit::follow_path_tick(pathing::BasePath& path, controllers::PID& 
     float error;
     switch (path.get_solver()) {
         case solvers::Solver::Newton:
-            std::tie(t, error) = utils::compute_updated_t_newton(path, func, deriv, t, iterations);
+            std::tie(t, error) = utils::compute_updated_t_newton(path, func, deriv, t, 20);
             break;
         case solvers::Solver::Secant:
             std::tie(t, error) = utils::compute_updated_t_secant(path, func, t, iterations);
@@ -26,9 +27,10 @@ float pure_pursuit::follow_path_tick(pathing::BasePath& path, controllers::PID& 
     }
 
     if ((t < 0 || error > 1) && fabs(t - path.points.size() + 1) > 1e-3) {
+        printf("Recomputing path | Error: %f, t: %f, t_left: %f\n", error, t, fabs(t - path.points.size() + 1));
         int goal = (int) ceilf(t);
-        goal = std::clamp(goal, 0, (int) path.points.size() - 1);
-        std::tie(t, error) = utils::recompute_path(path, vec_func, vec_deriv, path.get_solver(), goal);
+        goal = std::clamp(goal, 1, (int) path.points.size() - 1);
+        std::tie(t, error) = utils::recompute_path(path, vec_func, vec_deriv, path.get_solver(), goal, end_heading, end_magnitude);
     }
 
     if (error > 1) {
@@ -55,6 +57,7 @@ float pure_pursuit::follow_path_tick(pathing::BasePath& path, controllers::PID& 
 float pure_pursuit::follow_path(pathing::BasePath& path,
                 float radius,
                 controllers::PID* pid,
+                float end_heading, float end_magnitude,
                 int iterations, long long timeout)
 {
     bool delete_pid = pid == nullptr;
@@ -83,12 +86,14 @@ float pure_pursuit::follow_path(pathing::BasePath& path,
 	};
 
     long long start = pros::millis();
-    float t = utils::recompute_path(path, vec_func, vec_deriv, path.get_solver(), 1, false).first;
-    while (true) {
+    float t = utils::recompute_path(path, vec_func, vec_deriv, path.get_solver(), 1, end_heading, end_magnitude, false).first;
+    printf("Initial t: %f\n", t);
+    while (robot::distance(path.points.back()) > 5) {
         point.noalias() = Eigen::Vector2f(robot::x, robot::y);
         t = pure_pursuit::follow_path_tick(
             path, *pid, t, radius, 
             func, deriv, vec_func, vec_deriv,
+            end_heading, end_magnitude,
             iterations
         );
 

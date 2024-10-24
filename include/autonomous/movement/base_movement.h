@@ -39,7 +39,9 @@ std::pair<float, float>
 recompute_path(pathing::BasePath& path, 
                 solvers::func_vec_t func, solvers::func_vec_t deriv, 
                 solvers::Solver solver,
-                int goal_i, bool dont_solve_t = false);
+                int goal_i, 
+                float end_heading = 0, float end_magnitude = 0,
+                bool dont_solve_t = false);
 } // namespace utils
 
 void init_pid(controllers::PID& pid);

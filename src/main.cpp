@@ -15,7 +15,7 @@ void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
 	robot::init();
-	// odometry::init();
+	odometry::init();
 	renderer::init();
 }
 
@@ -40,54 +40,55 @@ void autonomous(void) {
 
 void opcontrol(void) {
 	std::cout << "Opcontrol started" << std::endl;
+	
 
-	auto path = pathing::BoomerangPath(
-		Eigen::Vector2f(0, 0), Eigen::Vector2f(50, 50)
-	);
+	// auto path = pathing::BoomerangPath(
+	// 	Eigen::Vector2f(200, 200), Eigen::Vector2f(0, 0)
+	// );
 
-	path.solve_coeffs(M_PI/2, 1 / sqrtf(2));
+	// path.solve_coeffs(-M_PI/2, 1 / sqrtf(2));
 
-	printf("P = [");
-	for (float t = 0; t <= 1; t += 0.01) {
-		Eigen::Vector2f res = path.compute(t);
-		printf("(%f, %f), ", res(0), res(1));
-	}
-	printf("]\n");
+	// // printf("P = [");
+	// // for (float t = 0; t <= 1; t += 0.01) {
+	// // 	Eigen::Vector2f res = path.compute(t, 1);
+	// // 	printf("(%f, %f), ", res(0), res(1));
+	// // }
+	// // printf("]\n");
 
 
-	// strategies::test_strategy::run();
+	strategies::test_strategy::run();
 
-	// pathing::QuinticSpline sp;
-	// sp.points.emplace_back(0, 0);
-	// sp.points.emplace_back(0, 100);
-	// sp.points.emplace_back(-50, 200);
-	// sp.points.emplace_back(-200, 200);
-	// sp.solve_coeffs(pathing::BaseParams {0, 0, 0, 0});
-	// std::cout << sp.debug_out() << std::endl;
+	// // pathing::QuinticSpline sp;
+	// // sp.points.emplace_back(0, 0);
+	// // sp.points.emplace_back(0, 100);
+	// // sp.points.emplace_back(-50, 200);
+	// // sp.points.emplace_back(-200, 200);
+	// // sp.solve_coeffs(pathing::BaseParams {0, 0, 0, 0});
+	// // std::cout << sp.debug_out() << std::endl;
 
-	// auto pos = Eigen::Vector2f(0, 0);
+	// auto pos = Eigen::Vector2f(200, 200);
 	// float radius = 10;
 
 	// auto func = [=](float t) -> float {
-	// 	return (sp.compute(t) - pos).norm() - radius;
+	// 	return (path.compute(t) - pos).norm() - radius;
 	// };
 	// auto deriv = [=](float t) -> float {
-	// 	const Eigen::Vector2f rel = sp.compute(t) - pos;
-	// 	return rel.dot(sp.compute(t, 1)) / rel.norm();
+	// 	const Eigen::Vector2f rel = path.compute(t) - pos;
+	// 	return rel.dot(path.compute(t, 1)) / rel.norm();
 	// };
 	// auto vec_func = [=](Eigen::VectorXf& t) -> Eigen::VectorXf {
-	// 	return (sp.compute(t).colwise() - pos).colwise().norm().array() - radius;
+	// 	return (path.compute(t).colwise() - pos).colwise().norm().array() - radius;
 	// };
     // auto vec_deriv = [=](Eigen::VectorXf& t) -> Eigen::VectorXf {
-	// 	const Eigen::Matrix2Xf rel = sp.compute(t).colwise() - pos;
-    //     return rel.cwiseProduct(sp.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
+	// 	const Eigen::Matrix2Xf rel = path.compute(t).colwise() - pos;
+    //     return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 	// };
 
-	// Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(32, 0.05, sp.points.size() - 1.1);
-	// Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(32, 0.1, sp.points.size() - 1.05);
+	// // Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(32, 0.05, sp.points.size() - 1.1);
+	// Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(32, 0.1, path.points.size() - 1.05);
 
 	// auto res = solvers::newton_vec(
-	// 	vec_func, vec_deriv, t1, 0, sp.points.size() - 1, 5
+	// 	vec_func, vec_deriv, t1, 0, path.points.size() - 1, 5
 	// );
 
 	// printf("Newton intersect at %f with %f dist\n", res.first, res.second);

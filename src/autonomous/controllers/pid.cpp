@@ -27,7 +27,9 @@ void PID::reset() {
     registered = false;
 }
 
+#include <iostream>
 float PID::get(void) {
     float derivative = (error - last_error) * (int) registered;
+    // printf("Error: %f, Integral: %f, Derivative: %f\n", error, integral, derivative);
     return kp * error + ki * integral - kd * derivative;
 }

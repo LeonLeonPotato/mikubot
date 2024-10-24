@@ -20,7 +20,7 @@ class BoomerangPath : public BasePath {
         bool need_solve() const override { return true; }
         void solve_coeffs(const BaseParams& params) override;
         void solve_coeffs(float heading, float lead);
-        solvers::Solver get_solver() const override { return solvers::Solver::Newton; }
+        solvers::Solver get_solver() const override { return solvers::Solver::Secant; }
 
         void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const override;
         Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const override;

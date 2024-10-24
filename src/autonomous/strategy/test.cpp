@@ -16,5 +16,13 @@ void test_strategy::run(void) {
     sp.points.emplace_back(robot::x + 50, robot::y + 200);
     sp.points.emplace_back(robot::x + 200, robot::y + 200);
 
-    movement::stanley::follow_path(sp);
+    movement::pure_pursuit::follow_path(sp, 30);
+    movement::turn_towards(-M_PI/2, 0.1);
+    robot::brake();
+
+    auto pathback = pathing::BoomerangPath(
+        Eigen::Vector2f(robot::x, robot::y), Eigen::Vector2f(0, 0)
+    );
+
+    movement::pure_pursuit::follow_path(pathback, 30, nullptr, -M_PI, 1 / sqrtf(2), 5);
 }

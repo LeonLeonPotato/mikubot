@@ -1,6 +1,5 @@
 #include "gui/autonselector.h"
 #include "gui/utils.h"
-#include "gui/gif-pros/gifclass.hpp"
 #include "autonomous/strategies.h"
 #include "version.h"
 #include "essential.h"
@@ -30,7 +29,7 @@ lv_style_t* selected_auton_box_style;
 
 renderer::NamedButton* confirm_button;
 
-Gif* miku_gif;
+lv_obj_t* miku_gif;
 
 inline void create_logo(void) {
     logo = lv_spangroup_create(lv_scr_act());
@@ -172,7 +171,9 @@ inline void confirm_selection(void) {
 }
 
 void init_gif(void) {
-    miku_gif = new Gif("/usd/kaito-miku-90-nobg.gif", lv_scr_act(), 380, 10);
+    miku_gif = lv_gif_create(lv_scr_act());
+    lv_obj_set_pos(miku_gif, 380, 10);
+    lv_gif_set_src(miku_gif, "/usd/kaito-miku-90-nobg.gif");
 }
 
 void init(void) {
@@ -200,7 +201,6 @@ void destroy(void) {
     lv_obj_del(selected_auton_box);
     lv_style_reset(selected_auton_box_style);
 
-    miku_gif->clean();
-    delete miku_gif;
+    lv_obj_del(miku_gif);
 }
 }

@@ -375,6 +375,7 @@
     #undef pixel
 
   #elif ((defined  __ARM_NEON) || (defined __ARM_NEON__)) && !(defined EIGEN_ARM64_USE_SVE) && !(defined __clang__)
+
     #define EIGEN_VECTORIZE
     #define EIGEN_VECTORIZE_NEON
     #include <arm_neon.h>
