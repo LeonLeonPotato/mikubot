@@ -7,6 +7,8 @@ namespace movement {
 namespace stanley {
 
 namespace variables {
+    extern float step_size;
+
     extern float kP;
     extern float kI;
     extern float kD;
@@ -22,10 +24,9 @@ float follow_path_tick(pathing::BasePath& path,
                         solvers::func_t deriv, float t,
                         int iterations = 5);
 
-float follow_path(pathing::BasePath& path,
+float follow_path(pathing::BasePath& path, pathing::BaseParams& solve_params,
                 controllers::PID* turn_pid = nullptr,
                 controllers::PID* track = nullptr,
-                float end_heading = 0, float end_magnitude = 0,
                 int iterations = 5, long long timeout = 5000);
 
 } // namespace stanley

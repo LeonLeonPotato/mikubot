@@ -167,7 +167,7 @@ inline Eigen::Vector2f Polynomial2D<N>::normal(float t) const {
 template <int N>
 inline float Polynomial2D<N>::angle(float t) const {
     Eigen::Vector2f d = compute(t, 1);
-    return atan2(d(1), d(0));
+    return atan2(d(0), d(1));
 }
 
 template <int N>

@@ -7,16 +7,16 @@
 
 using namespace strategies;
 
-pathing::QuinticSpline sp;
-
 void test_strategy::run(void) {
-    sp = pathing::QuinticSpline();
-    sp.points.emplace_back(robot::x, robot::y);
-    sp.points.emplace_back(robot::x, robot::y + 100);
-    sp.points.emplace_back(robot::x + 50, robot::y + 200);
-    sp.points.emplace_back(robot::x + 200, robot::y + 200);
+    auto qs = pathing::QuinticSpline();
+    qs.points.emplace_back(robot::x, robot::y);
+    qs.points.emplace_back(robot::x, robot::y + 100);
+    qs.points.emplace_back(robot::x + 50, robot::y + 200);
+    qs.points.emplace_back(robot::x + 200, robot::y + 200);
 
-    movement::pure_pursuit::follow_path(sp, 30);
+    pathing::BaseParams qsparams = {0, 0, 0, 0};
+
+    movement::pure_pursuit::follow_path(qs, qsparams, 30);
     movement::turn_towards(-M_PI/2, 0.1);
     robot::brake();
 

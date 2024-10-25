@@ -5,14 +5,16 @@
 using namespace movement;
 
 namespace movement::stanley::variables {
+    float step_size = 0.0001;
+
     float kP = 0.1;
     float kI = 0.01;
     float kD = 0.01;
 
-    float I_disable_min = -999;
+    float I_disable_min = -infinity();
     float I_disable_max = 10;
-    float I_max = 999;
-    float I_min = -999;
+    float I_max = infinity();
+    float I_min = -infinity();
 };
 
 void stanley_init_pid(controllers::PID& pid) {
@@ -26,18 +28,18 @@ void stanley_init_pid(controllers::PID& pid) {
 }
 
 float stanley::follow_path_tick(pathing::BasePath& path, 
-                                        controllers::PID& turn_pid, controllers::PID& track_pid, 
-                                        solvers::func_t deriv, float t,
-                                        int iterations)
+                                controllers::PID& turn_pid, controllers::PID& track_pid, 
+                                solvers::func_t deriv, float t,
+                                int iterations)
 {
     Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
     Eigen::Vector2f& last_point = path.points.back();
 
-    t = utils::compute_updated_t_grad_desc(path, deriv, t, 0.0001, iterations);
+    t = utils::compute_updated_t_grad_desc(path, deriv, t, stanley::variables::step_size, iterations);
 
     Eigen::Vector2f res = path.compute(t);
     Eigen::Vector2f tangent = path.compute(t, 1);
-    float theta = atan2(tangent(1), tangent(0));
+    float theta = atan2(tangent(0), tangent(1));
 
     float dtheta = robot::angular_diff(theta);
     turn_pid.register_error(fabs(dtheta));
@@ -60,10 +62,8 @@ float stanley::follow_path_tick(pathing::BasePath& path,
     return t;
 }
 
-float stanley::follow_path(pathing::BasePath& path,
-                            controllers::PID* turn,
-                            controllers::PID* track,
-                            float end_heading, float end_magnitude,
+float stanley::follow_path(pathing::BasePath& path, pathing::BaseParams& params,
+                            controllers::PID* turn, controllers::PID* track,
                             int iterations, long long timeout)
 {
     bool delete_turn = turn == nullptr;
@@ -86,24 +86,21 @@ float stanley::follow_path(pathing::BasePath& path,
         return diff.dot(path.compute(t, 1)) / diff.norm();
     };
 
-    utils::recompute_path(path, nullptr, nullptr, solvers::Solver::GradientDescent, 1, end_heading, end_magnitude, true);
-    std::cout << path.debug_out() << std::endl;
+    utils::recompute_path(path, params, 1);
 
     long long start = pros::millis();
     float t = 0.000;
     while (true) {
-        point.noalias() = Eigen::Vector2f(99, 99);
+        point.noalias() = Eigen::Vector2f(robot::x, robot::y);
         t = stanley::follow_path_tick(
             path, *turn, *track, deriv, t,
-            20
+            iterations
         );
 
         if (t < 0 || pros::millis() - start > timeout) {
             break;
         }
     }
-
-    printf("Stanley pathing finished at %f\n", t);
 
     robot::brake();
 

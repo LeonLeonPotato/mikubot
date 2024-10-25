@@ -42,7 +42,7 @@ Eigen::Vector2f BasePath::normal(float t) const {
 
 float BasePath::angle(float t) const {
     Eigen::Vector2f d = compute(t, 1);
-    return atan2(d(1), d(0));
+    return atan2(d(0), d(1));
 }
 
 float BasePath::angular_velocity(float t) const {
