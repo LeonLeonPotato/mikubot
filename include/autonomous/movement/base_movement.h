@@ -22,6 +22,23 @@ namespace variables {
     extern float turning_I_min;
 } // namespace variables
 
+enum class ExitCodes {
+    TBD = -1,
+    SUCCESS = 0,
+    RECOMPUTATION_ERROR = 1,
+    TIMEOUT = 2,
+    CANCELLED = 3
+};
+
+struct MovementResult {
+    ExitCodes code = ExitCodes::TBD;
+
+    int time_taken_ms;
+    int num_recomputations;
+    float t;
+    float error;
+};
+
 namespace utils {
 std::pair<float, float> 
 compute_initial_t_newton(pathing::BasePath& path, solvers::func_vec_t func, solvers::func_vec_t deriv);

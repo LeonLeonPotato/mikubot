@@ -38,8 +38,22 @@ void autonomous(void) {
 	std::cout << "Auton started" << std::endl;
 }
 
+#include "autonomous/future.h"
+
 void opcontrol(void) {
 	competition_initialize();
 	std::cout << "Opcontrol started" << std::endl;
 	// strategies::test_strategy::run();
+	
+
+	Future<int> f;
+
+	auto dummy_task = [&f]() {
+		pros::delay(1000);
+		f.set_value(10);
+	};
+
+	pros::Task task(dummy_task);
+
+	std::cout << f.get() << std::endl;
 }

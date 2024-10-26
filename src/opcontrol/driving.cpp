@@ -99,8 +99,6 @@ void print_logs(void) {
 	}
 
 	fclose(fp);
-	nlohmann::json j;
-	
 }
 
 void run() {
