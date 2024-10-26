@@ -13,7 +13,7 @@ namespace movement::variables {
 
     float turning_kP = 800;
     float turning_kI = 0.0;
-    float turning_kD = 100;
+    float turning_kD = 400;
 
     float turning_I_disable_min = -infinity();
     float turning_I_disable_max = 1;
@@ -77,9 +77,9 @@ utils::compute_updated_t_grad_desc(pathing::BasePath& path, solvers::func_t func
 }
 
 std::pair<float, float>
-compute_initial_t(solvers::Solver solver, 
-                pathing::BasePath& path, 
-                solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv)
+utils::compute_initial_t(solvers::Solver solver, 
+    pathing::BasePath& path, 
+    solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv)
 {
      switch (solver) {
         case solvers::Solver::Newton:
@@ -92,9 +92,9 @@ compute_initial_t(solvers::Solver solver,
 }
 
 std::pair<float, float>
-compute_updated_t(solvers::Solver solver, 
-                pathing::BasePath& path, 
-                solvers::func_t func, solvers::func_t deriv, float t, int iterations)
+utils::compute_updated_t(solvers::Solver solver, 
+    pathing::BasePath& path, 
+    solvers::func_t func, solvers::func_t deriv, float t, int iterations)
 {
     switch (solver) {
         case solvers::Solver::Newton:

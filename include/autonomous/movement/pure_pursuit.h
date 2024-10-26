@@ -16,7 +16,7 @@ float follow_path_tick(pathing::BasePath& path, pathing::BaseParams& solve_param
 float follow_path(pathing::BasePath& path, pathing::BaseParams& solve_params,
                 float radius,
                 controllers::PID* pid = nullptr,
-                int iterations = 5, long long timeout = 5000);
+                int iterations = 5, int timeout = 5000);
 
 } // namespace pure_pursuit
 } // namespace movement

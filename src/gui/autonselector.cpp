@@ -173,8 +173,9 @@ inline void confirm_selection(void) {
 void init_gif(void) {
     miku_gif = lv_gif_create(lv_scr_act());
     lv_obj_set_pos(miku_gif, 380, 10);
-    lv_gif_set_src(miku_gif, "/usd/kaito-miku-90-nobg.gif");
+    lv_gif_set_src(miku_gif, "S/kaito-miku.gif");
 }
+
 
 void init(void) {
     create_logo();

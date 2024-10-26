@@ -8,6 +8,8 @@
 using namespace strategies;
 
 void test_strategy::run(void) {
+    robot::set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+
     auto qs = pathing::QuinticSpline();
     qs.points.emplace_back(robot::x, robot::y);
     qs.points.emplace_back(robot::x, robot::y + 100);
@@ -24,5 +26,9 @@ void test_strategy::run(void) {
         Eigen::Vector2f(robot::x, robot::y), Eigen::Vector2f(0, 0)
     );
 
-    movement::pure_pursuit::follow_path(pathback, 30, nullptr, -M_PI, 1 / sqrtf(2), 5);
+    pathing::BaseParams pbparams = {0, 0, -M_PI, 1 / sqrtf(2)};
+    movement::pure_pursuit::follow_path(pathback, pbparams, 30);
+
+    robot::brake();
+    robot::set_brake_mode(robot::config::default_brake_mode);
 }

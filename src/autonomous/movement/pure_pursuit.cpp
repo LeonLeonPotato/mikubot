@@ -49,7 +49,7 @@ float pure_pursuit::follow_path_tick(pathing::BasePath& path, pathing::BaseParam
 float pure_pursuit::follow_path(pathing::BasePath& path, pathing::BaseParams& params,
                 float radius,
                 controllers::PID* pid,
-                int iterations, long long timeout)
+                int iterations, int timeout)
 {
     bool delete_pid = pid == nullptr;
 
@@ -76,7 +76,7 @@ float pure_pursuit::follow_path(pathing::BasePath& path, pathing::BaseParams& pa
         return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 	};
 
-    long long start = pros::millis();
+    int start = pros::millis();
     utils::recompute_path(path, params, 1);
     float t = utils::compute_initial_t(path.get_solver(), path, vec_func, vec_deriv).first;
 

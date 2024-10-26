@@ -27,7 +27,7 @@ float follow_path_tick(pathing::BasePath& path,
 float follow_path(pathing::BasePath& path, pathing::BaseParams& solve_params,
                 controllers::PID* turn_pid = nullptr,
                 controllers::PID* track = nullptr,
-                int iterations = 5, long long timeout = 5000);
+                int iterations = 5, int timeout = 5000);
 
 } // namespace stanley
 } // namespace movement

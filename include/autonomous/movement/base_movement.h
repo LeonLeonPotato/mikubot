@@ -38,14 +38,15 @@ compute_updated_t_secant(pathing::BasePath& path, solvers::func_t func, float t,
 float
 compute_updated_t_grad_desc(pathing::BasePath& path, solvers::func_t func, float t, float step_size, int iterations);
 
-std::pair<float, float> compute_initial_t(solvers::Solver solver, 
-                                        pathing::BasePath& path, 
-                                        solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv);
+std::pair<float, float> 
+compute_initial_t(solvers::Solver solver, 
+    pathing::BasePath& path, 
+    solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv);
 
 std::pair<float, float>
 compute_updated_t(solvers::Solver solver, 
-                pathing::BasePath& path, 
-                solvers::func_t func, solvers::func_t deriv, float t, int iterations);
+    pathing::BasePath& path, 
+    solvers::func_t func, solvers::func_t deriv, float t, int iterations);
 
 void recompute_path(pathing::BasePath& path, pathing::BaseParams& params, int goal_i);
 } // namespace utils

@@ -1,6 +1,7 @@
 #include "opcontrol/driving.h"
 #include "essential.h"
 #include "api.h"
+#include "nlohmann/json.h"
 
 #include <iostream>
 
@@ -85,16 +86,21 @@ void print_logs(void) {
 	while (!pros::Task::notify_take(true, 50)) {
 		for (; idx < logs.size(); idx++) {
 			auto& log = logs[idx];
-			fprintf(fp, "%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%d\n", log.x, log.y, log.theta,
-														log.left_voltage, log.right_voltage,
-														log.left_velo, log.right_velo,
-														log.left_accel, log.right_accel,
-														log.left_eff, log.right_eff,
-														log.dt);
+			fprintf(fp, 
+				"%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%d\n", 
+				log.x, log.y, log.theta,
+				log.left_voltage, log.right_voltage,
+				log.left_velo, log.right_velo,
+				log.left_accel, log.right_accel,
+				log.left_eff, log.right_eff,
+				log.dt
+			);
 		}
 	}
 
 	fclose(fp);
+	nlohmann::json j;
+	
 }
 
 void run() {

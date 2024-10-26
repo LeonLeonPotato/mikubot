@@ -64,7 +64,7 @@ float stanley::follow_path_tick(pathing::BasePath& path,
 
 float stanley::follow_path(pathing::BasePath& path, pathing::BaseParams& params,
                             controllers::PID* turn, controllers::PID* track,
-                            int iterations, long long timeout)
+                            int iterations, int timeout)
 {
     bool delete_turn = turn == nullptr;
     bool delete_track = track == nullptr;
@@ -88,7 +88,7 @@ float stanley::follow_path(pathing::BasePath& path, pathing::BaseParams& params,
 
     utils::recompute_path(path, params, 1);
 
-    long long start = pros::millis();
+    int start = pros::millis();
     float t = 0.000;
     while (true) {
         point.noalias() = Eigen::Vector2f(robot::x, robot::y);

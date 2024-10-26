@@ -4,15 +4,12 @@ using namespace pathing;
 
 void BoomerangPath::solve_coeffs(const BaseParams& params) {
     float dist = (points.back() - points.front()).norm();
-    printf("End Magnitude: %f\n", params.end_magnitude);
     carrot = points.back() - Eigen::Vector2f(
         params.end_magnitude * sinf(params.end_heading) * dist, 
         params.end_magnitude * cosf(params.end_heading) * dist
     );
-    printf("Carrot: (%f, %f)\n", carrot(0), carrot(1));
 }
 
-#include <iostream>
 void BoomerangPath::solve_coeffs(float heading, float lead) {
     float dist = (points.back() - points.front()).norm();
     carrot = points.back() - Eigen::Vector2f(
