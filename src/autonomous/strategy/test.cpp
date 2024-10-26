@@ -17,8 +17,8 @@ void test_strategy::run(void) {
     qs.points.emplace_back(robot::x + 200, robot::y + 200);
 
     pathing::BaseParams qsparams = {0, 0, 0, 0};
+    movement::PurePursuit(qs, qsparams, 10).follow_path();
 
-    movement::pure_pursuit::follow_path(qs, qsparams, 30);
     movement::turn_towards(-M_PI/2, 0.1);
     robot::brake();
 
@@ -27,7 +27,7 @@ void test_strategy::run(void) {
     );
 
     pathing::BaseParams pbparams = {0, 0, -M_PI, 1 / sqrtf(2)};
-    movement::pure_pursuit::follow_path(pathback, pbparams, 30);
+    movement::PurePursuit(pathback, pbparams, 10).follow_path();
 
     robot::brake();
     robot::set_brake_mode(robot::config::default_brake_mode);

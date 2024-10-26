@@ -35,7 +35,7 @@ class Future {
         }
 
         void wait() {
-            if (!state->available) {
+            if (!state->available && !state->cancelled) {
                 state->waiting_tasks.push_back(pros::c::task_get_current());
                 pros::c::task_notify_take(true, TIMEOUT_MAX);
             }
@@ -48,5 +48,10 @@ class Future {
 
         bool valid() const {
             return !state->cancelled;
+        }
+
+        // use with caution
+        std::shared_ptr<SharedState> get_state() {
+            return state;
         }
 };

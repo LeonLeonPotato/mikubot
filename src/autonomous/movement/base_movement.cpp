@@ -5,139 +5,121 @@
 
 using namespace movement;
 
-namespace movement::variables {
-    int recomputation_iterations = 20;
-    float recomputation_error = 1;
-
-    float distance_coeff = 5.0;
-
-    float turning_kP = 800;
-    float turning_kI = 0.0;
-    float turning_kD = 400;
-
-    float turning_I_disable_min = -infinity();
-    float turning_I_disable_max = 1;
-    float turning_I_min = -infinity();
-    float turning_I_max = infinity();
-};
-
-std::pair<float, float> 
-utils::compute_initial_t_newton(pathing::BasePath& path, solvers::func_vec_t func, solvers::func_vec_t deriv) 
+std::pair<float, float> utils::compute_initial_t_newton(BaseMovement& mover)
 {
-    Eigen::VectorXf guesses = Eigen::VectorXf::LinSpaced(32, 0.05, path.points.size() - 1.05);
+    Eigen::VectorXf guesses = Eigen::VectorXf::LinSpaced(32, 0.05, mover.maxt() - 1.05);
     return solvers::newton_vec(
-        func, deriv, 
+        mover.vec_func(), mover.vec_deriv(), 
         guesses, 
-        0, path.points.size() - 1, 
-        variables::recomputation_iterations
+        0, mover.maxt(), 
+        mover.recomputation_iterations,
+        mover.recomputation_threshold
     );
 }
 
-std::pair<float, float> 
-utils::compute_initial_t_secant(pathing::BasePath& path, solvers::func_vec_t func) {
-    Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(32, 0.05, path.points.size() - 1.1);
-    Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(32, 0.10, path.points.size() - 1.05);
+std::pair<float, float> utils::compute_initial_t_secant(BaseMovement& mover) 
+{
+    Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(32, 0.05, mover.maxt() - 1.1);
+    Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(32, 0.10, mover.maxt() - 1.05);
 
     return solvers::secant_vec(
-        func, 
+        mover.vec_func(),
         t0, t1, 
-        0, path.points.size() - 1, 
-        variables::recomputation_iterations
+        0, mover.maxt(), 
+        mover.recomputation_iterations,
+        mover.recomputation_threshold
     );
 }
 
-std::pair<float, float> 
-utils::compute_updated_t_newton(pathing::BasePath& path, solvers::func_t func, solvers::func_t deriv, float t, int iterations) {
-    return solvers::newton_single(
-        func, deriv, 
-        t, 
-        t, path.points.size() - 1, 
-        iterations
-    );
-}
-
-std::pair<float, float> 
-utils::compute_updated_t_secant(pathing::BasePath& path, solvers::func_t func, float t, int iterations) {
-    return solvers::secant_single(
-        func, 
-        t, 
-        t + 1, t, path.points.size() - 1, 
-        iterations
-    );
-}
-
-float
-utils::compute_updated_t_grad_desc(pathing::BasePath& path, solvers::func_t func, float t, float step_size, int iterations) {
-    return solvers::gradient_descent_single(
-        func, 
-        t, 
-        t, path.points.size() - 1, 
-        step_size, iterations
-    );
-}
-
-std::pair<float, float>
-utils::compute_initial_t(solvers::Solver solver, 
-    pathing::BasePath& path, 
-    solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv)
+std::pair<float, float> utils::compute_updated_t_newton(BaseMovement& mover, float t) 
 {
-     switch (solver) {
-        case solvers::Solver::Newton:
-            return utils::compute_initial_t_newton(path, vec_func, vec_deriv);
-        case solvers::Solver::Secant:
-            return utils::compute_initial_t_secant(path, vec_func);
-        default:
-            return {-1, -1};
-    }
+    return solvers::newton_single(
+        mover.func(), mover.deriv(), 
+        t, 
+        t, mover.maxt(), 
+        mover.update_iterations,
+        mover.update_threshold
+    );
 }
 
-std::pair<float, float>
-utils::compute_updated_t(solvers::Solver solver, 
-    pathing::BasePath& path, 
-    solvers::func_t func, solvers::func_t deriv, float t, int iterations)
+std::pair<float, float> utils::compute_updated_t_secant(BaseMovement& mover, float t) 
+{
+    return solvers::secant_single(
+        mover.func(), 
+        t, t + 1,
+        t, mover.maxt(), 
+        mover.update_iterations,
+        mover.update_threshold
+    );
+}
+
+float utils::compute_updated_t_grad_desc(BaseMovement& mover, float t) 
+{
+    return solvers::gradient_descent_single(
+        mover.deriv(), 
+        t, 
+        0, mover.maxt(), 
+        mover.grad_desc_step_size, 
+        mover.update_iterations
+    );
+}
+
+std::pair<float, float> utils::compute_initial_t(solvers::Solver solver, BaseMovement& mover)
 {
     switch (solver) {
         case solvers::Solver::Newton:
-            return utils::compute_updated_t_newton(path, func, deriv, t, iterations);
+            return compute_initial_t_newton(mover);
         case solvers::Solver::Secant:
-            return utils::compute_updated_t_secant(path, func, t, iterations);
+            return compute_initial_t_secant(mover);
         default:
             return {-1, -1};
     }
 }
 
-void
-utils::recompute_path(pathing::BasePath& path, pathing::BaseParams& solve_params, int goal_i)
+std::pair<float, float> utils::compute_updated_t(solvers::Solver solver, BaseMovement& mover, float t)
+{
+    switch (solver) {
+        case solvers::Solver::Newton:
+            return compute_updated_t_newton(mover, t);
+        case solvers::Solver::Secant:
+            return compute_updated_t_secant(mover, t);
+        default:
+            return {-1, -1};
+    }
+}
+
+void utils::recompute_path(BaseMovement& mover, int goal_i)
 {
     if (goal_i > 1) {
-        for (int i = goal_i; i < path.points.size(); i++) {
-            path.points[i - goal_i + 1] = path.points[i];
+        for (int i = goal_i; i < mover.path.points.size(); i++) {
+            mover.path.points[i - goal_i + 1] = mover.path.points[i];
         }
         for (int i = 0; i < goal_i - 1; i++) {
-            path.points.pop_back();
+            mover.path.points.pop_back();
         }
     }
 
-    path.points[0] = Eigen::Vector2f(robot::x, robot::y);
-    solve_params.start_heading = robot::theta;
-    solve_params.start_magnitude = 10;
-    path.solve_coeffs(solve_params);
+    mover.path.points[0] = Eigen::Vector2f(robot::x, robot::y);
+    mover.solve_params.start_heading = robot::theta;
+    mover.solve_params.start_magnitude = 10;
+    mover.path.solve_coeffs(mover.solve_params);
 }
 
-void movement::init_pid(controllers::PID& pid) {
-    pid.kp = variables::turning_kP;
-    pid.ki = variables::turning_kI;
-    pid.kd = variables::turning_kD;
-    pid.integral_min = variables::turning_I_min;
-    pid.integral_max = variables::turning_I_max;
-    pid.disable_integral_lower = variables::turning_I_disable_min;
-    pid.disable_integral_upper = variables::turning_I_disable_max;
+// Do not question me on my generic pid parameters. Trust the femboy programmer~
+void BaseMovement::init_generic_pid(controllers::PID& pid) {
+    pid.kp = 800;
+    pid.ki = 0;
+    pid.kd = 400;
+    pid.integral_min = -infinity();
+    pid.integral_max = infinity();
+    pid.disable_integral_lower = -infinity();
+    pid.disable_integral_upper = 1;
 }
 
-void movement::goto_pos_tick(const Eigen::Vector2f& point, controllers::PID& pid) {
+void movement::goto_pos_tick(const Eigen::Vector2f& point, float distance_coeff, controllers::PID& pid) {
     float theta_diff = robot::angular_diff(point);
     float dist = robot::distance(point);
-    float dist_vel = fmin(dist * variables::distance_coeff, 127);
+    float dist_vel = fmin(dist * distance_coeff, 127);
     pid.register_error(fabs(theta_diff));
     float turn_vel = pid.get();
     robot::volt(
@@ -156,19 +138,17 @@ void movement::turn_towards_tick(float angle, controllers::PID& pid) {
     );
 }
 
-void movement::goto_pos(const Eigen::Vector2f& point, float threshold) {
-    controllers::PID pid;
-    init_pid(pid);
+void movement::goto_pos(const Eigen::Vector2f& point, float distance_coeff, float threshold) {
+    controllers::PID pid; BaseMovement::init_generic_pid(pid);
     
     while (robot::distance(point) > threshold) {
-        goto_pos_tick(point, pid);
+        goto_pos_tick(point, distance_coeff, pid);
         pros::delay(20);
     }
 }
 
 void movement::turn_towards(float angle, float threshold) {
-    controllers::PID pid;
-    init_pid(pid);
+    controllers::PID pid; BaseMovement::init_generic_pid(pid);
 
     while (fabs(robot::angular_diff(angle)) > threshold) {
         turn_towards_tick(angle, pid);
@@ -176,20 +156,20 @@ void movement::turn_towards(float angle, float threshold) {
     }
 }
 
-void movement::goto_pose(const Eigen::Vector2f& point, float angle, float threshold, float theta_threshold) {
-    controllers::PID pid;
-    init_pid(pid);
+void movement::goto_pose(const Eigen::Vector2f& point, float angle, float distance_coeff, float threshold, float theta_threshold) {
+    controllers::PID pid; BaseMovement::init_generic_pid(pid);
 
     while (robot::distance(point) > threshold) {
-        goto_pos_tick(point, pid);
+        goto_pos_tick(point, distance_coeff, pid);
         pros::delay(20);
     }
+
     pid.reset();
-    printf("Angle: %f\n", robot::angular_diff(angle));
+
     while (fabs(robot::angular_diff(angle)) > theta_threshold) {
         turn_towards_tick(angle, pid);
-        printf("Angle: %f\n", robot::angular_diff(angle));
         pros::delay(20);
     }
+
     robot::brake();
 }

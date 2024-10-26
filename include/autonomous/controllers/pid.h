@@ -25,5 +25,10 @@ class PID {
         void reset(void);
         void register_error(float error);
         float get(void);
+
+        float get(float error) {
+            register_error(error);
+            return get();
+        }
 };
 } // namespace controllers

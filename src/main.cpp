@@ -43,7 +43,7 @@ void autonomous(void) {
 void opcontrol(void) {
 	competition_initialize();
 	std::cout << "Opcontrol started" << std::endl;
-	// strategies::test_strategy::run();
+	strategies::test_strategy::run();
 	
 
 	Future<int> f;

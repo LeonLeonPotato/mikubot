@@ -7,6 +7,7 @@
 
 namespace solvers {
 enum class Solver {
+    None,
     Bisection,
     Newton,
     Secant,

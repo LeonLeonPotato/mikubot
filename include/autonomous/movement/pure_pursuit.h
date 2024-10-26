@@ -7,23 +7,24 @@
 #include "autonomous/future.h"
 
 namespace movement {
-namespace pure_pursuit {
 
-std::pair<float, float> follow_path_tick(pathing::BasePath& path, pathing::BaseParams& solve_params,
-    controllers::PID& pid, float t, float radius,
-    solvers::func_t func, solvers::func_t deriv, 
-    solvers::func_vec_t vec_func, solvers::func_vec_t vec_deriv, 
-    MovementResult& result, int iterations = 5);
+class PurePursuit : public BaseMovement {
+    protected:
+        float func(float t) const override;
+        float deriv(float t) const override;
+        Eigen::VectorXf vec_func(Eigen::VectorXf& t) const override;
+        Eigen::VectorXf vec_deriv(Eigen::VectorXf& t) const override;
 
-MovementResult follow_path(pathing::BasePath& path, pathing::BaseParams& solve_params,
-    float radius,
-    controllers::PID* pid = nullptr,
-    int iterations = 5, int timeout = 5000);
+    public:
+        float radius;
 
-Future<MovementResult> follow_path_async(pathing::BasePath& path, pathing::BaseParams& solve_params,
-    float radius,
-    controllers::PID* pid = nullptr,
-    int iterations = 5, int timeout = 5000);
+        PurePursuit(pathing::BasePath& path, pathing::BaseParams& solve_params, const controllers::PID& pid, float radius) :
+            BaseMovement(path, solve_params, pid), radius(radius) {}
+        PurePursuit(pathing::BasePath& path, pathing::BaseParams& solve_params, float radius) :
+            BaseMovement(path, solve_params), radius(radius) {}
 
-} // namespace pure_pursuit
+        TickResult tick(float t) override;
+        MovementResult follow_path_cancellable(bool& cancel_ref) override;
+};
+
 } // namespace movement
