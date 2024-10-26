@@ -6,7 +6,6 @@ template <typename T>
 class Future {
     private:
         struct SharedState {
-            std::vector<pros::task_t> waiting_tasks;
             bool cancelled = false;
             bool available = false;
             T value;
@@ -21,23 +20,16 @@ class Future {
 
         void cancel() {
             state->cancelled = true;
-            for (auto& task : state->waiting_tasks) {
-                pros::c::task_notify(task);
-            }
         }
 
         void set_value(const T& value) {
             state->value = value;
             state->available = true;
-            for (auto& task : state->waiting_tasks) {
-                pros::c::task_notify(task);
-            }
         }
 
         void wait() {
-            if (!state->available && !state->cancelled) {
-                state->waiting_tasks.push_back(pros::c::task_get_current());
-                pros::c::task_notify_take(true, TIMEOUT_MAX);
+            while (!state->available) {
+                pros::delay(5);
             }
         }
 
@@ -48,6 +40,10 @@ class Future {
 
         bool valid() const {
             return !state->cancelled;
+        }
+
+        bool available() const {
+            return state->available;
         }
 
         // use with caution

@@ -17,7 +17,17 @@ void test_strategy::run(void) {
     qs.points.emplace_back(robot::x + 200, robot::y + 200);
 
     pathing::BaseParams qsparams = {0, 0, 0, 0};
-    movement::PurePursuit(qs, qsparams, 10).follow_path();
+    auto pure_pursuit = movement::PurePursuit(qs, qsparams, 10);
+    auto fut = pure_pursuit.follow_path_async();
+
+    int start = pros::millis();
+    while (!fut.available()) {
+        printf("t: %d\n", pros::millis());
+        pros::delay(20);
+    }
+
+    auto val = fut.get();
+    printf("Result: %s\n", val.debug_out().c_str());
 
     movement::turn_towards(-M_PI/2, 0.1);
     robot::brake();

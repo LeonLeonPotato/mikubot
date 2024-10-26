@@ -30,6 +30,12 @@ struct MovementResult {
     int num_recomputations = 0;
     float t = 0;
     float error = 0;
+
+    std::string debug_out(void) {
+        char buffer[256];
+        sprintf(buffer, "MovementResult {Code: %d, Time: %d, Recomputations: %d, T: %f, Error: %f}", code, time_taken_ms, num_recomputations, t, error);
+        return std::string(buffer);
+    }
 };
 
 class BaseMovement {
@@ -82,14 +88,15 @@ class BaseMovement {
         virtual TickResult tick(float t) = 0;
         virtual MovementResult follow_path_cancellable(bool& cancel_ref) = 0;
 
-        virtual MovementResult follow_path(void) {
+        MovementResult follow_path(void) {
             bool cancel = false;
             return follow_path_cancellable(cancel);
         }
-        virtual Future<MovementResult> follow_path_async() {
+        Future<MovementResult> follow_path_async() {
             Future<MovementResult> future;
             pros::Task task([this, &future]() {
-                future.set_value(follow_path_cancellable(future.get_state()->cancelled));
+                auto res = follow_path_cancellable(future.get_state()->cancelled);
+                future.set_value(res);
             });
             return future;
         }
