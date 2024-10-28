@@ -50,6 +50,17 @@ class BaseMovement {
         virtual Eigen::VectorXf vec_func(Eigen::VectorXf& t) const { return Eigen::VectorXf(); };
         virtual Eigen::VectorXf vec_deriv(Eigen::VectorXf& t) const { return Eigen::VectorXf(); };
 
+        std::pair<float, float> compute_initial_t_newton(void);
+        std::pair<float, float> compute_initial_t_secant(void);
+        std::pair<float, float> compute_updated_t_newton(float t);
+        std::pair<float, float> compute_updated_t_secant(float t);
+        float compute_updated_t_grad_desc(float t);
+        
+        std::pair<float, float> compute_initial_t(solvers::Solver solver);
+        std::pair<float, float> compute_updated_t(solvers::Solver solver, float t);
+
+        void recompute_path(int goal_i);
+
     public:
         pathing::BasePath& path;
         pathing::BaseParams& solve_params;
@@ -63,11 +74,14 @@ class BaseMovement {
 
         float final_threshold = 5.0;
         float distance_coeff = 5.0;
+        int max_base_speed = 127;
 
         int update_iterations = 3;
         float update_threshold = 1e-1;
         float grad_desc_step_size = 0.1;
 
+        bool always_recompute = false;
+        int recomputation_guesses = 32;
         float recomputation_error = 1.5;
         int recomputation_iterations = 12;
         float recomputation_threshold = 1e-1;
@@ -107,29 +121,4 @@ class BaseMovement {
 
         static void init_generic_pid(controllers::PID& pid);
 };
-
-namespace utils {
-std::pair<float, float> compute_initial_t_newton(BaseMovement& mover);
-
-std::pair<float, float> compute_initial_t_secant(BaseMovement& mover);
-
-std::pair<float, float> compute_updated_t_newton(BaseMovement& mover, float t);
-
-std::pair<float, float> compute_updated_t_secant(BaseMovement& mover, float t);
-
-float compute_updated_t_grad_desc(BaseMovement& mover, float t);
-
-std::pair<float, float> compute_initial_t(solvers::Solver solver, BaseMovement& mover);
-
-std::pair<float, float> compute_updated_t(solvers::Solver solver, BaseMovement& mover, float t);
-
-void recompute_path(BaseMovement& mover, int goal_i);
-} // namespace utils
-
-void init_generic_pid(controllers::PID& pid);
-void goto_pos_tick(const Eigen::Vector2f& point, float distance_coeff, controllers::PID& pid);
-void turn_towards_tick(float angle, controllers::PID& pid);
-void goto_pos(const Eigen::Vector2f& point, float distance_coeff, float threshold);
-void turn_towards(float angle, float threshold);
-void goto_pose(const Eigen::Vector2f& point, float angle, float distance_coeff, float threshold, float theta_threshold);
 } // namespace movement

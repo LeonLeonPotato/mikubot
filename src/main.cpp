@@ -1,6 +1,5 @@
 #include "main.h"
 #include "essential.h"
-#include "opcontrol/driving.h"
 #include "autonomous/odometry.h"
 #include "autonomous/pathing.h"
 #include "gui/autonselector.h"
@@ -8,6 +7,7 @@
 #include "gui/utils.h"
 #include "autonomous/solvers.h"
 #include "autonomous/strategies.h"
+#include "opcontrol/opcontrol.h"
 
 #include "api.h"
 
@@ -49,8 +49,10 @@ void opcontrol(void) {
 	Future<int> f;
 
 	auto dummy_task = [&f]() {
+		printf("Setting value\n");
 		pros::delay(1000);
 		f.set_value(10);
+		printf("Set value\n");
 	};
 
 	pros::Task task(dummy_task);

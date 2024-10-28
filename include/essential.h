@@ -15,6 +15,10 @@ inline namespace state {
     extern double y, velocity_y, acceleration_y;
     extern double theta, angular_velocity, angular_acceleration;
 
+    inline Eigen::Vector2f pos(void) {
+        return Eigen::Vector2f(x, y);
+    }
+
     inline float speed(void) {
         return sqrtf(velocity_x * velocity_x + velocity_y * velocity_y);
     }

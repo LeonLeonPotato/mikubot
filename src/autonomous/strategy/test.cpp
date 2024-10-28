@@ -37,8 +37,10 @@ void test_strategy::run(void) {
     );
 
     pathing::BaseParams pbparams = {0, 0, -M_PI, 1 / sqrtf(2)};
-    movement::PurePursuit(pathback, pbparams, 10).follow_path();
+    // movement::PurePursuit(pathback, pbparams, 10).follow_path();
 
     robot::brake();
     robot::set_brake_mode(robot::config::default_brake_mode);
+
+    printf("Finished test strategy\n");
 }

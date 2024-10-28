@@ -1,11 +1,11 @@
-#include "opcontrol/driving.h"
+#include "opcontrol/impl/driving.h"
 #include "essential.h"
 #include "api.h"
-#include "nlohmann/json.h"
 
 #include <iostream>
 
-namespace driving {
+using namespace controls;
+
 struct LogObject {
 	float x, y, theta;
 	int left_voltage, right_voltage;
@@ -17,7 +17,7 @@ struct LogObject {
 
 std::vector<LogObject> logs;
 
-inline void leon_mode(int left_x, int left_y, int right_x, int right_y) {
+void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
 		int left = left_y + right_x;
 		int right = left_y - right_x;
@@ -101,7 +101,7 @@ void print_logs(void) {
 	fclose(fp);
 }
 
-void run() {
+void driving::run() {
 	int it = 0;
 	// pros::Task::create(print_logs);
 	float left_last_velo = robot::left_motors.get_actual_velocity();
@@ -135,4 +135,3 @@ void run() {
 		pros::delay(20);
 	}
 }
-} // namespace driving

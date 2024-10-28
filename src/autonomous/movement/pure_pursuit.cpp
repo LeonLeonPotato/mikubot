@@ -4,37 +4,38 @@
 using namespace movement;
 
 float PurePursuit::func(float t) const {
-    return (Eigen::Vector2f(robot::x, robot::y) - path.compute(t)).norm() - radius;
+    return (robot::pos() - path.compute(t)).norm() - radius;
 }
 
 float PurePursuit::deriv(float t) const {
-    Eigen::Vector2f diff = Eigen::Vector2f(robot::x, robot::y) - path.compute(t);
+    Eigen::Vector2f diff = robot::pos() - path.compute(t);
     return diff.dot(path.compute(t, 1)) / diff.norm();
 }
 
 Eigen::VectorXf PurePursuit::vec_func(Eigen::VectorXf& t) const {
-    return (path.compute(t).colwise() - Eigen::Vector2f(robot::x, robot::y)).colwise().norm().array() - radius;
+    return (path.compute(t).colwise() - robot::pos()).colwise().norm().array() - radius;
 }
 
 Eigen::VectorXf PurePursuit::vec_deriv(Eigen::VectorXf& t) const {
-    const Eigen::Matrix2Xf rel = path.compute(t).colwise() - Eigen::Vector2f(robot::x, robot::y);
+    const Eigen::Matrix2Xf rel = path.compute(t).colwise() - robot::pos();
     return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 }
 
 TickResult PurePursuit::tick(float t) {
     TickResult result;
 
-    Eigen::Vector2f point = Eigen::Vector2f(robot::x, robot::y);
+    Eigen::Vector2f point = robot::pos();
     Eigen::Vector2f& dest = path.points.back();
 
-    std::tie(result.t, result.error) = utils::compute_updated_t(get_solver(), *this, t);
+    std::tie(result.t, result.error) = compute_updated_t(get_solver(), t);
+    bool end_of_path = fabs(result.t - maxt()) < 0.0001;
 
-    if (result.error > recomputation_error || result.t < 0) {
+    if ((fabs(result.error) > recomputation_error || result.t < 0 || always_recompute) && !end_of_path) {
         result.recomputed = true;
 
         int goal = std::clamp((int) ceil(t), 0, (int) maxt());
-        utils::recompute_path(*this, goal);
-        std::tie(result.t, result.error) = utils::compute_initial_t(get_solver(), *this);
+        recompute_path(goal);
+        std::tie(result.t, result.error) = compute_initial_t(get_solver());
 
         if (result.error > recomputation_error || result.t < 0) {
             result.code = ExitCode::RECOMPUTATION_ERROR;
@@ -48,7 +49,7 @@ TickResult PurePursuit::tick(float t) {
     pid.register_error(fabs(dtheta));
 
     float dist = robot::distance(dest);
-    dist = fmin(dist * distance_coeff, radius) / radius * 127;
+    dist = fmin(dist * distance_coeff, radius) / radius * max_base_speed;
 
     float ctrl = pid.get();
 
@@ -63,12 +64,11 @@ TickResult PurePursuit::tick(float t) {
 
 MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
     MovementResult result;
-    result.code = ExitCode::SUCCESS;
 
     int start_t = pros::millis();
 
-    utils::recompute_path(*this, 1);
-    std::tie(result.t, result.error) = utils::compute_initial_t(get_solver(), *this);
+    recompute_path(1);
+    std::tie(result.t, result.error) = compute_initial_t(get_solver());
 
     while (robot::distance(path.points.back()) > final_threshold) {
         if (cancel_ref) {
@@ -76,15 +76,16 @@ MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
             break;
         }
 
+        if (pros::millis() - start_t > timeout) {
+            result.code = ExitCode::TIMEOUT;
+            break;
+        }
+
+        if (robot::distance(path.points.back()) <= radius) result.t = maxt();
         TickResult tick_result = tick(result.t);
 
         if (tick_result.code != ExitCode::SUCCESS) {
             result.code = tick_result.code;
-            break;
-        }
-
-        if (pros::millis() - start_t > timeout) {
-            result.code = ExitCode::TIMEOUT;
             break;
         }
 
@@ -95,6 +96,7 @@ MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
         pros::delay(20);
     }
 
+    if (result.code == ExitCode::TBD) result.code = ExitCode::SUCCESS;
     result.time_taken_ms = pros::millis() - start_t;
 
     return result;

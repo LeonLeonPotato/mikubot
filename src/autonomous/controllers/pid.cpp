@@ -1,5 +1,5 @@
 #include "autonomous/controllers/pid.h"
-#include <cmath>
+#include "api.h"
 
 using namespace controllers;
 
@@ -10,13 +10,14 @@ void PID::register_error(float error) {
     } else {
         last_error = this->error;
 
-        if (error > disable_integral_upper || error < disable_integral_lower || (std::signbit(error) != std::signbit(last_error))) {
+        if (fabs(error) > disable_integral_limit || (std::signbit(error) != std::signbit(last_error) && sign_switch_reset)) {
             integral = 0;
         } else {
-            integral += error;
-            integral = fmax(integral_min, fmin(integral_max, integral));
+            float integral_inc = error * (pros::micros() - last_time) / 1000000.0;
+            integral = std::clamp(integral + integral_inc, -integral_limit, integral_limit);
         }
     }
+    last_time = pros::micros();
     this->error = error;
 }
 
@@ -27,9 +28,8 @@ void PID::reset() {
     registered = false;
 }
 
-#include <iostream>
 float PID::get(void) {
-    float derivative = (error - last_error) * (int) registered;
-    // printf("Error: %f, Integral: %f, Derivative: %f\n", error, integral, derivative);
+    float dt = (pros::micros() - last_time) / 1000000.0;
+    float derivative = (error - last_error) * (int) registered / dt;
     return kp * error + ki * integral - kd * derivative;
 }
