@@ -42,20 +42,9 @@ void autonomous(void) {
 
 void opcontrol(void) {
 	competition_initialize();
+	// pros::delay(100);
 	std::cout << "Opcontrol started" << std::endl;
-	strategies::test_strategy::run();
-	
+	// strategies::test_strategy::run();
 
-	Future<int> f;
-
-	auto dummy_task = [&f]() {
-		printf("Setting value\n");
-		pros::delay(1000);
-		f.set_value(10);
-		printf("Set value\n");
-	};
-
-	pros::Task task(dummy_task);
-
-	std::cout << f.get() << std::endl;
+	controls::lidartest::run();
 }

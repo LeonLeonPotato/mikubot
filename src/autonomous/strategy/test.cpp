@@ -27,9 +27,10 @@ void test_strategy::run(void) {
     }
 
     auto val = fut.get();
-    printf("Result: %s\n", val.debug_out().c_str());
+    printf("QS Pure pursuit Result: %s\n", val.debug_out().c_str());
 
-    movement::turn_towards(-M_PI/2, 0.1);
+    auto gtres = movement::simple::turn_towards(-M_PI / 2);
+    printf("Go to Result: %s\n", gtres.debug_out().c_str());
     robot::brake();
 
     auto pathback = pathing::BoomerangPath(
@@ -37,7 +38,8 @@ void test_strategy::run(void) {
     );
 
     pathing::BaseParams pbparams = {0, 0, -M_PI, 1 / sqrtf(2)};
-    // movement::PurePursuit(pathback, pbparams, 10).follow_path();
+    auto res = movement::PurePursuit(pathback, pbparams, 10).follow_path();
+    printf("Pathing back Result: %s\n", res.debug_out().c_str());
 
     robot::brake();
     robot::set_brake_mode(robot::config::default_brake_mode);

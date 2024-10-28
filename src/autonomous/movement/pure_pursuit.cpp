@@ -33,17 +33,17 @@ TickResult PurePursuit::tick(float t) {
     if ((fabs(result.error) > recomputation_error || result.t < 0 || always_recompute) && !end_of_path) {
         result.recomputed = true;
 
-        int goal = std::clamp((int) ceil(t), 0, (int) maxt());
+        int goal = std::clamp((int) ceil(t), 1, (int) maxt());
         recompute_path(goal);
         std::tie(result.t, result.error) = compute_initial_t(get_solver());
 
-        if (result.error > recomputation_error || result.t < 0) {
+        if (fabs(result.error) > recomputation_error || result.t < 0) {
             result.code = ExitCode::RECOMPUTATION_ERROR;
             return result;
         }
     }
 
-    Eigen::Vector2f res = path.compute(t);
+    Eigen::Vector2f res = path.compute(result.t);
 
     float dtheta = robot::angular_diff(res);
     pid.register_error(fabs(dtheta));
@@ -54,8 +54,8 @@ TickResult PurePursuit::tick(float t) {
     float ctrl = pid.get();
 
     robot::volt(
-        (int) (dist + ctrl * dtheta),
-        (int) (dist - ctrl * dtheta)
+        (int) (dist + ctrl),
+        (int) (dist - ctrl)
     );
 
     result.code = ExitCode::SUCCESS;
