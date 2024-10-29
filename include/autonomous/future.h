@@ -27,14 +27,16 @@ class Future {
             state->available = true;
         }
 
-        void wait() {
-            while (!state->available) {
-                pros::delay(5);
+        bool wait(int timeout = TIMEOUT_MAX, int delay = 5) {
+            int start = pros::millis();
+            while (!state->available && pros::millis() - start < timeout) {
+                pros::delay(delay);
             }
+            return state->available;
         }
 
-        const T& get() {
-            wait();
+        const T& get(int timeout = TIMEOUT_MAX, int delay = 5) {
+            wait(timeout, delay);
             return state->value;
         }
 

@@ -17,7 +17,7 @@ void test_strategy::run(void) {
     qs.points.emplace_back(robot::x + 200, robot::y + 200);
 
     pathing::BaseParams qsparams = {0, 0, 0, 0};
-    auto pure_pursuit = movement::PurePursuit(qs, qsparams, 10);
+    auto pure_pursuit = movement::PurePursuit(qs, movement::PurePursuitParams {.radius = 5}, 10);
     auto fut = pure_pursuit.follow_path_async();
 
     int start = pros::millis();

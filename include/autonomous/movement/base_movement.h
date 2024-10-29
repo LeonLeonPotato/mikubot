@@ -38,6 +38,26 @@ struct MovementResult {
     }
 };
 
+struct BaseMovementParams {
+    bool reversed = false;
+
+    float final_threshold = 5.0;
+    float distance_coeff = 5.0;
+    int max_base_speed = 127;
+
+    int update_iterations = 3;
+    float update_threshold = 1e-1;
+    float grad_desc_step_size = 0.1;
+
+    bool always_recompute = false;
+    int recomputation_guesses = 32;
+    float recomputation_error = 1.5;
+    int recomputation_iterations = 12;
+    float recomputation_threshold = 1e-1;
+
+    int timeout = 5000;
+};
+
 class BaseMovement {
     protected:
         const solvers::func_t func_ = [this](float t) -> float { return func(t); };
@@ -62,37 +82,22 @@ class BaseMovement {
         void recompute_path(int goal_i);
 
     public:
-        pathing::BasePath& path;
-        pathing::BaseParams& solve_params;
+        const BaseMovementParams params;
 
+        pathing::BasePath& path;
+        std::function<void(pathing::BaseParams&)> solve_params_initializer = __initialize_solve_params;
         controllers::PID pid;
 
         solvers::Solver solver_override = solvers::Solver::None;
-        virtual solvers::Solver get_solver() const {
-            return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
-        }
 
-        float final_threshold = 5.0;
-        float distance_coeff = 5.0;
-        int max_base_speed = 127;
-
-        int update_iterations = 3;
-        float update_threshold = 1e-1;
-        float grad_desc_step_size = 0.1;
-
-        bool always_recompute = false;
-        int recomputation_guesses = 32;
-        float recomputation_error = 1.5;
-        int recomputation_iterations = 12;
-        float recomputation_threshold = 1e-1;
-
-        int timeout = 5000;
-
-        BaseMovement(pathing::BasePath& path, pathing::BaseParams& solve_params, const controllers::PID& pid) :
-            path(path), solve_params(solve_params), pid(pid) {}
-
-        BaseMovement(pathing::BasePath& path, pathing::BaseParams& solve_params) :
-            path(path), solve_params(solve_params) { set_generic_pid(); }
+        BaseMovement(
+            pathing::BasePath& path, 
+            const std::function<void(pathing::BaseParams&)> initializer, 
+            const BaseMovementParams& params,
+            const controllers::PID& pid,
+            const solvers::Solver solver_override
+        ) : path(path), solve_params_initializer(initializer), params(params),
+            pid(pid), solver_override(solver_override) {}
 
         solvers::func_t func() const { return func_; }
         solvers::func_t deriv() const { return deriv_; }
@@ -115,10 +120,32 @@ class BaseMovement {
             return future;
         }
 
+        virtual solvers::Solver get_solver() const {
+            return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
+        }
+
         // for convenience
         float maxt() const { return path.points.size() - 1; }
         void set_generic_pid() { init_generic_pid(pid); }
 
         static void init_generic_pid(controllers::PID& pid);
+        static void init_generic_solve_params(pathing::BaseParams& solve_params);
+};
+
+class BaseMovementBuilder {
+    std::optional<BaseMovementParams> params = std::nullopt;
+    std::optional<controllers::PID> pid = std::nullopt;
+    pathing::BasePath* path = nullptr; // we definitely do not want to copy path!
+    std::function<void(pathing::BaseParams&)> solve_params_initializer = BaseMovement::init_generic_solve_params;
+    solvers::Solver solver_override = solvers::Solver::None;
+
+    BaseMovementBuilder& with_params(const BaseMovementParams params);
+    BaseMovementBuilder& with_pid(const controllers::PID pid);
+    BaseMovementBuilder& with_path(pathing::BasePath& path);
+    BaseMovementBuilder& with_solve_params_initializer(const std::function<void(pathing::BaseParams&)>);
+    BaseMovementBuilder& with_solver_override(const solvers::Solver solver);
+
+    BaseMovement build(void) const;
+    virtual std::shared_ptr<BaseMovement> build_no_copy(void) const;
 };
 } // namespace movement

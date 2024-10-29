@@ -7,25 +7,25 @@ using namespace movement;
 
 std::pair<float, float> BaseMovement::compute_initial_t_newton(void)
 {
-    Eigen::VectorXf guesses = Eigen::VectorXf::LinSpaced(recomputation_guesses, 0.05, maxt() - 1.05);
+    Eigen::VectorXf guesses = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.05, maxt() - 1.05);
     return solvers::newton_vec(
         vec_func_, vec_deriv_, 
         guesses, 
         0, maxt(), 
-        recomputation_iterations, recomputation_threshold
+        params.recomputation_iterations, params.recomputation_threshold
     );
 }
 
 std::pair<float, float> BaseMovement::compute_initial_t_secant(void) 
 {
-    Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(recomputation_guesses, 0.05, maxt() - 1.1);
-    Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(recomputation_guesses, 0.10, maxt() - 1.05);
+    Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.05, maxt() - 1.1);
+    Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.10, maxt() - 1.05);
 
     return solvers::secant_vec(
         vec_func_,
         t0, t1, 
         0, maxt(), 
-        recomputation_iterations, recomputation_threshold
+        params.recomputation_iterations, params.recomputation_threshold
     );
 }
 
@@ -35,7 +35,7 @@ std::pair<float, float> BaseMovement::compute_updated_t_newton(float t)
         func_, deriv_, 
         t, 
         t, maxt(), 
-        update_iterations, update_threshold
+        params.update_iterations, params.update_threshold
     );
 }
 
@@ -45,7 +45,7 @@ std::pair<float, float> BaseMovement::compute_updated_t_secant(float t)
         func_, 
         t, fmin(maxt(), t + 1),
         t, maxt(), 
-        update_iterations, update_threshold
+        params.update_iterations, params.update_threshold
     );
 }
 
@@ -55,8 +55,8 @@ float BaseMovement::compute_updated_t_grad_desc(float t)
         deriv_,
         t, 
         0, maxt(), 
-        grad_desc_step_size, 
-        update_iterations
+        params.grad_desc_step_size, 
+        params.update_iterations
     );
 }
 
@@ -96,8 +96,10 @@ void BaseMovement::recompute_path(int goal_i)
     }
 
     path.points[0] = Eigen::Vector2f(robot::x, robot::y);
-    solve_params.start_heading = robot::theta;
-    solve_params.start_magnitude = 10;
+
+    pathing::BaseParams solve_params;
+    solve_params_initializer(solve_params);
+
     path.solve_coeffs(solve_params);
 }
 
@@ -109,4 +111,39 @@ void BaseMovement::init_generic_pid(controllers::PID& pid) {
     pid.integral_limit = 1;
     pid.disable_integral_limit = 1;
     pid.sign_switch_reset = true;
+}
+
+void BaseMovement::init_generic_solve_params(pathing::BaseParams& solve_params) {
+    solve_params.start_heading = robot::theta;
+    solve_params.start_magnitude = 10 * robot::speed();
+    solve_params.end_heading = 0;
+    solve_params.end_magnitude = 0;
+}
+
+BaseMovementBuilder& BaseMovementBuilder::with_params(const BaseMovementParams params) {
+    this->params = std::move(params);
+}
+
+BaseMovementBuilder& BaseMovementBuilder::with_pid(const controllers::PID pid) {
+    this->pid = std::move(pid);
+}
+
+BaseMovementBuilder& BaseMovementBuilder::with_path(pathing::BasePath& path) {
+    this->path = &path;
+}
+
+BaseMovementBuilder& BaseMovementBuilder::with_solver_override(const solvers::Solver solver) {
+    this->solver_override = solver;
+}
+
+BaseMovementBuilder& BaseMovementBuilder::with_solve_params_initializer(const std::function<void(pathing::BaseParams&)> initializer) {
+    this->solve_params_initializer = std::move(initializer);
+}
+
+std::shared_ptr<BaseMovement> BaseMovementBuilder::build_no_copy(void) const {
+    if (!params.has_value() || !pid.has_value() || path == nullptr) {
+        params = BaseMovementParams();
+    }
+
+    return BaseMovement(*path, solve_params_initializer, *params, *pid, solver_override);
 }

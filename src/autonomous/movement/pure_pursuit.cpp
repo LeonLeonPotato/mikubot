@@ -3,6 +3,8 @@
 
 using namespace movement;
 
+#define radius ((PurePursuitParams) params).radius
+
 float PurePursuit::func(float t) const {
     return (robot::pos() - path.compute(t)).norm() - radius;
 }
@@ -30,32 +32,27 @@ TickResult PurePursuit::tick(float t) {
     std::tie(result.t, result.error) = compute_updated_t(get_solver(), t);
     bool end_of_path = fabs(result.t - maxt()) < 0.0001;
 
-    if ((fabs(result.error) > recomputation_error || result.t < 0 || always_recompute) && !end_of_path) {
+    if ((fabs(result.error) > params.recomputation_error || result.t < 0 || params.always_recompute) && !end_of_path) {
         result.recomputed = true;
 
         int goal = std::clamp((int) ceil(t), 1, (int) roundf(maxt())); // prevent floating point error
         recompute_path(goal);
         std::tie(result.t, result.error) = compute_initial_t(get_solver());
 
-        if (fabs(result.error) > recomputation_error || result.t < 0) {
+        if (fabs(result.error) > params.recomputation_error || result.t < 0) {
             result.code = ExitCode::RECOMPUTATION_ERROR;
             return result;
         }
     }
 
     Eigen::Vector2f res = path.compute(result.t);
-
-    float dtheta = robot::angular_diff(res);
-    pid.register_error(fabs(dtheta));
-
-    float dist = robot::distance(dest);
-    dist = fmin(dist * distance_coeff, radius) / radius * max_base_speed;
-
-    float ctrl = pid.get();
+    float speed = fmin(robot::distance(dest) * params.distance_coeff, params.max_base_speed);
+    float ctrl = pid.get(robot::angular_diff(res, params.reversed));
+    if (params.reversed) speed = -speed;
 
     robot::volt(
-        (int) (dist + ctrl),
-        (int) (dist - ctrl)
+        (int) (speed + ctrl),
+        (int) (speed - ctrl)
     );
 
     result.code = ExitCode::SUCCESS;
@@ -70,13 +67,13 @@ MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
     recompute_path(1);
     std::tie(result.t, result.error) = compute_initial_t(get_solver());
 
-    while (robot::distance(path.points.back()) > final_threshold) {
+    while (robot::distance(path.points.back()) > params.final_threshold) {
         if (cancel_ref) {
             result.code = ExitCode::CANCELLED;
             break;
         }
 
-        if (pros::millis() - start_t >= timeout) {
+        if (pros::millis() - start_t >= params.timeout) {
             result.code = ExitCode::TIMEOUT;
             break;
         }

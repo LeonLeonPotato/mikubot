@@ -8,6 +8,10 @@
 
 namespace movement {
 
+struct PurePursuitParams : public BaseMovementParams {
+    float radius;
+};
+
 class PurePursuit : public BaseMovement {
     protected:
         float func(float t) const override;
@@ -16,13 +20,6 @@ class PurePursuit : public BaseMovement {
         Eigen::VectorXf vec_deriv(Eigen::VectorXf& t) const override;
 
     public:
-        float radius;
-
-        PurePursuit(pathing::BasePath& path, pathing::BaseParams& solve_params, const controllers::PID& pid, float radius) :
-            BaseMovement(path, solve_params, pid), radius(radius) {}
-        PurePursuit(pathing::BasePath& path, pathing::BaseParams& solve_params, float radius) :
-            BaseMovement(path, solve_params), radius(radius) {}
-
         TickResult tick(float t) override;
         MovementResult follow_path_cancellable(bool& cancel_ref) override;
 };
