@@ -27,16 +27,16 @@ inline namespace state {
         return sqrtf(acceleration_x * acceleration_x + acceleration_y * acceleration_y);
     }
 
-    inline float angular_diff(float desired) {
-        return fmod(desired - fmod(theta, M_TWOPI) + M_PI, M_TWOPI) - M_PI;
+    inline float angular_diff(float desired, bool reversed = false) {
+        return fmod(desired - theta + M_PI + (M_PI * (int) reversed), M_TWOPI) - M_PI;
     }
 
-    inline float angular_diff(float desired_x, float desired_y) {
-        return angular_diff(atan2(desired_x - x, desired_y - y));
+    inline float angular_diff(float desired_x, float desired_y, bool reversed = false) {
+        return angular_diff(atan2(desired_x - x, desired_y - y), reversed);
     }
 
-    inline float angular_diff(const Eigen::Vector2f& point) {
-        return angular_diff(atan2(point(0) - x, point(1) - y));
+    inline float angular_diff(const Eigen::Vector2f& point, bool reversed = false) {
+        return angular_diff(atan2(point(0) - x, point(1) - y), reversed);
     }
 
     inline float distance(float desired_x, float desired_y) {

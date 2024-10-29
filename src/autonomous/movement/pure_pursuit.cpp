@@ -33,7 +33,7 @@ TickResult PurePursuit::tick(float t) {
     if ((fabs(result.error) > recomputation_error || result.t < 0 || always_recompute) && !end_of_path) {
         result.recomputed = true;
 
-        int goal = std::clamp((int) ceil(t), 1, (int) maxt());
+        int goal = std::clamp((int) ceil(t), 1, (int) roundf(maxt())); // prevent floating point error
         recompute_path(goal);
         std::tie(result.t, result.error) = compute_initial_t(get_solver());
 
@@ -76,7 +76,7 @@ MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
             break;
         }
 
-        if (pros::millis() - start_t > timeout) {
+        if (pros::millis() - start_t >= timeout) {
             result.code = ExitCode::TIMEOUT;
             break;
         }
