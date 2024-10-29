@@ -20,6 +20,16 @@ class PurePursuit : public BaseMovement {
         Eigen::VectorXf vec_deriv(Eigen::VectorXf& t) const override;
 
     public:
+        PurePursuit(
+            pathing::BasePath& path, 
+            float radius,
+            std::optional<solver_init_t> initializer, 
+            std::optional<const controllers::PID&> pid = std::nullopt,
+            std::optional<const solvers::Solver> solver_override = std::nullopt
+        ) : BaseMovement(path, PurePursuitParams(), initializer, pid, solver_override) {
+            ((PurePursuitParams&) params).radius = radius;
+        }
+
         TickResult tick(float t) override;
         MovementResult follow_path_cancellable(bool& cancel_ref) override;
 };

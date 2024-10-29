@@ -59,6 +59,8 @@ struct BaseMovementParams {
 };
 
 class BaseMovement {
+    using solver_init_t = std::function<void(pathing::BaseParams&)>;
+
     protected:
         const solvers::func_t func_ = [this](float t) -> float { return func(t); };
         const solvers::func_t deriv_ = [this](float t) -> float { return deriv(t); };
@@ -82,22 +84,27 @@ class BaseMovement {
         void recompute_path(int goal_i);
 
     public:
-        const BaseMovementParams params;
+        BaseMovementParams params;
 
         pathing::BasePath& path;
-        std::function<void(pathing::BaseParams&)> solve_params_initializer = __initialize_solve_params;
+        solver_init_t solve_params_initializer = __initialize_solve_params;
         controllers::PID pid;
 
         solvers::Solver solver_override = solvers::Solver::None;
 
         BaseMovement(
             pathing::BasePath& path, 
-            const std::function<void(pathing::BaseParams&)> initializer, 
-            const BaseMovementParams& params,
-            const controllers::PID& pid,
-            const solvers::Solver solver_override
-        ) : path(path), solve_params_initializer(initializer), params(params),
-            pid(pid), solver_override(solver_override) {}
+            std::optional<const BaseMovementParams&> params = std::nullopt,
+            std::optional<const solver_init_t&> initializer, 
+            std::optional<const controllers::PID&> pid = std::nullopt,
+            std::optional<const solvers::Solver> solver_override = std::nullopt
+        ) : path(path)
+        {
+            if (params.has_value()) this->params = params.value();
+            if (initializer.has_value()) this->solve_params_initializer = initializer.value();
+            if (pid.has_value()) this->pid = pid.value();
+            if (solver_override.has_value()) this->solver_override = solver_override.value();
+        }
 
         solvers::func_t func() const { return func_; }
         solvers::func_t deriv() const { return deriv_; }
@@ -130,22 +137,5 @@ class BaseMovement {
 
         static void init_generic_pid(controllers::PID& pid);
         static void init_generic_solve_params(pathing::BaseParams& solve_params);
-};
-
-class BaseMovementBuilder {
-    std::optional<BaseMovementParams> params = std::nullopt;
-    std::optional<controllers::PID> pid = std::nullopt;
-    pathing::BasePath* path = nullptr; // we definitely do not want to copy path!
-    std::function<void(pathing::BaseParams&)> solve_params_initializer = BaseMovement::init_generic_solve_params;
-    solvers::Solver solver_override = solvers::Solver::None;
-
-    BaseMovementBuilder& with_params(const BaseMovementParams params);
-    BaseMovementBuilder& with_pid(const controllers::PID pid);
-    BaseMovementBuilder& with_path(pathing::BasePath& path);
-    BaseMovementBuilder& with_solve_params_initializer(const std::function<void(pathing::BaseParams&)>);
-    BaseMovementBuilder& with_solver_override(const solvers::Solver solver);
-
-    BaseMovement build(void) const;
-    virtual std::shared_ptr<BaseMovement> build_no_copy(void) const;
 };
 } // namespace movement

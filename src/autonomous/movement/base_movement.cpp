@@ -119,31 +119,3 @@ void BaseMovement::init_generic_solve_params(pathing::BaseParams& solve_params) 
     solve_params.end_heading = 0;
     solve_params.end_magnitude = 0;
 }
-
-BaseMovementBuilder& BaseMovementBuilder::with_params(const BaseMovementParams params) {
-    this->params = std::move(params);
-}
-
-BaseMovementBuilder& BaseMovementBuilder::with_pid(const controllers::PID pid) {
-    this->pid = std::move(pid);
-}
-
-BaseMovementBuilder& BaseMovementBuilder::with_path(pathing::BasePath& path) {
-    this->path = &path;
-}
-
-BaseMovementBuilder& BaseMovementBuilder::with_solver_override(const solvers::Solver solver) {
-    this->solver_override = solver;
-}
-
-BaseMovementBuilder& BaseMovementBuilder::with_solve_params_initializer(const std::function<void(pathing::BaseParams&)> initializer) {
-    this->solve_params_initializer = std::move(initializer);
-}
-
-std::shared_ptr<BaseMovement> BaseMovementBuilder::build_no_copy(void) const {
-    if (!params.has_value() || !pid.has_value() || path == nullptr) {
-        params = BaseMovementParams();
-    }
-
-    return BaseMovement(*path, solve_params_initializer, *params, *pid, solver_override);
-}
