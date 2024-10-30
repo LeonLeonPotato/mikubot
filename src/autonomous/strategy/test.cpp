@@ -19,22 +19,20 @@ void test_strategy::run(void) {
     qs.points.emplace_back(robot::x + 195, robot::y + 106);
     qs.points.emplace_back(robot::x + 96, robot::y + 35.5);
 
-    auto pp = movement::PurePursuit(&qs, 10);
-    std::cout << reinterpret_cast<uintptr_t>(&qs) << std::endl;
-    pp.path = &qs;
-    std::cout << reinterpret_cast<uintptr_t>(pp.path) << std::endl;
-    auto fut = pp.follow_path();
-    if (1==1) return;
+    auto pp = movement::PurePursuit(qs, 90);
+    pp.params.always_recompute = true;
+    // printf("%f", ((movement::PurePursuitParams&) pp.params).radius);
+    auto fut = pp.follow_path_async();
 
     // std::cout << pure_pursuit.params.timeout << std::endl;
 
-    // int start = pros::millis();
-    // while (!fut.available()) {
-    //     // printf("asdasdsadasd %d\n", pros::millis());
-    //     pros::delay(20);
-    // }
+    int start = pros::millis();
+    while (!fut.available()) {
+        pros::delay(20);
+    }
 
-    // std::cout << qs.debug_out() << std::endl;
+    printf("%s", fut.get().debug_out().c_str());
+    std::cout << qs.debug_out() << std::endl;
 
     // auto val = fut.get();
     // printf("QS Pure pursuit Result: %s\n", val.debug_out().c_str());
