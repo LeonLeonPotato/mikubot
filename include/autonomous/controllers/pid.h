@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace controllers {
 class PID {
     private:
@@ -28,6 +30,12 @@ class PID {
         float get(float error) {
             register_error(error);
             return get();
+        }
+
+        std::string debug(void) {
+            char buffer[256];
+            sprintf(buffer, "PID {last_time: %f, last_error: %f, error: %f, integral: %f}", last_time, last_error, error, integral);
+            return std::string(buffer);
         }
 };
 } // namespace controllers

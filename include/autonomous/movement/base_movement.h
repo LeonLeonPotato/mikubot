@@ -59,9 +59,15 @@ struct BaseMovementParams {
 };
 
 class BaseMovement {
-    using solver_init_t = std::function<void(pathing::BaseParams&)>;
+    private:
+        void __follow_path_async_task_fn(void* p) {
+            auto fut = *((Future<MovementResult>*) p);
+            fut.set_value(follow_path_cancellable(fut.get_state()->cancelled));
+        }
 
     protected:
+        using solver_init_t = std::function<void(pathing::BaseParams&)>;
+
         const solvers::func_t func_ = [this](float t) -> float { return func(t); };
         const solvers::func_t deriv_ = [this](float t) -> float { return deriv(t); };
         const solvers::func_vec_t vec_func_ = [this](Eigen::VectorXf& t) -> Eigen::VectorXf { return vec_func(t); };
@@ -86,24 +92,27 @@ class BaseMovement {
     public:
         BaseMovementParams params;
 
-        pathing::BasePath& path;
-        solver_init_t solve_params_initializer = __initialize_solve_params;
+        pathing::BasePath* path = nullptr;
+        solver_init_t solve_params_initializer = init_generic_solve_params;
         controllers::PID pid;
 
         solvers::Solver solver_override = solvers::Solver::None;
 
         BaseMovement(
-            pathing::BasePath& path, 
-            std::optional<const BaseMovementParams&> params = std::nullopt,
-            std::optional<const solver_init_t&> initializer, 
-            std::optional<const controllers::PID&> pid = std::nullopt,
-            std::optional<const solvers::Solver> solver_override = std::nullopt
-        ) : path(path)
+            pathing::BasePath* path, 
+            std::optional<BaseMovementParams> params = std::nullopt,
+            std::optional<solver_init_t> initializer = std::nullopt, 
+            std::optional<controllers::PID> pid = std::nullopt,
+            std::optional<solvers::Solver> solver_override = std::nullopt
+        )
         {
+            this->path = path;
             if (params.has_value()) this->params = params.value();
             if (initializer.has_value()) this->solve_params_initializer = initializer.value();
             if (pid.has_value()) this->pid = pid.value();
             if (solver_override.has_value()) this->solver_override = solver_override.value();
+            printf("BaseMovement constructor pointer: %d\n", (int) path);
+            printf("BaseMovement constructor pointer (self): %d\n", (int) this->path);
         }
 
         solvers::func_t func() const { return func_; }
@@ -120,19 +129,19 @@ class BaseMovement {
         }
         Future<MovementResult> follow_path_async() {
             Future<MovementResult> future;
-            pros::Task task([this, &future]() {
-                auto res = follow_path_cancellable(future.get_state()->cancelled);
-                future.set_value(res);
-            });
+            pros::c::task_create(
+                __follow_path_async_task_fn, &future, 
+                TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, ""
+            );
             return future;
         }
 
         virtual solvers::Solver get_solver() const {
-            return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
+            return solver_override == solvers::Solver::None ? path->get_solver() : solver_override;
         }
 
         // for convenience
-        float maxt() const { return path.points.size() - 1; }
+        float maxt() const { return path->points.size() - 1; }
         void set_generic_pid() { init_generic_pid(pid); }
 
         static void init_generic_pid(controllers::PID& pid);

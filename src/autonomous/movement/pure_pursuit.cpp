@@ -6,28 +6,28 @@ using namespace movement;
 #define radius ((PurePursuitParams) params).radius
 
 float PurePursuit::func(float t) const {
-    return (robot::pos() - path.compute(t)).norm() - radius;
+    return (robot::pos() - path->compute(t)).norm() - radius;
 }
 
 float PurePursuit::deriv(float t) const {
-    Eigen::Vector2f diff = robot::pos() - path.compute(t);
-    return diff.dot(path.compute(t, 1)) / diff.norm();
+    Eigen::Vector2f diff = robot::pos() - path->compute(t);
+    return diff.dot(path->compute(t, 1)) / diff.norm();
 }
 
 Eigen::VectorXf PurePursuit::vec_func(Eigen::VectorXf& t) const {
-    return (path.compute(t).colwise() - robot::pos()).colwise().norm().array() - radius;
+    return (path->compute(t).colwise() - robot::pos()).colwise().norm().array() - radius;
 }
 
 Eigen::VectorXf PurePursuit::vec_deriv(Eigen::VectorXf& t) const {
-    const Eigen::Matrix2Xf rel = path.compute(t).colwise() - robot::pos();
-    return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
+    const Eigen::Matrix2Xf rel = path->compute(t).colwise() - robot::pos();
+    return rel.cwiseProduct(path->compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 }
 
 TickResult PurePursuit::tick(float t) {
     TickResult result;
 
     Eigen::Vector2f point = robot::pos();
-    Eigen::Vector2f& dest = path.points.back();
+    Eigen::Vector2f& dest = path->points.back();
 
     std::tie(result.t, result.error) = compute_updated_t(get_solver(), t);
     bool end_of_path = fabs(result.t - maxt()) < 0.0001;
@@ -45,7 +45,7 @@ TickResult PurePursuit::tick(float t) {
         }
     }
 
-    Eigen::Vector2f res = path.compute(result.t);
+    Eigen::Vector2f res = path->compute(result.t);
     float speed = fmin(robot::distance(dest) * params.distance_coeff, params.max_base_speed);
     float ctrl = pid.get(robot::angular_diff(res, params.reversed));
     if (params.reversed) speed = -speed;
@@ -64,10 +64,11 @@ MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
 
     int start_t = pros::millis();
 
+    printf("3");
     recompute_path(1);
     std::tie(result.t, result.error) = compute_initial_t(get_solver());
 
-    while (robot::distance(path.points.back()) > params.final_threshold) {
+    while (robot::distance(path->points.back()) > params.final_threshold) {
         if (cancel_ref) {
             result.code = ExitCode::CANCELLED;
             break;
@@ -78,7 +79,7 @@ MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
             break;
         }
 
-        if (robot::distance(path.points.back()) <= radius) result.t = maxt();
+        if (robot::distance(path->points.back()) <= radius) result.t = maxt();
         TickResult tick_result = tick(result.t);
 
         if (tick_result.code != ExitCode::SUCCESS) {

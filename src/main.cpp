@@ -38,11 +38,13 @@ void autonomous(void) {
 	std::cout << "Auton started" << std::endl;
 }
 
-void opcontrol(void) {
-	competition_initialize();
-	// pros::delay(100);
-	std::cout << "Opcontrol started" << std::endl;
-	// strategies::test_strategy::run();
+#include "autonomous/controllers/pid.h"
 
-	controls::lidartest::run();
+void opcontrol(void) {
+	// competition_initialize();
+	// pros::delay(100);
+	// std::cout << "Opcontrol started" << std::endl;
+	strategies::test_strategy::run();
+
+	//controls::lidartest::run();
 }

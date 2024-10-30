@@ -86,21 +86,26 @@ std::pair<float, float> BaseMovement::compute_updated_t(solvers::Solver solver, 
 
 void BaseMovement::recompute_path(int goal_i)
 {
+    printf("4");
     if (goal_i > 1) {
-        for (int i = goal_i; i < path.points.size(); i++) {
-            path.points[i - goal_i + 1] = path.points[i];
+        for (int i = goal_i; i < path->points.size(); i++) {
+            path->points[i - goal_i + 1] = path->points[i];
         }
         for (int i = 0; i < goal_i - 1; i++) {
-            path.points.pop_back();
+            path->points.pop_back();
         }
     }
+    printf("5");
 
-    path.points[0] = Eigen::Vector2f(robot::x, robot::y);
+    std::cout << "Recompute path pointer: " << (int) this->path << std::endl;
+
+    path->points[0] = Eigen::Vector2f(robot::x, robot::y);
+    printf("Set new initial point\n");
 
     pathing::BaseParams solve_params;
     solve_params_initializer(solve_params);
 
-    path.solve_coeffs(solve_params);
+    path->solve_coeffs(solve_params);
 }
 
 // Do not question me on my generic pid parameters. Trust the femboy programmer~

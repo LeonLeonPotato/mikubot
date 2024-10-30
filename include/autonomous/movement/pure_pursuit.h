@@ -21,13 +21,14 @@ class PurePursuit : public BaseMovement {
 
     public:
         PurePursuit(
-            pathing::BasePath& path, 
+            pathing::BasePath* path, 
             float radius,
-            std::optional<solver_init_t> initializer, 
-            std::optional<const controllers::PID&> pid = std::nullopt,
-            std::optional<const solvers::Solver> solver_override = std::nullopt
-        ) : BaseMovement(path, PurePursuitParams(), initializer, pid, solver_override) {
-            ((PurePursuitParams&) params).radius = radius;
+            std::optional<solver_init_t> initializer = std::nullopt, 
+            std::optional<controllers::PID> pid = std::nullopt,
+            std::optional<solvers::Solver> solver_override = std::nullopt
+        ) : BaseMovement(path, PurePursuitParams(), initializer, pid, solver_override)
+        {
+            // ((PurePursuitParams&) params).radius = radius;
         }
 
         TickResult tick(float t) override;
