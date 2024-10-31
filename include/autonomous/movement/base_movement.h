@@ -63,26 +63,32 @@ class BaseMovement {
         using solver_init_t = std::function<void(pathing::BaseParams&)>;
 
         std::pair<float, float> compute_initial_t_newton(
-            solvers::func_vec_t func, solvers::func_vec_t deriv,
-            const pathing::BasePath& path, const BaseMovementParams& params) const;
+            const pathing::BasePath& path, const BaseMovementParams& params,
+            solvers::func_vec_t func, solvers::func_vec_t deriv) const;
         std::pair<float, float> compute_initial_t_secant(
-            solvers::func_t func,
-            const pathing::BasePath& path, const BaseMovementParams& params) const;
+            const pathing::BasePath& path, const BaseMovementParams& params,
+            solvers::func_t func) const;
         std::pair<float, float> compute_updated_t_newton(
-            solvers::func_vec_t func, solvers::func_vec_t deriv,
-            const pathing::BasePath& path, const BaseMovementParams& params, float t) const;
+            const pathing::BasePath& path, const BaseMovementParams& params,
+            solvers::func_vec_t func, solvers::func_vec_t deriv, float t) const;
         std::pair<float, float> compute_updated_t_secant(
-            solvers::func_t func,
-            const pathing::BasePath& path, const BaseMovementParams& params, float t) const;
+            const pathing::BasePath& path, const BaseMovementParams& params,
+            solvers::func_t func, float t) const;
         float compute_updated_t_grad_desc(
-            solvers::func_t deriv,
-            const pathing::BasePath& path, const BaseMovementParams& params, float t) const;
+            const pathing::BasePath& path, const BaseMovementParams& params,
+            solvers::func_t deriv, float t) const;
         
         std::pair<float, float> compute_initial_t(
-            
             const pathing::BasePath& path, const BaseMovementParams& params, 
+            std::optional<solvers::func_vec_t> func = std::nullopt,
+            std::optional<solvers::func_vec_t> deriv = std::nullopt,
             solvers::Solver solver = solvers::Solver::None) const;
-        std::pair<float, float> compute_updated_t(const pathing::BasePath& path, const BaseMovementParams& params, float t, solvers::Solver solver = solvers::Solver::None) const;
+        std::pair<float, float> compute_updated_t(
+            const pathing::BasePath& path, const BaseMovementParams& params, float t,
+            std::optional<solvers::func_vec_t> func = std::nullopt,
+            std::optional<solvers::func_vec_t> deriv = std::nullopt,
+            solvers::Solver solver = solvers::Solver::None
+        ) const;
 
         void recompute_path(pathing::BasePath& path, int goal_i) const;
 
@@ -124,11 +130,6 @@ class BaseMovement {
                 ret.set_value(follow_path((bool&) ret.get_state()->available, args...));
             }};
         }
-
-        solvers::func_t func() const { return func_; }
-        solvers::func_t deriv() const { return deriv_; }
-        solvers::func_vec_t vec_func() const { return vec_func_; }
-        solvers::func_vec_t vec_deriv() const { return vec_deriv_; }
         
         virtual solvers::Solver get_solver(const pathing::BasePath& path) const {
             return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
