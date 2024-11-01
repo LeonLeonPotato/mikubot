@@ -9,6 +9,12 @@ constexpr float TRACKING_WHEEL_RADIUS = 4.1275f;
 constexpr float BACK_TRACKING_WHEEL_OFFSET = 7.075f;
 constexpr float SIDE_TRACKING_WHEEL_OFFSET = 10.5f;
 
+enum EngineMode {
+    DIRECT,
+    HIGH_SPEED,
+    HIGH_TORQUE
+};
+
 inline namespace state {
     extern bool braking;
     extern double x, velocity_x, acceleration_x;
@@ -46,6 +52,9 @@ inline namespace state {
     inline float distance(const Eigen::Vector2f& point) {
         return sqrtf((point(0) - x) * (point(0) - x) + (point(1) - y) * (point(1) - y));
     }
+
+    void set_engine_mode(EngineMode mode);
+    EngineMode get_engine_mode(void);
 } // namespace state
 
 namespace signatures {
@@ -105,6 +114,12 @@ inline void velo(int left, int right) {
     int lv = (int) (std::clamp(left, -127, 127) / 127.0f * max);
     int rv = (int) (std::clamp(right, -127, 127) / 127.0f * max);
     braking = false;
+
+    if (get_engine_mode() == EngineMode::HIGH_TORQUE) {
+        lv = (int) (lv * 0.6);
+        rv = (int) (rv * 0.6);
+    }
+
     left_motors.move_velocity(lv);
     right_motors.move_velocity(rv);
 }
@@ -114,6 +129,12 @@ inline void velo(float left, float right) {
     int lv = (int) (std::clamp(left, -1.0f, 1.0f) * max);
     int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
     braking = false;
+
+    if (get_engine_mode() == EngineMode::HIGH_TORQUE) {
+        lv = (int) (lv * 0.6);
+        rv = (int) (rv * 0.6);
+    }
+
     left_motors.move_velocity(left);
     right_motors.move_velocity(right);
 }

@@ -114,23 +114,40 @@ void driving::run() {
 		int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
         int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
+		int engine_mode = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_A) + robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_B);
+
+		switch (engine_mode) {
+			case 0:
+				robot::set_engine_mode(robot::EngineMode::DIRECT);
+				break;
+			case 1:
+				robot::set_engine_mode(robot::EngineMode::HIGH_SPEED);
+				break;
+			case 2:
+				robot::set_engine_mode(robot::EngineMode::HIGH_TORQUE);
+				break;
+		}
+
+		printf("Engine mode: %d\n", robot::get_engine_mode());
+		printf("Set engine mode: %d\n", engine_mode);
+
 		// swap out for other modes
-		leon_mode(left_x, left_y, right_x, right_y);
+		leon_mode_velocity_based(left_x, left_y, right_x, right_y);
 		it++;
 
 		long long dt = pros::micros() - cur_time;
 		cur_time = pros::micros();
 
-		float cur_left_velo = robot::left_motors.get_actual_velocity();
-		float cur_right_velo = robot::right_motors.get_actual_velocity();
-		float left_accel = (cur_left_velo - left_last_velo) / (dt / 1000000.0);
-		float right_accel = (cur_right_velo - right_last_velo) / (dt / 1000000.0);
-		logs.emplace_back(robot::x, robot::y, robot::theta,
-							robot::left_motors.get_voltage(), robot::right_motors.get_voltage(),
-							cur_left_velo, cur_right_velo,
-							left_accel, right_accel,
-							robot::left_motors.get_efficiency(), robot::right_motors.get_efficiency(),
-							(int) dt);
+		// float cur_left_velo = robot::left_motors.get_actual_velocity();
+		// float cur_right_velo = robot::right_motors.get_actual_velocity();
+		// float left_accel = (cur_left_velo - left_last_velo) / (dt / 1000000.0);
+		// float right_accel = (cur_right_velo - right_last_velo) / (dt / 1000000.0);
+		// logs.emplace_back(robot::x, robot::y, robot::theta,
+		// 					robot::left_motors.get_voltage(), robot::right_motors.get_voltage(),
+		// 					cur_left_velo, cur_right_velo,
+		// 					left_accel, right_accel,
+		// 					robot::left_motors.get_efficiency(), robot::right_motors.get_efficiency(),
+		// 					(int) dt);
 
 		pros::delay(20);
 	}

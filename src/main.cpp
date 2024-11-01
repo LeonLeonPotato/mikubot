@@ -44,7 +44,8 @@ void opcontrol(void) {
 	// competition_initialize();
 	// pros::delay(100);
 	// std::cout << "Opcontrol started" << std::endl;
-	strategies::test_strategy::run();
+	// strategies::test_strategy::run();
+	controls::driving::run();
 
 	//controls::lidartest::run();
 }
