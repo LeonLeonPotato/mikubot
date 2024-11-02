@@ -21,54 +21,64 @@ MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::
     return follow_path_cancellable(cancel_ref, path, BaseMovementParams(), pid);
 }
 
-std::pair<float, float> BaseMovement::compute_initial_t_newton(const pathing::BasePath& path, const BaseMovementParams& params) const
+std::pair<float, float> BaseMovement::compute_initial_t_newton(
+    const pathing::BasePath& path, const BaseMovementParams& params,
+    solvers::func_vec_t func, solvers::func_vec_t deriv) const
 {
     Eigen::VectorXf guesses = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.05, path.maxt() - 1.05);
     return solvers::newton_vec(
-        vec_func_, vec_deriv_, 
+        func, deriv, 
         guesses, 
         0, path.maxt(), 
         params.recomputation_iterations, params.recomputation_threshold
     );
 }
 
-std::pair<float, float> BaseMovement::compute_initial_t_secant(const pathing::BasePath& path, const BaseMovementParams& params) const
+std::pair<float, float> BaseMovement::compute_initial_t_secant(
+    const pathing::BasePath& path, const BaseMovementParams& params,
+    solvers::func_vec_t func) const
 {
     Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.05, path.maxt() - 1.1);
     Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.10, path.maxt() - 1.05);
 
     return solvers::secant_vec(
-        vec_func_,
+        func,
         t0, t1, 
         0, path.maxt(), 
         params.recomputation_iterations, params.recomputation_threshold
     );
 }
 
-std::pair<float, float> BaseMovement::compute_updated_t_newton(const pathing::BasePath& path, const BaseMovementParams& params, float t) const
+std::pair<float, float> BaseMovement::compute_updated_t_newton(
+    const pathing::BasePath& path, const BaseMovementParams& params,
+    solvers::func_t func, solvers::func_t deriv, float t) const
 {
     return solvers::newton_single(
-        func_, deriv_, 
+        func, deriv, 
         t, 
         t, path.maxt(), 
         params.update_iterations, params.update_threshold
     );
 }
 
-std::pair<float, float> BaseMovement::compute_updated_t_secant(const pathing::BasePath& path, const BaseMovementParams& params, float t) const
+std::pair<float, float> BaseMovement::compute_updated_t_secant(
+    const pathing::BasePath& path, const BaseMovementParams& params,
+    solvers::func_t func, float t) const
 {
     return solvers::secant_single(
-        func_, 
+        func, 
         t, fmin(path.points.size() - 1, t + 1),
         t, path.maxt(), 
         params.update_iterations, params.update_threshold
     );
 }
 
-float BaseMovement::compute_updated_t_grad_desc(const pathing::BasePath& path, const BaseMovementParams& params, float t) const
+float BaseMovement::compute_updated_t_grad_desc(
+    const pathing::BasePath& path, const BaseMovementParams& params,
+    solvers::func_t deriv, float t) const
 {
     return solvers::gradient_descent_single(
-        deriv_,
+        deriv,
         t, 
         0, path.maxt(), 
         params.grad_desc_step_size, 
@@ -76,31 +86,39 @@ float BaseMovement::compute_updated_t_grad_desc(const pathing::BasePath& path, c
     );
 }
 
-std::pair<float, float> BaseMovement::compute_initial_t(const pathing::BasePath& path, const BaseMovementParams& params, solvers::Solver solver) const
+std::pair<float, float> BaseMovement::compute_initial_t(
+    const pathing::BasePath& path, const BaseMovementParams& params, 
+    std::optional<solvers::func_vec_t> func,
+    std::optional<solvers::func_vec_t> deriv,
+    solvers::Solver solver) const
 {
     if (solver == solvers::Solver::None)
         solver = get_solver(path);
 
     switch (solver) {
         case solvers::Solver::Newton:
-            return compute_initial_t_newton(path, params);
+            return compute_initial_t_newton(path, params, func.value(), deriv.value());
         case solvers::Solver::Secant:
-            return compute_initial_t_secant(path, params);
+            return compute_initial_t_secant(path, params, func.value());
         default:
             return {-1, -1};
     }
 }
 
-std::pair<float, float> BaseMovement::compute_updated_t(const pathing::BasePath& path, const BaseMovementParams& params, float t, solvers::Solver solver) const
+std::pair<float, float> BaseMovement::compute_updated_t(
+    const pathing::BasePath& path, const BaseMovementParams& params, float t,
+    std::optional<solvers::func_t> func,
+    std::optional<solvers::func_t> deriv,
+    solvers::Solver solver) const
 {
     if (solver == solvers::Solver::None)
         solver = get_solver(path);
 
     switch (solver) {
         case solvers::Solver::Newton:
-            return compute_updated_t_newton(path, params, t);
+            return compute_updated_t_newton(path, params, func.value(), deriv.value(), t);
         case solvers::Solver::Secant:
-            return compute_updated_t_secant(path, params, t);
+            return compute_updated_t_secant(path, params, func.value(), t);
         default:
             return {-1, -1};
     }

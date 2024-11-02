@@ -7,6 +7,10 @@
 
 using namespace strategies;
 
+movement::PurePursuit pure_pursuit = movement::PurePursuit(
+    
+);
+
 void test_strategy::run(void) {
     robot::set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
@@ -33,29 +37,4 @@ void test_strategy::run(void) {
 
     printf("%s", fut.get().debug_out().c_str());
     std::cout << qs.debug_out() << std::endl;
-
-    // auto val = fut.get();
-    // printf("QS Pure pursuit Result: %s\n", val.debug_out().c_str());
-
-    // auto gtres = movement::simple::turn_towards(-M_PI / 2);
-    // printf("Go to Result: %s\n", gtres.debug_out().c_str());
-    // robot::brake();
-
-    // auto pathback = pathing::BoomerangPath(
-    //     Eigen::Vector2f(robot::x, robot::y), Eigen::Vector2f(0, 0)
-    // );
-
-    // auto pb_initializer = [](pathing::BaseParams& params) {
-    //     params.start_heading = 0;
-    //     params.start_magnitude = 0;
-    //     params.end_heading = -M_PI;
-    //     params.end_magnitude = 1 / sqrtf(2);
-    // };
-    // auto res = movement::PurePursuit(&pathback, 10, pb_initializer).follow_path();
-    // printf("Pathing back Result: %s\n", res.debug_out().c_str());
-
-    // robot::brake();
-    // robot::set_brake_mode(robot::config::default_brake_mode);
-
-    // printf("Finished test strategy\n");
 }

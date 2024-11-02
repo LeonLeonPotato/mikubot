@@ -67,10 +67,10 @@ class BaseMovement {
             solvers::func_vec_t func, solvers::func_vec_t deriv) const;
         std::pair<float, float> compute_initial_t_secant(
             const pathing::BasePath& path, const BaseMovementParams& params,
-            solvers::func_t func) const;
+            solvers::func_vec_t func) const;
         std::pair<float, float> compute_updated_t_newton(
             const pathing::BasePath& path, const BaseMovementParams& params,
-            solvers::func_vec_t func, solvers::func_vec_t deriv, float t) const;
+            solvers::func_t func, solvers::func_t deriv, float t) const;
         std::pair<float, float> compute_updated_t_secant(
             const pathing::BasePath& path, const BaseMovementParams& params,
             solvers::func_t func, float t) const;
@@ -85,12 +85,16 @@ class BaseMovement {
             solvers::Solver solver = solvers::Solver::None) const;
         std::pair<float, float> compute_updated_t(
             const pathing::BasePath& path, const BaseMovementParams& params, float t,
-            std::optional<solvers::func_vec_t> func = std::nullopt,
-            std::optional<solvers::func_vec_t> deriv = std::nullopt,
+            std::optional<solvers::func_t> func = std::nullopt,
+            std::optional<solvers::func_t> deriv = std::nullopt,
             solvers::Solver solver = solvers::Solver::None
         ) const;
 
         void recompute_path(pathing::BasePath& path, int goal_i) const;
+
+        virtual solvers::Solver get_solver(const pathing::BasePath& path) const {
+            return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
+        }
 
     public:
         solver_init_t solve_params_initializer = init_generic_solve_params;
@@ -129,10 +133,6 @@ class BaseMovement {
             pros::Task task {[this, &ret, args...]() {
                 ret.set_value(follow_path((bool&) ret.get_state()->available, args...));
             }};
-        }
-        
-        virtual solvers::Solver get_solver(const pathing::BasePath& path) const {
-            return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
         }
 
         static void init_generic_pid(controllers::PID& pid);
