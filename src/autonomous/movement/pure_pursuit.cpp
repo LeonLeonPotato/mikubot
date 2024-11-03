@@ -22,7 +22,7 @@ Eigen::VectorXf PurePursuit::vec_deriv(pathing::BasePath& path, Eigen::VectorXf&
 }
 
 TickResult PurePursuit::tick(
-    pathing::BasePath& path, const BaseMovementParams& params, controllers::PID& pid, 
+    pathing::BasePath& path, const MovementParams& params, controllers::PID& pid, 
     const solvers::FunctionGroup& funcs, float t) const 
 {
     TickResult result;
@@ -39,12 +39,19 @@ TickResult PurePursuit::tick(
         result.error = funcs.funcs[0](result.t); // should give raw error
     }
 
-    if ((fabs(result.error) > params.recomputation_threshold || result.t < 0 || params.always_recompute) && !end_of_path) {
-        // Error is too high, or intersection not found, or always recompute is enabled
-        result.recomputed = true;
+    const bool pathing_error = fabs(result.error) > params.recomputation_threshold || result.t < 0;
 
-        int goal = std::clamp((int) ceil(t), 1, (int) roundf(path.maxt())); // prevent floating point error
-        recompute_path(path, goal);
+    if ((pathing_error || params.force_recomputation != RecomputationLevel::NONE) && !end_of_path) {
+        // Error is too high, or intersection not found, or some mode of always recompute is enabled
+        // We must be recomputing the time
+        result.recomputation_level = RecomputationLevel::TIME;
+
+        if (pathing_error || params.force_recomputation == RecomputationLevel::PATH_AND_TIME) {
+            // Error is too high or intersection still not found, or force path and time recomputation is enabled
+            result.recomputation_level = RecomputationLevel::PATH_AND_TIME;
+            int goal = std::clamp((int) ceil(t), 1, (int) roundf(path.maxt())); // prevent floating point error
+            recompute_path(path, goal);
+        }
 
         std::tie(result.t, result.error) = compute_initial_t(path, params, funcs);
 
@@ -75,7 +82,7 @@ TickResult PurePursuit::tick(
 MovementResult PurePursuit::follow_path_cancellable(
     bool& cancel_ref, 
     pathing::BasePath& path,
-    const BaseMovementParams& params,
+    const MovementParams& params,
     controllers::PID& pid) const 
 {
     MovementResult result;
@@ -119,7 +126,10 @@ MovementResult PurePursuit::follow_path_cancellable(
 
         result.t = tick_result.t;
         result.error = tick_result.error;
-        if (tick_result.recomputed) result.num_recomputations++;
+        if (tick_result.recomputation_level != RecomputationLevel::NONE) {
+            result.num_time_recomputations++;
+            if (tick_result.recomputation_level == RecomputationLevel::PATH_AND_TIME) result.num_path_recomputations++;
+        }
 
         pros::delay(params.delay);
     }

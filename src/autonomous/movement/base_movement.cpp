@@ -11,7 +11,7 @@ MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::
     return follow_path_cancellable(cancel_ref, path, default_params, pid);
 }
 
-MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, const BaseMovementParams& params) const {
+MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, const MovementParams& params) const {
     controllers::PID pid;
     BaseMovement::init_generic_pid(pid);
     return follow_path_cancellable(cancel_ref, path, params, pid);
@@ -22,7 +22,7 @@ MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::
 }
 
 std::pair<float, float> BaseMovement::compute_initial_t(
-    const pathing::BasePath& path, const BaseMovementParams& params,
+    const pathing::BasePath& path, const MovementParams& params,
     const solvers::FunctionGroup& funcs, 
     solvers::Solver solver) const 
 {
@@ -44,7 +44,7 @@ std::pair<float, float> BaseMovement::compute_initial_t(
 }
 
 std::pair<float, float> BaseMovement::compute_updated_t(
-    pathing::BasePath& path, const BaseMovementParams& params,
+    pathing::BasePath& path, const MovementParams& params,
     const solvers::FunctionGroup& funcs, float t, 
     solvers::Solver solver) const 
 {

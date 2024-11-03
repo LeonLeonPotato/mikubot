@@ -16,7 +16,7 @@ class PurePursuit : public BaseMovement {
         Eigen::VectorXf vec_deriv(pathing::BasePath& path, Eigen::VectorXf& t) const;
 
     TickResult tick(
-        pathing::BasePath& path, const BaseMovementParams& params, controllers::PID& pid, 
+        pathing::BasePath& path, const MovementParams& params, controllers::PID& pid, 
         const solvers::FunctionGroup& funcs, float t
     ) const override;
 
@@ -32,7 +32,7 @@ class PurePursuit : public BaseMovement {
         MovementResult follow_path_cancellable(
             bool& cancel_ref, 
             pathing::BasePath& path,
-            const BaseMovementParams& params,
+            const MovementParams& params,
             controllers::PID& pid
         ) const override;
 };

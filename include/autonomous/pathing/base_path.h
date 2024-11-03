@@ -21,6 +21,8 @@ class BasePath {
 
     public:
         std::vector<Eigen::Vector2f> points;
+
+        void set_relative(const Eigen::Vector2f& p);
         
         virtual void solve_coeffs(const BaseParams& params) {}
         virtual bool need_solve() const = 0;

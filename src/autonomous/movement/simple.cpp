@@ -18,7 +18,7 @@ TickResult simple::turn_towards_tick(float angle, controllers::PID& pid,
     float diff = robot::angular_diff(angle);
     int ctrl = (int) pid.get(diff);
     robot::volt(ctrl, -ctrl);
-    return { ExitCode::SUCCESS, 0, diff, false };
+    return { ExitCode::SUCCESS, 0, diff, RecomputationLevel::NONE };
 }
 
 MovementResult simple::turn_towards_cancellable(float angle, controllers::PID& pid,
@@ -103,7 +103,7 @@ TickResult simple::go_to_tick(const Eigen::Vector2f& point, controllers::PID& pi
     float ctrl = pid.get(dtheta);
     robot::volt(dist + ctrl, dist - ctrl);
 
-    return { ExitCode::SUCCESS, 0, dist, false };
+    return { ExitCode::SUCCESS, 0, dist, RecomputationLevel::NONE };
 }
 
 MovementResult simple::go_to_cancellable(const Eigen::Vector2f& point, controllers::PID& pid,

@@ -2,6 +2,12 @@
 
 using namespace pathing;
 
+void BasePath::set_relative(const Eigen::Vector2f& p) {
+    for (auto& point : points) {
+        point += p;
+    }
+}
+
 std::pair<float, float> BaseParams::start_cartesian() const {
     return std::make_pair(
         start_magnitude * sinf(start_heading), 

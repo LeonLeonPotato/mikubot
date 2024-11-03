@@ -15,30 +15,38 @@ enum class ExitCode {
     CANCELLED = 3
 };
 
+enum class RecomputationLevel {
+    NONE = 0,
+    TIME = 1,
+    PATH_AND_TIME = 2
+};
+
 struct TickResult {
     ExitCode code = ExitCode::TBD;
 
     float t = 0;
     float error = 0;
-    bool recomputed = false;
+    RecomputationLevel recomputation_level = RecomputationLevel::NONE;
 };
 
 struct MovementResult {
     ExitCode code = ExitCode::TBD;
 
     int time_taken_ms = 0;
-    int num_recomputations = 0;
+    int num_path_recomputations = 0;
+    int num_time_recomputations = 0;
     float t = 0;
     float error = 0;
 
     std::string debug_out(void) const {
         char buffer[256];
-        sprintf(buffer, "MovementResult {Code: %d, Time: %d, Recomputations: %d, T: %f, Error: %f}", code, time_taken_ms, num_recomputations, t, error);
+        sprintf(buffer, "MovementResult {Code: %d, Time taken: %d, Path recomputations: %d, Time recomputations: %d, t parameter: %f, Error: %f}", 
+            code, time_taken_ms, num_path_recomputations, num_time_recomputations, t, error);
         return std::string(buffer);
     }
 };
 
-struct BaseMovementParams {
+struct MovementParams {
     bool reversed = false;
 
     float final_threshold = 5.0;
@@ -49,7 +57,7 @@ struct BaseMovementParams {
     float update_threshold = 1e-1;
     float grad_desc_step_size = 0.1;
 
-    bool always_recompute = false;
+    RecomputationLevel force_recomputation = RecomputationLevel::NONE;
     int recomputation_guesses = 32;
     float recomputation_threshold = 1.5;
     int recomputation_iterations = 12;
@@ -63,12 +71,12 @@ class BaseMovement {
         using path_solver_t = std::function<void(pathing::BasePath& path)>;
 
         std::pair<float, float> compute_initial_t(
-            const pathing::BasePath& path, const BaseMovementParams& params,
+            const pathing::BasePath& path, const MovementParams& params,
             const solvers::FunctionGroup& funcs, 
             solvers::Solver solver = solvers::Solver::None) const;
 
         std::pair<float, float> compute_updated_t(
-            pathing::BasePath& path, const BaseMovementParams& params,
+            pathing::BasePath& path, const MovementParams& params,
             const solvers::FunctionGroup& funcs, float t, 
             solvers::Solver solver = solvers::Solver::None) const;
 
@@ -79,14 +87,14 @@ class BaseMovement {
         }
 
         virtual TickResult tick(
-            pathing::BasePath& path, const BaseMovementParams& params, controllers::PID& pid, 
+            pathing::BasePath& path, const MovementParams& params, controllers::PID& pid, 
             const solvers::FunctionGroup& funcs, float t
         ) const = 0;
 
     public:
         path_solver_t path_solver;
         solvers::Solver solver_override;
-        BaseMovementParams default_params;
+        MovementParams default_params;
 
         BaseMovement(
             std::optional<path_solver_t> path_solver = solve_path_default, 
@@ -94,12 +102,12 @@ class BaseMovement {
         ) : path_solver(path_solver.value()), solver_override(solver_override.value()) { }
 
         MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path) const;
-        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, const BaseMovementParams& params) const;
+        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, const MovementParams& params) const;
         MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, controllers::PID& pid) const;
         virtual MovementResult follow_path_cancellable(
             bool& cancel_ref, 
             pathing::BasePath& path,
-            const BaseMovementParams& params,
+            const MovementParams& params,
             controllers::PID& pid
         ) const = 0;
 

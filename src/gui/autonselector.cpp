@@ -176,7 +176,6 @@ void init_gif(void) {
     lv_gif_set_src(miku_gif, "S/kaito-miku.gif");
 }
 
-
 void init(void) {
     create_logo();
     team_selector();
