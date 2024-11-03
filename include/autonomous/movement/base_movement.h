@@ -51,44 +51,26 @@ struct BaseMovementParams {
 
     bool always_recompute = false;
     int recomputation_guesses = 32;
-    float recomputation_error = 1.5;
+    float recomputation_threshold = 1.5;
     int recomputation_iterations = 12;
-    float recomputation_threshold = 1e-1;
 
     int timeout = 5000;
+    int delay = 20;
 };
 
 class BaseMovement {
     protected:
-        using solver_init_t = std::function<void(pathing::BaseParams&)>;
+        using path_solver_t = std::function<void(pathing::BasePath& path)>;
 
-        std::pair<float, float> compute_initial_t_newton(
-            const pathing::BasePath& path, const BaseMovementParams& params,
-            solvers::func_vec_t func, solvers::func_vec_t deriv) const;
-        std::pair<float, float> compute_initial_t_secant(
-            const pathing::BasePath& path, const BaseMovementParams& params,
-            solvers::func_vec_t func) const;
-        std::pair<float, float> compute_updated_t_newton(
-            const pathing::BasePath& path, const BaseMovementParams& params,
-            solvers::func_t func, solvers::func_t deriv, float t) const;
-        std::pair<float, float> compute_updated_t_secant(
-            const pathing::BasePath& path, const BaseMovementParams& params,
-            solvers::func_t func, float t) const;
-        float compute_updated_t_grad_desc(
-            const pathing::BasePath& path, const BaseMovementParams& params,
-            solvers::func_t deriv, float t) const;
-        
         std::pair<float, float> compute_initial_t(
-            const pathing::BasePath& path, const BaseMovementParams& params, 
-            std::optional<solvers::func_vec_t> func = std::nullopt,
-            std::optional<solvers::func_vec_t> deriv = std::nullopt,
+            const pathing::BasePath& path, const BaseMovementParams& params,
+            const solvers::FunctionGroup& funcs, 
             solvers::Solver solver = solvers::Solver::None) const;
+
         std::pair<float, float> compute_updated_t(
-            const pathing::BasePath& path, const BaseMovementParams& params, float t,
-            std::optional<solvers::func_t> func = std::nullopt,
-            std::optional<solvers::func_t> deriv = std::nullopt,
-            solvers::Solver solver = solvers::Solver::None
-        ) const;
+            pathing::BasePath& path, const BaseMovementParams& params,
+            const solvers::FunctionGroup& funcs, float t, 
+            solvers::Solver solver = solvers::Solver::None) const;
 
         void recompute_path(pathing::BasePath& path, int goal_i) const;
 
@@ -96,46 +78,47 @@ class BaseMovement {
             return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
         }
 
+        virtual TickResult tick(
+            pathing::BasePath& path, const BaseMovementParams& params, controllers::PID& pid, 
+            const solvers::FunctionGroup& funcs, float t
+        ) const = 0;
+
     public:
-        solver_init_t solve_params_initializer = init_generic_solve_params;
-        solvers::Solver solver_override = solvers::Solver::None;
+        path_solver_t path_solver;
+        solvers::Solver solver_override;
+        BaseMovementParams default_params;
 
         BaseMovement(
-            std::optional<solver_init_t> initializer = std::nullopt, 
-            std::optional<solvers::Solver> solver_override = std::nullopt
-        )
-        {
-            if (initializer.has_value()) this->solve_params_initializer = initializer.value();
-            if (solver_override.has_value()) this->solver_override = solver_override.value();
-        }
+            std::optional<path_solver_t> path_solver = solve_path_default, 
+            std::optional<solvers::Solver> solver_override = solvers::Solver::None
+        ) : path_solver(path_solver.value()), solver_override(solver_override.value()) { }
 
-        virtual TickResult tick(pathing::BasePath& path, float t) = 0;
-
-        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path);
-        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, const BaseMovementParams& params);
-        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, controllers::PID& pid);
+        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path) const;
+        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, const BaseMovementParams& params) const;
+        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, controllers::PID& pid) const;
         virtual MovementResult follow_path_cancellable(
             bool& cancel_ref, 
             pathing::BasePath& path,
             const BaseMovementParams& params,
             controllers::PID& pid
-        ) = 0;
+        ) const = 0;
 
         template <typename... Args>
-        MovementResult follow_path(Args&&... args) {
+        MovementResult follow_path(Args&&... args) const {
             bool cancel = false;
-            return follow_path_cancellable((bool&) cancel, std::forward<Args>(args));
+            return follow_path_cancellable((bool&) cancel, std::forward<Args>(args)...);
         }
 
         template <typename... Args>
-        Future<MovementResult> follow_path_async(Args&&... args) {
+        Future<MovementResult> follow_path_async(Args&&... args) const {
             Future<MovementResult> ret;
-            pros::Task task {[this, &ret, args...]() {
-                ret.set_value(follow_path((bool&) ret.get_state()->available, args...));
+            pros::Task task {[this, &ret, &args...]() {
+                ret.set_value(std::move(follow_path_cancellable((bool&) ret.get_state()->available, std::forward<Args>(args)...)));
             }};
+            return ret;
         }
 
         static void init_generic_pid(controllers::PID& pid);
-        static void init_generic_solve_params(pathing::BaseParams& solve_params);
+        static void solve_path_default(pathing::BasePath& path);
 };
 } // namespace movement

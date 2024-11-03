@@ -26,6 +26,13 @@ std::pair<float, float> solvers::secant_single(
     return {t1, ft1};
 }
 
+std::pair<float, float> solvers::secant_single(
+    const FunctionGroup& funcs,
+    float t0, float t1, float start_bound, float end_bound, int iterations, float threshold
+) {
+    return secant_single(funcs.funcs[0], t0, t1, start_bound, end_bound, iterations, threshold);
+}
+
 std::pair<float, float> solvers::secant_vec(
     func_vec_t func,
     Eigen::VectorXf t0, Eigen::VectorXf t1, float start_bound, float end_bound, int iterations, float threshold
@@ -54,3 +61,12 @@ std::pair<float, float> solvers::secant_vec(
 
     return {max_guess, max_key};
 }
+
+std::pair<float, float> solvers::secant_vec(
+    const FunctionGroup& funcs,
+    const Eigen::VectorXf& t0, const Eigen::VectorXf& t1, 
+    float start_bound, float end_bound, int iterations, float threshold
+) {
+    return secant_vec(funcs.vec_funcs[0], t0, t1, start_bound, end_bound, iterations, threshold);
+}
+

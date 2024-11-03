@@ -7,34 +7,33 @@
 
 using namespace strategies;
 
-movement::PurePursuit pure_pursuit = movement::PurePursuit(
-    
-);
-
 void test_strategy::run(void) {
     robot::set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
-    auto qs = pathing::QuinticSpline();
-    qs.points.emplace_back(robot::x, robot::y);
-    qs.points.emplace_back(robot::x - 53, robot::y + 136);
-    qs.points.emplace_back(robot::x - 15, robot::y + 269);
-    qs.points.emplace_back(robot::x + 100.6, robot::y + 308.5);
-    qs.points.emplace_back(robot::x + 191, robot::y + 263);
-    qs.points.emplace_back(robot::x + 195, robot::y + 106);
-    qs.points.emplace_back(robot::x + 96, robot::y + 35.5);
+    movement::PurePursuit pure_pursuit(100);
 
-    auto pp = movement::PurePursuit(qs, 90);
-    pp.params.always_recompute = true;
-    // printf("%f", ((movement::PurePursuitParams&) pp.params).radius);
-    auto fut = pp.follow_path_async();
+    auto path = pathing::QuinticSpline();
+    path.points.emplace_back(robot::x, robot::y);
+    path.points.emplace_back(robot::x - 53, robot::y + 136);
+    path.points.emplace_back(robot::x - 15, robot::y + 269);
+    path.points.emplace_back(robot::x + 100.6, robot::y + 308.5);
+    path.points.emplace_back(robot::x + 191, robot::y + 263);
+    path.points.emplace_back(robot::x + 195, robot::y + 106);
+    path.points.emplace_back(robot::x + 96, robot::y + 35.5);
 
-    // std::cout << pure_pursuit.params.timeout << std::endl;
+    auto fut = pure_pursuit.follow_path_async(path, movement::BaseMovementParams { .timeout = 100 });
 
     int start = pros::millis();
     while (!fut.available()) {
         pros::delay(20);
     }
 
-    printf("%s", fut.get().debug_out().c_str());
-    std::cout << qs.debug_out() << std::endl;
+    auto result = std::move(fut.get());
+    printf("Result: %d\n", result.code);
+    printf("Time: %d\n", pros::millis() - start);
+    printf("Recomputations: %d\n", result.num_recomputations);
+    printf("Error: %f\n", result.error);
+    printf("T: %f\n", result.t);
+
+    robot::set_brake_mode(robot::config::default_brake_mode);
 }

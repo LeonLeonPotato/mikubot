@@ -9,27 +9,32 @@
 namespace movement {
 
 class PurePursuit : public BaseMovement {
-    protected:
-        float func(float t) const override;
-        float deriv(float t) const override;
-        Eigen::VectorXf vec_func(Eigen::VectorXf& t) const override;
-        Eigen::VectorXf vec_deriv(Eigen::VectorXf& t) const override;
+    private:
+        float func(pathing::BasePath& path, float t) const;
+        float deriv(pathing::BasePath& path, float t) const;
+        Eigen::VectorXf vec_func(pathing::BasePath& path, Eigen::VectorXf& t) const;
+        Eigen::VectorXf vec_deriv(pathing::BasePath& path, Eigen::VectorXf& t) const;
+
+    TickResult tick(
+        pathing::BasePath& path, const BaseMovementParams& params, controllers::PID& pid, 
+        const solvers::FunctionGroup& funcs, float t
+    ) const override;
 
     public:
         float radius;
 
         PurePursuit(
-            pathing::BasePath& path, 
             float radius,
-            std::optional<BaseMovementParams> params = std::nullopt, 
-            std::optional<solver_init_t> initializer = std::nullopt, 
-            std::optional<controllers::PID> pid = std::nullopt,
-            std::optional<solvers::Solver> solver_override = std::nullopt
-        ) : BaseMovement(path, params, initializer, pid, solver_override), radius(radius)
-        { }
+            std::optional<path_solver_t> initializer = solve_path_default, 
+            std::optional<solvers::Solver> solver_override = solvers::Solver::None
+        ) : BaseMovement(initializer, solver_override), radius(radius) { }
 
-        TickResult tick(float t) override;
-        MovementResult follow_path_cancellable(bool& cancel_ref) override;
+        MovementResult follow_path_cancellable(
+            bool& cancel_ref, 
+            pathing::BasePath& path,
+            const BaseMovementParams& params,
+            controllers::PID& pid
+        ) const override;
 };
 
 } // namespace movement

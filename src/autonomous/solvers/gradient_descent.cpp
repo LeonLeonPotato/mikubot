@@ -2,10 +2,9 @@
 
 using namespace solvers;
 
-float solvers::gradient_descent_single(
-    func_t deriv,
-    float guess, float start_bound, float end_bound, 
-    float step_size, int iterations
+std::pair<float, float> solvers::gradient_descent_single(
+    func_t func, func_t deriv, float guess, 
+    float start_bound, float end_bound, float step_size, int iterations
 ) {
     while (iterations--) {
         float den = deriv(guess);
@@ -14,13 +13,19 @@ float solvers::gradient_descent_single(
         guess = std::clamp(new_guess, start_bound, end_bound);
     }
 
-    return guess;
+    return { guess, func(guess) };
+}
+
+std::pair<float, float> solvers::gradient_descent_single(
+    const FunctionGroup& funcs, float guess, 
+    float start_bound, float end_bound, float step_size, int iterations
+) {
+    return solvers::gradient_descent_single(funcs.funcs[0], funcs.funcs[1], guess, start_bound, end_bound, step_size, iterations);
 }
 
 std::pair<float, float> solvers::gradient_descent_vec(
-    func_vec_t func, func_vec_t deriv,
-    Eigen::VectorXf guess, float start_bound, float end_bound, 
-    float step_size, int iterations
+    func_vec_t func, func_vec_t deriv, Eigen::VectorXf guess, 
+    float start_bound, float end_bound, float step_size, int iterations
 ) {
     while (iterations--) {
         Eigen::VectorXf den = deriv(guess).array() * step_size;
@@ -42,4 +47,11 @@ std::pair<float, float> solvers::gradient_descent_vec(
     }
 
     return {max_guess, max_key};
+}
+
+std::pair<float, float> solvers::gradient_descent_vec(
+    const FunctionGroup& funcs, const Eigen::VectorXf& guess, 
+    float start_bound, float end_bound, float step_size, int iterations
+) {
+    return solvers::gradient_descent_vec(funcs.vec_funcs[0], funcs.vec_funcs[1], guess, start_bound, end_bound, step_size, iterations);
 }

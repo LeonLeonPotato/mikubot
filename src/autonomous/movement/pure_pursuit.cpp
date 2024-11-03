@@ -3,67 +3,100 @@
 
 using namespace movement;
 
-float PurePursuit::func(float t) const {
+float PurePursuit::func(pathing::BasePath& path, float t) const {
     return (robot::pos() - path.compute(t)).norm() - radius;
 }
 
-float PurePursuit::deriv(float t) const {
+float PurePursuit::deriv(pathing::BasePath& path, float t) const {
     Eigen::Vector2f diff = robot::pos() - path.compute(t);
     return diff.dot(path.compute(t, 1)) / diff.norm();
 }
 
-Eigen::VectorXf PurePursuit::vec_func(Eigen::VectorXf& t) const {
+Eigen::VectorXf PurePursuit::vec_func(pathing::BasePath& path, Eigen::VectorXf& t) const {
     return (path.compute(t).colwise() - robot::pos()).colwise().norm().array() - radius;
 }
 
-Eigen::VectorXf PurePursuit::vec_deriv(Eigen::VectorXf& t) const {
+Eigen::VectorXf PurePursuit::vec_deriv(pathing::BasePath& path, Eigen::VectorXf& t) const{
     const Eigen::Matrix2Xf rel = path.compute(t).colwise() - robot::pos();
     return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 }
 
-TickResult PurePursuit::tick(float t) {
+TickResult PurePursuit::tick(
+    pathing::BasePath& path, const BaseMovementParams& params, controllers::PID& pid, 
+    const solvers::FunctionGroup& funcs, float t) const 
+{
     TickResult result;
 
     Eigen::Vector2f point = robot::pos();
     Eigen::Vector2f& dest = path.points.back();
 
-    std::tie(result.t, result.error) = compute_updated_t(get_solver(), t);
-    bool end_of_path = fabs(result.t - maxt()) < 0.0001;
+    bool end_of_path = fabs(t - path.maxt()) < 0.0001; // is old t the end of the path?
+    if (!end_of_path) { // lets update t and store it in result
+        std::tie(result.t, result.error) = compute_updated_t(path, params, funcs, t);
+        end_of_path = fabs(result.t - path.maxt()) < 0.0001;
+    } else { // update result to reflect end of path
+        result.t = path.maxt();
+        result.error = funcs.funcs[0](result.t); // should give raw error
+    }
 
-    if ((fabs(result.error) > params.recomputation_error || result.t < 0 || params.always_recompute) && !end_of_path) {
+    if ((fabs(result.error) > params.recomputation_threshold || result.t < 0 || params.always_recompute) && !end_of_path) {
+        // Error is too high, or intersection not found, or always recompute is enabled
         result.recomputed = true;
 
-        int goal = std::clamp((int) ceil(t), 1, (int) roundf(maxt())); // prevent floating point error
-        recompute_path(goal);
-        std::tie(result.t, result.error) = compute_initial_t(get_solver());
+        int goal = std::clamp((int) ceil(t), 1, (int) roundf(path.maxt())); // prevent floating point error
+        recompute_path(path, goal);
 
-        if (fabs(result.error) > params.recomputation_error || result.t < 0) {
+        std::tie(result.t, result.error) = compute_initial_t(path, params, funcs);
+
+        if (fabs(result.error) > params.recomputation_threshold || result.t < 0) {
+            // Error is still too high or intersection still not found
+            // We have to abort since compute_initial_t is deterministic, so we can't just call it again
             result.code = ExitCode::RECOMPUTATION_ERROR;
             return result;
         }
     }
 
+    // Anyways, we have a valid new t now (or we have aborted), so lets do speed calculations
     Eigen::Vector2f res = path.compute(result.t);
     float speed = fmin(robot::distance(dest) * params.distance_coeff, params.max_base_speed);
-    float ctrl = pid.get(robot::angular_diff(res, params.reversed));
+    float turn = pid.get(robot::angular_diff(res, params.reversed));
     if (params.reversed) speed = -speed;
 
+    // Move the robot
     robot::volt(
-        (int) (speed + ctrl),
-        (int) (speed - ctrl)
+        (int) (speed + turn),
+        (int) (speed - turn)
     );
 
     result.code = ExitCode::SUCCESS;
     return result;
 }
 
-MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
+MovementResult PurePursuit::follow_path_cancellable(
+    bool& cancel_ref, 
+    pathing::BasePath& path,
+    const BaseMovementParams& params,
+    controllers::PID& pid) const 
+{
     MovementResult result;
 
     int start_t = pros::millis();
 
-    recompute_path(1);
-    std::tie(result.t, result.error) = compute_initial_t(get_solver());
+    // Create function group with binds to member functions
+    solvers::FunctionGroup funcs = {
+        {
+            std::bind(&PurePursuit::func, this, std::ref(path), std::placeholders::_1),
+            std::bind(&PurePursuit::deriv, this, std::ref(path), std::placeholders::_1)
+        },
+        {
+            std::bind(&PurePursuit::vec_func, this, std::ref(path), std::placeholders::_1),
+            std::bind(&PurePursuit::vec_deriv, this, std::ref(path), std::placeholders::_1)
+        }
+    };
+
+    // Compute our initial path with the goal being the first point in the path (discounting robot)
+    recompute_path(path, 1);
+    std::tie(result.t, result.error) = compute_initial_t(path, params, funcs);
 
     while (robot::distance(path.points.back()) > params.final_threshold) {
         if (cancel_ref) {
@@ -76,8 +109,8 @@ MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
             break;
         }
 
-        if (robot::distance(path.points.back()) <= radius) result.t = maxt();
-        TickResult tick_result = tick(result.t);
+        if (robot::distance(path.points.back()) <= radius) result.t = path.maxt();
+        TickResult tick_result = tick(path, params, pid, funcs, result.t);
 
         if (tick_result.code != ExitCode::SUCCESS) {
             result.code = tick_result.code;
@@ -88,7 +121,7 @@ MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
         result.error = tick_result.error;
         if (tick_result.recomputed) result.num_recomputations++;
 
-        pros::delay(20);
+        pros::delay(params.delay);
     }
 
     if (result.code == ExitCode::TBD) result.code = ExitCode::SUCCESS;

@@ -24,30 +24,34 @@ namespace config {
 const pros::motor_brake_mode_e_t default_brake_mode = pros::E_MOTOR_BRAKE_COAST;
 } // namespace config
 
-pros::Controller master(pros::E_CONTROLLER_MASTER);
+#ifndef MIKU_TESTENV
+    pros::Controller master(pros::E_CONTROLLER_MASTER);
 
-pros::Imu inertial(9);
-pros::Rotation side_encoder(-12);
-pros::Rotation back_encoder(3);
+    pros::Imu inertial(9);
+    pros::Rotation side_encoder(-12);
+    pros::Rotation back_encoder(3);
 
-pros::MotorGroup left_motors({-6, -7, -16}, pros::MotorGearset::blue);
-pros::MotorGroup right_motors({11, 17, 15}, pros::MotorGearset::blue);
+    pros::MotorGroup left_motors({-6, -7, -16}, pros::MotorGearset::blue);
+    pros::MotorGroup right_motors({11, 17, 15}, pros::MotorGearset::blue);
 
-// pros::MotorGroup intake({2, 9});
-// pros::Motor conveyor(10);
+    // pros::MotorGroup intake({2, 9});
+    // pros::Motor conveyor(10);
 
-pros::adi::Pneumatics excluder('B', false);
-pros::Optical classifier(13);
+    pros::adi::Pneumatics excluder('B', false);
+    pros::Optical classifier(13);
 
-pros::Vision vision(1);
+    pros::Vision vision(1);
+#endif
 
 void init(void) {
-    inertial.reset(true);
-    left_motors.set_brake_mode_all(config::default_brake_mode);
-    right_motors.set_brake_mode_all(config::default_brake_mode);
+    #ifndef MIKU_TESTENV
+        inertial.reset(true);
+        left_motors.set_brake_mode_all(config::default_brake_mode);
+        right_motors.set_brake_mode_all(config::default_brake_mode);
 
-    vision.set_signature(signatures::blue_ring_id, &signatures::blue_ring);
-    vision.set_signature(signatures::red_ring_id, &signatures::red_ring);
-    vision.set_signature(signatures::goal_id, &signatures::goal);
+        vision.set_signature(signatures::blue_ring_id, &signatures::blue_ring);
+        vision.set_signature(signatures::red_ring_id, &signatures::red_ring);
+        vision.set_signature(signatures::goal_id, &signatures::goal);
+    #endif
 }
 } // namespace robot

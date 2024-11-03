@@ -10,9 +10,15 @@ pros::task_t task;
 
 void run(void* args) {
     long long iterations = 0;
-    float ls = rad(robot::side_encoder.get_position() / 100);
-    float lb = rad(robot::back_encoder.get_position() / 100);
-    float ltheta = rad(robot::inertial.get_rotation());
+    #ifndef MIKU_TESTENV
+        float ls = rad(robot::side_encoder.get_position() / 100);
+        float lb = rad(robot::back_encoder.get_position() / 100);
+        float ltheta = rad(robot::inertial.get_rotation());
+    #else
+        float ls = 0;
+        float lb = 0;
+        float ltheta = 0;
+    #endif
     auto ltime = pros::micros();
     float lx = 0, ly = 0;
     float lvx = 0, lvy = 0;
@@ -21,7 +27,11 @@ void run(void* args) {
         auto dt = (pros::micros() - ltime) / 1000000.0f;
         ltime = pros::micros();
 
-        float ctheta = rad(robot::inertial.get_rotation());
+        #ifndef MIKU_TESTENV
+            float ctheta = rad(robot::inertial.get_rotation());
+        #else
+            float ctheta = 0;
+        #endif
         float dtheta = ctheta - ltheta;
         robot::theta += dtheta;
         ltheta = ctheta;
@@ -30,8 +40,13 @@ void run(void* args) {
         robot::angular_acceleration = (dtheta / dt - robot::angular_velocity) / dt;
         robot::angular_velocity = dtheta / dt;
 
-        float cs = rad(robot::side_encoder.get_position() / 100.0);
-        float cb = rad(robot::back_encoder.get_position() / 100.0);
+        #ifndef MIKU_TESTENV
+            float cs = rad(robot::side_encoder.get_position() / 100.0);
+            float cb = rad(robot::back_encoder.get_position() / 100.0);
+        #else
+            float cs = 0;
+            float cb = 0;
+        #endif
         float ds = cs - ls;
         float db = cb - lb;
         ls = cs;

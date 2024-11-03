@@ -9,9 +9,19 @@ std::pair<float, float> newton_single(
     float guess, float start_bound, float end_bound, int iterations = 5, float threshold=1e-1
 );
 
+std::pair<float, float> newton_single(
+    const FunctionGroup& funcs,
+    float guess, float start_bound, float end_bound, int iterations = 5, float threshold=1e-1
+);
+
 std::pair<float, float> newton_vec(
     func_vec_t func, func_vec_t deriv,
     Eigen::VectorXf guess, float start_bound, float end_bound, int iterations = 5, float threshold=1e-1
+);
+
+std::pair<float, float> newton_vec(
+    const FunctionGroup& funcs,
+    const Eigen::VectorXf& guess, float start_bound, float end_bound, int iterations = 5, float threshold=1e-1
 );
 
 } // namespace solvers

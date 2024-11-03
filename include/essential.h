@@ -63,70 +63,86 @@ namespace config {
     extern const pros::motor_brake_mode_e_t default_brake_mode;
 } // namespace config
 
-extern pros::Controller master;
-extern pros::IMU inertial;
-extern pros::Rotation side_encoder;
-extern pros::Rotation back_encoder;
+#ifndef MIKU_TESTENV
+    extern pros::Controller master;
+    extern pros::IMU inertial;
+    extern pros::Rotation side_encoder;
+    extern pros::Rotation back_encoder;
 
-extern pros::MotorGroup left_motors;
-extern pros::MotorGroup right_motors;
+    extern pros::MotorGroup left_motors;
+    extern pros::MotorGroup right_motors;
 
-extern pros::MotorGroup intake;
-extern pros::Motor conveyor;
+    extern pros::MotorGroup intake;
+    extern pros::Motor conveyor;
 
-extern pros::adi::Pneumatics excluder;
-extern pros::Optical classifier;
+    extern pros::adi::Pneumatics excluder;
+    extern pros::Optical classifier;
 
-extern pros::Vision vision;
+    extern pros::Vision vision;
+#endif
 
 inline int max_speed(void) {
-    switch (left_motors.get_gearing()) {
-        case pros::MotorGears::blue:
-            return 600;
-        case pros::MotorGears::green:
-            return 200;
-        case pros::MotorGears::red:
-            return 100;
-        default:
-            return 200;
-    }
+    #ifndef MIKU_TESTENV
+        switch (left_motors.get_gearing()) {
+            case pros::MotorGears::blue:
+                return 600;
+            case pros::MotorGears::green:
+                return 200;
+            case pros::MotorGears::red:
+                return 100;
+            default:
+                return 200;
+        }
+    #else
+        return 200;
+    #endif
 }
 
 inline void volt(int left, int right) {
-    left = fminf(fmaxf(left, -127), 127);
-    right = fminf(fmaxf(right, -127), 127);
-    braking = false;
-    left_motors.move(left);
-    right_motors.move(right);
+    #ifndef MIKU_TESTENV
+        left = fminf(fmaxf(left, -127), 127);
+        right = fminf(fmaxf(right, -127), 127);
+        braking = false;
+        left_motors.move(left);
+        right_motors.move(right);
+    #endif
 }
 
 inline void velo(int left, int right) {
-    int max = max_speed();
-    int lv = (int) (std::clamp(left, -127, 127) / 127.0f * max);
-    int rv = (int) (std::clamp(right, -127, 127) / 127.0f * max);
-    braking = false;
-    left_motors.move_velocity(lv);
-    right_motors.move_velocity(rv);
+    #ifndef MIKU_TESTENV
+        int max = max_speed();
+        int lv = (int) (std::clamp(left, -127, 127) / 127.0f * max);
+        int rv = (int) (std::clamp(right, -127, 127) / 127.0f * max);
+        braking = false;
+        left_motors.move_velocity(lv);
+        right_motors.move_velocity(rv);
+    #endif
 }
 
 inline void velo(float left, float right) {
-    int max = max_speed();
-    int lv = (int) (std::clamp(left, -1.0f, 1.0f) * max);
-    int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
-    braking = false;
-    left_motors.move_velocity(left);
-    right_motors.move_velocity(right);
+    #ifndef MIKU_TESTENV
+        int max = max_speed();
+        int lv = (int) (std::clamp(left, -1.0f, 1.0f) * max);
+        int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
+        braking = false;
+        left_motors.move_velocity(left);
+        right_motors.move_velocity(right);
+    #endif
 }
 
 inline void brake(void) {
-    braking = true;
-    left_motors.brake();
-    right_motors.brake();
+    #ifndef MIKU_TESTENV
+        braking = true;
+        left_motors.brake();
+        right_motors.brake();
+    #endif
 }
 
 inline void set_brake_mode(pros::motor_brake_mode_e_t mode) {
-    left_motors.set_brake_mode_all(mode);
-    right_motors.set_brake_mode_all(mode);
+    #ifndef MIKU_TESTENV
+        left_motors.set_brake_mode_all(mode);
+        right_motors.set_brake_mode_all(mode);
+    #endif
 }
 
 void init(void);

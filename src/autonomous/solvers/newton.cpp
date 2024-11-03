@@ -22,6 +22,13 @@ std::pair<float, float> solvers::newton_single(
     return {guess, dist};
 }
 
+std::pair<float, float> solvers::newton_single(
+    const FunctionGroup& funcs,
+    float guess, float start_bound, float end_bound, int iterations, float threshold
+) {
+    return newton_single(funcs.funcs[0], funcs.funcs[1], guess, start_bound, end_bound, iterations, threshold);
+}
+
 std::pair<float, float> solvers::newton_vec(
     func_vec_t func, func_vec_t deriv,
     Eigen::VectorXf guess, float start_bound, float end_bound, int iterations, float threshold
@@ -48,4 +55,11 @@ std::pair<float, float> solvers::newton_vec(
     }
 
     return {max_guess, max_key};
+}
+
+std::pair<float, float> solvers::newton_vec(
+    const FunctionGroup& funcs,
+    const Eigen::VectorXf& guess, float start_bound, float end_bound, int iterations, float threshold
+) {
+    return newton_vec(funcs.vec_funcs[0], funcs.vec_funcs[1], guess, start_bound, end_bound, iterations, threshold);
 }

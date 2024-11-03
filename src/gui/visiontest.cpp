@@ -61,32 +61,34 @@ void update(void* args) {
     std::cout << "Starting vision test" << std::endl;
 
     while (true) {
-        int cnt = robot::vision.get_object_count();
-        lv_label_set_text_fmt(obj_cnt, "Objects: %d", cnt);
+        #ifndef MIKU_TESTENV
+            int cnt = robot::vision.get_object_count();
+            lv_label_set_text_fmt(obj_cnt, "Objects: %d", cnt);
 
-        pros::vision_object_s_t object_arr[10];
-        int n = robot::vision.read_by_size(0, 10, object_arr);
+            pros::vision_object_s_t object_arr[10];
+            int n = robot::vision.read_by_size(0, 10, object_arr);
 
-        for (int i = 0; i < std::min(10, cnt); i++) {
-            bbox* b = boxes[i];
-            pros::vision_object_s_t& obj = object_arr[i];
+            for (int i = 0; i < std::min(10, cnt); i++) {
+                bbox* b = boxes[i];
+                pros::vision_object_s_t& obj = object_arr[i];
 
-            lv_obj_set_pos(b->box, obj.left_coord, obj.top_coord);
-            lv_obj_set_size(b->box, obj.width, obj.height);
-            lv_style_set_border_color(b->style, lv_color_hex(sig_color_map[obj.signature]));
+                lv_obj_set_pos(b->box, obj.left_coord, obj.top_coord);
+                lv_obj_set_size(b->box, obj.width, obj.height);
+                lv_style_set_border_color(b->style, lv_color_hex(sig_color_map[obj.signature]));
 
-            lv_obj_set_pos(b->sig, obj.left_coord, obj.top_coord - 20);
-            std::string text = "Sig " + std::to_string(obj.signature);
-            lv_label_set_text(b->sig, text.c_str());
+                lv_obj_set_pos(b->sig, obj.left_coord, obj.top_coord - 20);
+                std::string text = "Sig " + std::to_string(obj.signature);
+                lv_label_set_text(b->sig, text.c_str());
 
-            printf("Sig %d at [%d, %d, %d, %d]\n", obj.signature, obj.left_coord, obj.top_coord, obj.width, obj.height);
-        }
-        // for (int i = cnt; i < boxes.size(); i++) {
-        //     bbox* b = boxes[i];
-        //     lv_obj_set_pos(b->box, 0, 0);
-        //     lv_obj_set_size(b->box, 1, 1);
-        //     lv_label_set_text(b->sig, "");
-        // }
+                printf("Sig %d at [%d, %d, %d, %d]\n", obj.signature, obj.left_coord, obj.top_coord, obj.width, obj.height);
+            }
+            // for (int i = cnt; i < boxes.size(); i++) {
+            //     bbox* b = boxes[i];
+            //     lv_obj_set_pos(b->box, 0, 0);
+            //     lv_obj_set_size(b->box, 1, 1);
+            //     lv_label_set_text(b->sig, "");
+            // }
+        #endif
 
         pros::c::task_delay(50);
     }
