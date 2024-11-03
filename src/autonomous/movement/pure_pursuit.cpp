@@ -16,7 +16,7 @@ Eigen::VectorXf PurePursuit::vec_func(pathing::BasePath& path, Eigen::VectorXf& 
     return (path.compute(t).colwise() - robot::pos()).colwise().norm().array() - radius;
 }
 
-Eigen::VectorXf PurePursuit::vec_deriv(pathing::BasePath& path, Eigen::VectorXf& t) const{
+Eigen::VectorXf PurePursuit::vec_deriv(pathing::BasePath& path, Eigen::VectorXf& t) const {
     const Eigen::Matrix2Xf rel = path.compute(t).colwise() - robot::pos();
     return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 }
@@ -99,20 +99,20 @@ MovementResult PurePursuit::follow_path_cancellable(
     std::tie(result.t, result.error) = compute_initial_t(path, params, funcs);
 
     while (robot::distance(path.points.back()) > params.final_threshold) {
-        if (cancel_ref) {
+        if (cancel_ref) { // cancel handling
             result.code = ExitCode::CANCELLED;
             break;
         }
 
-        if (pros::millis() - start_t >= params.timeout) {
+        if (pros::millis() - start_t >= params.timeout) { // timeout handling
             result.code = ExitCode::TIMEOUT;
             break;
         }
 
-        if (robot::distance(path.points.back()) <= radius) result.t = path.maxt();
+        if (robot::distance(path.points.back()) <= radius) result.t = path.maxt(); // we are capable of reaching the end
         TickResult tick_result = tick(path, params, pid, funcs, result.t);
 
-        if (tick_result.code != ExitCode::SUCCESS) {
+        if (tick_result.code != ExitCode::SUCCESS) { // Any error that happened during the tick = exit
             result.code = tick_result.code;
             break;
         }
@@ -124,7 +124,7 @@ MovementResult PurePursuit::follow_path_cancellable(
         pros::delay(params.delay);
     }
 
-    if (result.code == ExitCode::TBD) result.code = ExitCode::SUCCESS;
+    if (result.code == ExitCode::TBD) result.code = ExitCode::SUCCESS; // if we reached here and code has not been set, we are successful
     result.time_taken_ms = pros::millis() - start_t;
 
     return result;

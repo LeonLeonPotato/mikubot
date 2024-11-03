@@ -21,16 +21,20 @@ void test_strategy::run(void) {
     path.points.emplace_back(robot::x + 195, robot::y + 106);
     path.points.emplace_back(robot::x + 96, robot::y + 35.5);
 
-    auto fut = pure_pursuit.follow_path_async(path, movement::BaseMovementParams { .timeout = 100 });
+    Future<movement::MovementResult> fut = pure_pursuit.follow_path_async(path, movement::BaseMovementParams { 
+        .always_recompute = true,
+        .timeout = 1000,
+        .delay = 5
+    });
 
-    int start = pros::millis();
     while (!fut.available()) {
-        pros::delay(20);
+        // printf("Doing other stuff while pathing!\n");
+        pros::delay(500);
     }
 
     auto result = std::move(fut.get());
     printf("Result: %d\n", result.code);
-    printf("Time: %d\n", pros::millis() - start);
+    printf("Time: %d\n", result.time_taken_ms);
     printf("Recomputations: %d\n", result.num_recomputations);
     printf("Error: %f\n", result.error);
     printf("T: %f\n", result.t);

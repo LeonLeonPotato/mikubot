@@ -16,6 +16,7 @@ Eigen::Matrix2Xf PolygonPath::compute(const Eigen::VectorXf& t, int deriv) const
 }
 
 void PolygonPath::compute(float t, Eigen::Vector2f& res, int deriv) const {
+    t = std::clamp(t, 0.0f, (float) maxt());
     int i = (int) t - (int) (t == points.size() - 1); t = t - i;
     if (deriv == 0)
         res = points[i] + (points[i + 1] - points[i]) * t;
@@ -26,6 +27,7 @@ void PolygonPath::compute(float t, Eigen::Vector2f& res, int deriv) const {
 }
 
 Eigen::Vector2f PolygonPath::compute(float t, int deriv) const {
+    t = std::clamp(t, 0.0f, (float) maxt());
     int i = (int) t - (int) (t == points.size() - 1); t = t - i;
     if (deriv == 0)
         return points[i] + (points[i + 1] - points[i]) * t;

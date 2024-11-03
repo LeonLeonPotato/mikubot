@@ -84,14 +84,20 @@ void run(void* args) {
 }
 
 void init(void) {
-    task = pros::c::task_create(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
+    #ifndef MIKU_TESTENV
+        task = pros::c::task_create(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
+    #endif
 }
 
 void start(void) {
-    pros::c::task_suspend(task);
+    #ifndef MIKU_TESTENV
+        pros::c::task_resume(task);
+    #endif
 }
 
 void stop(void) {
-    pros::c::task_resume(task);
+    #ifndef MIKU_TESTENV
+        pros::c::task_suspend(task);
+    #endif
 }
 }

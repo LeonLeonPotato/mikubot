@@ -15,7 +15,7 @@ void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
 	robot::init();
-	// odometry::init();
+	odometry::init();
 	renderer::init();
 }
 
@@ -36,10 +36,12 @@ void competition_initialize(void) {
 
 void autonomous(void) {
 	std::cout << "Auton started" << std::endl;
+	autonrunner::init();
 }
 
 void opcontrol(void) {
-	// competition_initialize();
+	competition_initialize();
+	autonomous();
 	// pros::delay(100);
 	std::cout << "Opcontrol started" << std::endl;
 	strategies::test_strategy::run();

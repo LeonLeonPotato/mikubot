@@ -29,9 +29,9 @@ lv_style_t* selected_auton_box_style;
 
 renderer::NamedButton* confirm_button;
 
-// lv_obj_t* miku_gif;
+lv_obj_t* miku_gif;
 
-inline void create_logo(void) {
+void create_logo(void) {
     logo = lv_spangroup_create(lv_scr_act());
     lv_obj_set_pos(logo, 10, 10);
 
@@ -69,7 +69,7 @@ void side_switch_callback(lv_event_t* e) {
     side_button->rename(strategies::config::get_side_name());
 }
 
-inline void team_selector(void) {
+void team_selector(void) {
     team_selection_text = new renderer::Text(
         "Team",
         roboto_regular_30, 
@@ -109,7 +109,7 @@ void auton_selection_callback(lv_event_t* e) {
     current_selected_idx = i;
 }
 
-inline void auton_strategy(void) {
+void auton_strategy(void) {
     auton_selection_text = new renderer::Text(
         "Auton",
         roboto_regular_30, 
@@ -160,7 +160,7 @@ void confirm_selection_callback(lv_event_t* e) {
     finished_selection = true;
 }
 
-inline void confirm_selection(void) {
+void confirm_selection(void) {
     confirm_button = new renderer::NamedButton(
         "Confirm", 
         roboto_regular_16, 
@@ -171,9 +171,9 @@ inline void confirm_selection(void) {
 }
 
 void init_gif(void) {
-    // miku_gif = lv_gif_create(lv_scr_act());
-    // lv_obj_set_pos(miku_gif, 380, 10);
-    // lv_gif_set_src(miku_gif, "S/kaito-miku.gif");
+    miku_gif = lv_gif_create(lv_scr_act());
+    lv_obj_set_pos(miku_gif, 380, 10);
+    lv_gif_set_src(miku_gif, "S/kaito-miku.gif");
 }
 
 
@@ -202,6 +202,6 @@ void destroy(void) {
     lv_obj_del(selected_auton_box);
     lv_style_reset(selected_auton_box_style);
 
-    // lv_obj_del(miku_gif);
+    lv_obj_del(miku_gif);
 }
 }

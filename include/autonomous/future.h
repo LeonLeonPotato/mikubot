@@ -40,6 +40,7 @@ class Future {
             return state->available;
         }
 
+        // We dont want to use T&& as we dont know if the user will call get() multiple times
         T& get(int timeout = TIMEOUT_MAX, int delay = 5) const {
             wait(timeout, delay);
             return state->value;
