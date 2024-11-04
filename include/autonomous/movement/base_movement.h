@@ -82,6 +82,8 @@ class BaseMovement {
 
         void recompute_path(pathing::BasePath& path, int goal_i) const;
 
+        virtual const MovementParams& get_global_params() const = 0;
+
         virtual solvers::Solver get_solver(const pathing::BasePath& path) const {
             return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
         }
@@ -94,7 +96,6 @@ class BaseMovement {
     public:
         path_solver_t path_solver;
         solvers::Solver solver_override;
-        MovementParams default_params;
 
         BaseMovement(
             std::optional<path_solver_t> path_solver = solve_path_default, 

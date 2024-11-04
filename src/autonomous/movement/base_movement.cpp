@@ -8,7 +8,7 @@ using namespace movement;
 MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path) const {
     controllers::PID pid;
     BaseMovement::init_generic_pid(pid);
-    return follow_path_cancellable(cancel_ref, path, default_params, pid);
+    return follow_path_cancellable(cancel_ref, path, get_global_params(), pid);
 }
 
 MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, const MovementParams& params) const {
@@ -18,7 +18,7 @@ MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::
 }
 
 MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, controllers::PID& pid) const {
-    return follow_path_cancellable(cancel_ref, path, default_params, pid);
+    return follow_path_cancellable(cancel_ref, path, get_global_params(), pid);
 }
 
 std::pair<float, float> BaseMovement::compute_initial_t(
@@ -26,17 +26,26 @@ std::pair<float, float> BaseMovement::compute_initial_t(
     const solvers::FunctionGroup& funcs, 
     solvers::Solver solver) const 
 {
+    if (solver == solvers::Solver::None) {
+        solver = get_solver(path);
+    }
+
     switch (solver) {
         case solvers::Solver::Newton: {
             Eigen::VectorXf guess = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.01, path.maxt() - 0.01);
 
             return solvers::newton_vec(funcs, guess, 0, path.maxt(), params.recomputation_iterations, params.recomputation_threshold);
+            break;
         }
         case solvers::Solver::Secant: {
             Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.05, path.maxt() - 0.10);
             Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.10, path.maxt() - 0.05);
 
             return solvers::secant_vec(funcs, t0, t1, 0, path.maxt(), params.recomputation_iterations, params.recomputation_threshold);
+            break;
+        }
+        default: {
+            throw std::runtime_error("Invalid / Unsupported solver: " + std::to_string((int) solver));
         }
     }
 

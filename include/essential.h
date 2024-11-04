@@ -10,57 +10,57 @@ constexpr float BACK_TRACKING_WHEEL_OFFSET = 7.075f;
 constexpr float SIDE_TRACKING_WHEEL_OFFSET = 10.5f;
 
 inline namespace state {
-    extern bool braking;
-    extern double x, velocity_x, acceleration_x;
-    extern double y, velocity_y, acceleration_y;
-    extern double theta, angular_velocity, angular_acceleration;
+extern bool braking;
+extern double x, velocity_x, acceleration_x;
+extern double y, velocity_y, acceleration_y;
+extern double theta, angular_velocity, angular_acceleration;
 
-    inline Eigen::Vector2f pos(void) {
-        return Eigen::Vector2f(x, y);
-    }
+inline Eigen::Vector2f pos(void) {
+    return Eigen::Vector2f(x, y);
+}
 
-    inline float speed(void) {
-        return sqrtf(velocity_x * velocity_x + velocity_y * velocity_y);
-    }
+inline float speed(void) {
+    return sqrtf(velocity_x * velocity_x + velocity_y * velocity_y);
+}
 
-    inline float accel(void) {
-        return sqrtf(acceleration_x * acceleration_x + acceleration_y * acceleration_y);
-    }
+inline float accel(void) {
+    return sqrtf(acceleration_x * acceleration_x + acceleration_y * acceleration_y);
+}
 
-    inline float angular_diff(float desired, bool reversed = false) {
-        return fmod(desired - theta + M_PI + (M_PI * (int) reversed), M_TWOPI) - M_PI;
-    }
+inline float angular_diff(const float desired, bool reversed = false) {
+    return fmod(desired - theta + M_PI + (M_PI * (int) reversed), M_TWOPI) - M_PI;
+}
 
-    inline float angular_diff(float desired_x, float desired_y, bool reversed = false) {
-        return angular_diff(atan2(desired_x - x, desired_y - y), reversed);
-    }
+inline float angular_diff(const float desired_x, const float desired_y, bool reversed = false) {
+    return angular_diff(atan2(desired_x - x, desired_y - y), reversed);
+}
 
-    inline float angular_diff(const Eigen::Vector2f& point, bool reversed = false) {
-        return angular_diff(atan2(point(0) - x, point(1) - y), reversed);
-    }
+inline float angular_diff(const Eigen::Vector2f& point, bool reversed = false) {
+    return angular_diff(atan2(point(0) - x, point(1) - y), reversed);
+}
 
-    inline float distance(float desired_x, float desired_y) {
-        return sqrtf((desired_x - x) * (desired_x - x) + (desired_y - y) * (desired_y - y));
-    }
+inline float distance(const float desired_x, const float desired_y) {
+    return sqrtf((desired_x - x) * (desired_x - x) + (desired_y - y) * (desired_y - y));
+}
 
-    inline float distance(const Eigen::Vector2f& point) {
-        return sqrtf((point(0) - x) * (point(0) - x) + (point(1) - y) * (point(1) - y));
-    }
+inline float distance(const Eigen::Vector2f& point) {
+    return sqrtf((point(0) - x) * (point(0) - x) + (point(1) - y) * (point(1) - y));
+}
 } // namespace state
 
 namespace signatures {
-    constexpr int blue_ring_id = 0;
-    constexpr int red_ring_id = 1;
-    constexpr int goal_id = 2;
+constexpr int blue_ring_id = 0;
+constexpr int red_ring_id = 1;
+constexpr int goal_id = 2;
 
-    extern pros::vision_signature_s_t blue_ring;
-    extern pros::vision_signature_s_t red_ring;
-    extern pros::vision_signature_s_t goal;
+extern pros::vision_signature_s_t blue_ring;
+extern pros::vision_signature_s_t red_ring;
+extern pros::vision_signature_s_t goal;
 } // namespace signatures
 
 namespace config {
-    constexpr bool velo_based_driving = true;
-    extern const pros::motor_brake_mode_e_t default_brake_mode;
+constexpr bool velo_based_driving = true;
+extern const pros::motor_brake_mode_e_t default_brake_mode;
 } // namespace config
 
 #ifndef MIKU_TESTENV

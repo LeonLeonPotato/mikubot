@@ -8,26 +8,36 @@
 
 namespace movement {
 
+struct PurePursuitParams : public MovementParams {
+    float radius = 30;
+};
+
 class PurePursuit : public BaseMovement {
     private:
-        float func(pathing::BasePath& path, float t) const;
+        float func(pathing::BasePath& path, float radius, float t) const;
         float deriv(pathing::BasePath& path, float t) const;
-        Eigen::VectorXf vec_func(pathing::BasePath& path, Eigen::VectorXf& t) const;
+        Eigen::VectorXf vec_func(pathing::BasePath& path, float radius, Eigen::VectorXf& t) const;
         Eigen::VectorXf vec_deriv(pathing::BasePath& path, Eigen::VectorXf& t) const;
 
-    TickResult tick(
-        pathing::BasePath& path, const MovementParams& params, controllers::PID& pid, 
-        const solvers::FunctionGroup& funcs, float t
-    ) const override;
+        const PurePursuitParams& get_global_params() const override {
+            return params;
+        }
+
+        TickResult tick(
+            pathing::BasePath& path, const MovementParams& params, controllers::PID& pid, 
+            const solvers::FunctionGroup& funcs, float t
+        ) const override;
 
     public:
-        float radius;
+        PurePursuitParams params;
 
         PurePursuit(
-            float radius,
+            float radius = 30,
             std::optional<path_solver_t> initializer = solve_path_default, 
             std::optional<solvers::Solver> solver_override = solvers::Solver::None
-        ) : BaseMovement(initializer, solver_override), radius(radius) { }
+        ) : BaseMovement(initializer, solver_override) { 
+            params.radius = radius;
+        }
 
         MovementResult follow_path_cancellable(
             bool& cancel_ref, 

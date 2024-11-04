@@ -3,7 +3,7 @@
 
 using namespace movement;
 
-float PurePursuit::func(pathing::BasePath& path, float t) const {
+float PurePursuit::func(pathing::BasePath& path, float radius, float t) const {
     return (robot::pos() - path.compute(t)).norm() - radius;
 }
 
@@ -12,7 +12,7 @@ float PurePursuit::deriv(pathing::BasePath& path, float t) const {
     return diff.dot(path.compute(t, 1)) / diff.norm();
 }
 
-Eigen::VectorXf PurePursuit::vec_func(pathing::BasePath& path, Eigen::VectorXf& t) const {
+Eigen::VectorXf PurePursuit::vec_func(pathing::BasePath& path, float radius, Eigen::VectorXf& t) const {
     return (path.compute(t).colwise() - robot::pos()).colwise().norm().array() - radius;
 }
 
@@ -90,13 +90,14 @@ MovementResult PurePursuit::follow_path_cancellable(
     int start_t = pros::millis();
 
     // Create function group with binds to member functions
+    float radius = ((const PurePursuitParams&) params).radius;
     solvers::FunctionGroup funcs = {
         {
-            std::bind(&PurePursuit::func, this, std::ref(path), std::placeholders::_1),
+            std::bind(&PurePursuit::func, this, std::ref(path), radius, std::placeholders::_1),
             std::bind(&PurePursuit::deriv, this, std::ref(path), std::placeholders::_1)
         },
         {
-            std::bind(&PurePursuit::vec_func, this, std::ref(path), std::placeholders::_1),
+            std::bind(&PurePursuit::vec_func, this, std::ref(path), radius, std::placeholders::_1),
             std::bind(&PurePursuit::vec_deriv, this, std::ref(path), std::placeholders::_1)
         }
     };

@@ -24,7 +24,7 @@ void test_strategy::run(void) {
     path.set_relative(robot::pos());
 
     Future<movement::MovementResult> fut = pure_pursuit.follow_path_async(path, movement::MovementParams { 
-        .force_recomputation = movement::RecomputationLevel::TIME,
+        .force_recomputation = movement::RecomputationLevel::NONE,
         .timeout = 100,
         .delay = 20
     });
