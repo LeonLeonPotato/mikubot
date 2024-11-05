@@ -40,11 +40,11 @@ void autonomous(void) {
 }
 
 void opcontrol(void) {
-	competition_initialize();
-	autonomous();
+	// competition_initialize();
+	// autonomous();
 	// pros::delay(100);
 	std::cout << "Opcontrol started" << std::endl;
-	strategies::test_strategy::run();
+	// strategies::test_strategy::run();
 
-	//controls::lidartest::run();
+	controls::lidartest::run();
 }

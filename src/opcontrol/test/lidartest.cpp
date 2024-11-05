@@ -14,21 +14,20 @@ using json = nlohmann::json;
 void lidartest::run(void) {
     std::cout << "Lidar test started" << std::endl;
 
-    float angle = 0;
-    float dist = rand() % 50 + 50;
+    pros::IMU inertial(12);
+    inertial.reset(true);
+
+    pros::Distance lidar(11);
 
     while (true) {
-        angle += (rand() % 100 + 50) / 1000.0;
-        dist += (rand() % 100 - 50) / 2.0;
-        dist = std::clamp(dist, 20.0f, 400.0f / sqrtf(2));
-
-        json j = {
-            {"angle", angle},
-            {"distance", dist}
-        };
-
-        std::cout << j.dump() << std::endl;
-
-        pros::delay(50);
+        json j;
+        j["distance"] = lidar.get();
+        j["confidence"] = lidar.get_confidence();
+        float pitch = inertial.get_pitch() / 180.0f * M_PI;
+        float yaw = inertial.get_yaw() / 180.0f * M_PI;
+        j["pitch"] = pitch;
+        j["yaw"] = yaw;
+        printf("LIDAR: %s\n", j.dump().c_str());
+        pros::delay(100);
     }
 }
