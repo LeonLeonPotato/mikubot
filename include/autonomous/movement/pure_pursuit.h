@@ -8,9 +8,16 @@
 
 namespace movement {
 
-struct PurePursuitParams : public MovementParams {
+/*
+Since C++20 and 23 both do not have a way to do speficied initialization of base class members
+We need to do this instead
+Its kinda a hacky workaround but it works
+*/
+struct PurePursuitParamsBOD {
     float radius = 30;
 };
+
+struct PurePursuitParams : MovementParams, PurePursuitParamsBOD {};
 
 class PurePursuit : public BaseMovement {
     private:
