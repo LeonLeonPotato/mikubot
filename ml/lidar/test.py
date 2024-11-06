@@ -1,99 +1,127 @@
-import subprocess
-import json
+import glfw
+import moderngl
 import numpy as np
-import matplotlib.pyplot as plt
 import time
+import json
+import subprocess
+import threading
+from pyrr import Matrix44, Vector3
 
-process = subprocess.Popen([
+proc = subprocess.Popen([
     "/Users/leon.zhu/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-cli-macos/pros",
     "terminal"
 ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-def quaternion_multiply(q1, q2):
-    """Multiplies two quaternions."""
-    w1, x1, y1, z1 = q1
-    w2, x2, y2, z2 = q2
-    w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2
-    y = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2
-    z = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2
-    return np.array([w, x, y, z])
+if not glfw.init():
+    raise Exception("GLFW cannot be initialized!")
 
-def quaternion_conjugate(q):
-    """Returns the conjugate of a quaternion."""
-    w, x, y, z = q
-    return np.array([w, -x, -y, -z])
+glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
+glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
+glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, glfw.TRUE)
 
-def rotate_point_by_quaternion(point, quaternion):
-    """Rotates a point in 3D space using a quaternion."""
-    # Represent the point as a quaternion with 0 as the scalar part
-    point_quaternion = np.array([0, *point])
-    
-    # Perform the rotation: q * p * q^-1
-    q_conjugate = quaternion_conjugate(quaternion)
-    rotated_point = quaternion_multiply(quaternion_multiply(quaternion, point_quaternion), q_conjugate)
-    
-    # Return the vector part of the rotated quaternion
-    return rotated_point[1:]
+window = glfw.create_window(800, 600, "Hello World", None, None)
+if not window:
+    glfw.terminate()
+    raise Exception("GLFW window cannot be created!")
 
-def project_point(distance, direction, quaternion):
-    """Projects a point from the origin given a distance, direction, and rotation quaternion."""
-    # Normalize the direction vector
-    direction = np.array(direction)
-    direction = direction / np.linalg.norm(direction)
-    
-    # Define the point at the specified distance along the direction
-    point = distance * direction
-    
-    # Rotate the point using the quaternion
-    projected_point = rotate_point_by_quaternion(point, quaternion)
-    
-    return projected_point
+glfw.make_context_current(window)
 
-xs, ys, zs = [], [], []
+ctx = moderngl.create_context()
 
-plt.ion()
-plt.show()
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+with open("ml/lidar/vert.glsl") as f:
+    with open("ml/lidar/frag.glsl") as g:
+        program = ctx.program(
+            vertex_shader=f.read(),
+            fragment_shader=g.read()
+        )
 
-scatter = ax.scatter([], [], [], c='r')
-ax.set_xlim(-500, 500)
-ax.set_ylim(-500, 500)
-ax.set_zlim(-500, 500)
+projection_matrix = Matrix44.perspective_projection(
+    fovy=60.0, 
+    aspect=1, 
+    near=0.1, 
+    far=10000.0
+)
 
-while True:
-    line = process.stdout.readline().decode("utf-8").strip()
+model_matrix = Matrix44.from_translation([0, 0, 0])
+rotation_y = Matrix44.from_y_rotation(0)
+scaling = Matrix44.from_scale([0.5, 0.5, 0.5])
+model_matrix = scaling * rotation_y * model_matrix
 
-    if "LIDAR" in line:
-        data = line.split("LIDAR: ")[1]
-        data = json.loads(data)
-        conf = data["confidence"]
-        distance = data["distance"]
-        pitch = data["pitch"]
-        yaw = data["yaw"]
 
-        if conf > 10:
+def project_pitch_yaw_dist(pitch, yaw, dist):
+    x = dist * np.cos(pitch) * np.cos(yaw)
+    y = dist * np.sin(pitch)
+    z = dist * np.cos(pitch) * np.sin(yaw)
 
-            point = np.array([
-                distance * np.cos(pitch) * np.cos(yaw),
-                distance * np.cos(pitch) * np.sin(yaw),
-                distance * np.sin(pitch)
-            ])
+    return x, y, z
 
-            xs.append(point[0])
-            ys.append(point[1])
-            zs.append(point[2])
+camera_pos = Vector3(project_pitch_yaw_dist(0.707, 0.707, 100.0))
+camera_target = Vector3([0.0, 0.0, 0.0])
+camera_up = Vector3([0.0, 1.0, 0.0])
 
-            print(point)
+view_matrix = Matrix44.look_at(
+    eye=camera_pos,
+    target=camera_target,
+    up=camera_up
+)
 
-            if len(xs) > 200:
-                xs.pop(0)
-                ys.pop(0)
-                zs.pop(0)
+program['model'].write(model_matrix.astype('f4').tobytes())
+program['view'].write(view_matrix.astype('f4').tobytes())
+program['projection'].write(projection_matrix.astype('f4').tobytes())
 
-            # ax.cla()
-            scatter._offsets3d = (xs, ys, zs)
+vbo = ctx.buffer(reserve=2**16)
+vao = ctx.simple_vertex_array(program, vbo, 'in_position')
 
-        plt.draw()
-        plt.pause(0.02)
+listlock = threading.Lock()
+lidarpoints = []
+def lidar():
+    global lidarpoints
+    while True:
+        line = proc.stdout.readline().decode("utf-8").strip()
+        if "LIDAR" in line:
+            line = line.split("LIDAR: ")[1]
+            line = json.loads(line)
+            if line['confidence'] >= 10:
+                listlock.acquire()
+                lidarpoints.append(
+                    project_pitch_yaw_dist(
+                        line["pitch"],
+                        line["yaw"],
+                        line["distance"]
+                    )
+                )
+                listlock.release()
+
+lidarthread = threading.Thread(target=lidar, daemon=True)
+lidarthread.start()
+
+while not glfw.window_should_close(window):
+    if glfw.get_key(window, glfw.KEY_P) == glfw.PRESS:
+        lidarpoints.clear()
+
+    ctx.clear(0.0, 0.0, 0.0, 1.0)
+
+    ctx.point_size = 5.0
+
+    camera_pos = Vector3(project_pitch_yaw_dist(45, time.time() * 0.5, 750.0))
+    view_matrix = Matrix44.look_at(
+        eye=camera_pos,
+        target=camera_target,
+        up=camera_up
+    )
+
+    program['view'].write(view_matrix.astype('f4').tobytes())
+
+    listlock.acquire()
+    new_vertices = np.array(lidarpoints + [(0, 0, 0)], dtype='f4').flatten()
+    listlock.release()
+
+    vbo.clear()
+    vbo.write(new_vertices.tobytes())
+    vao.render(moderngl.POINTS)
+
+    glfw.swap_buffers(window)
+    glfw.poll_events()
+
+glfw.terminate()

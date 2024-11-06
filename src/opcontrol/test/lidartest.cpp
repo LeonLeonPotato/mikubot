@@ -28,6 +28,6 @@ void lidartest::run(void) {
         j["pitch"] = pitch;
         j["yaw"] = yaw;
         printf("LIDAR: %s\n", j.dump().c_str());
-        pros::delay(100);
+        pros::delay(20);
     }
 }
