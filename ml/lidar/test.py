@@ -6,17 +6,24 @@ import json
 import subprocess
 import threading
 from pyrr import Matrix44, Vector3
+import os
+import sys
+
+prospath = {
+    "macos": "/Users/leon.zhu/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-cli-macos/pros",
+    "win32": "C:/Users/leon/AppData/Roaming/Code/User/globalStorage/sigbots.pros/install/pros-cli-windows/pros"
+}
 
 proc = subprocess.Popen([
-    "/Users/leon.zhu/Library/Application Support/Code/User/globalStorage/sigbots.pros/install/pros-cli-macos/pros",
+    prospath[sys.platform],
     "terminal"
 ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 if not glfw.init():
     raise Exception("GLFW cannot be initialized!")
 
-glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
-glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
+glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
+glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 1)
 glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, glfw.TRUE)
 
@@ -27,7 +34,7 @@ if not window:
 
 glfw.make_context_current(window)
 
-ctx = moderngl.create_context()
+ctx = moderngl.create_context(require=410)
 
 with open("ml/lidar/vert.glsl") as f:
     with open("ml/lidar/frag.glsl") as g:
@@ -48,6 +55,12 @@ rotation_y = Matrix44.from_y_rotation(0)
 scaling = Matrix44.from_scale([0.5, 0.5, 0.5])
 model_matrix = scaling * rotation_y * model_matrix
 
+def project_quaternion(quaternion, dist):
+    x = dist * (1 - 2 * (quaternion[1]**2 + quaternion[2]**2))
+    y = dist * 2 * (quaternion[0] * quaternion[1] + quaternion[2] * quaternion[3])
+    z = -dist * 2 * (quaternion[0] * quaternion[2] - quaternion[1] * quaternion[3])
+
+    return x, y, z
 
 def project_pitch_yaw_dist(pitch, yaw, dist):
     x = dist * np.cos(pitch) * np.cos(yaw)
@@ -56,21 +69,10 @@ def project_pitch_yaw_dist(pitch, yaw, dist):
 
     return x, y, z
 
-camera_pos = Vector3(project_pitch_yaw_dist(0.707, 0.707, 100.0))
-camera_target = Vector3([0.0, 0.0, 0.0])
-camera_up = Vector3([0.0, 1.0, 0.0])
-
-view_matrix = Matrix44.look_at(
-    eye=camera_pos,
-    target=camera_target,
-    up=camera_up
-)
-
 program['model'].write(model_matrix.astype('f4').tobytes())
-program['view'].write(view_matrix.astype('f4').tobytes())
 program['projection'].write(projection_matrix.astype('f4').tobytes())
 
-vbo = ctx.buffer(reserve=2**16)
+vbo = ctx.buffer(reserve=2**24)
 vao = ctx.simple_vertex_array(program, vbo, 'in_position')
 
 listlock = threading.Lock()
@@ -83,14 +85,14 @@ def lidar():
             line = line.split("LIDAR: ")[1]
             line = json.loads(line)
             if line['confidence'] >= 10:
+                relp = np.array(project_quaternion(
+                    line['quaternion'],
+                    line["distance"]
+                ))
+                globp = relp
+
                 listlock.acquire()
-                lidarpoints.append(
-                    project_pitch_yaw_dist(
-                        line["pitch"],
-                        line["yaw"],
-                        line["distance"]
-                    )
-                )
+                lidarpoints.append(globp)
                 listlock.release()
 
 lidarthread = threading.Thread(target=lidar, daemon=True)
@@ -102,19 +104,21 @@ while not glfw.window_should_close(window):
 
     ctx.clear(0.0, 0.0, 0.0, 1.0)
 
-    ctx.point_size = 5.0
+    ctx.enable(moderngl.PROGRAM_POINT_SIZE)
+    ctx.enable(moderngl.BLEND)
+    ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_DST_ALPHA
 
-    camera_pos = Vector3(project_pitch_yaw_dist(45, time.time() * 0.5, 750.0))
+    camera_pos = [0, 0, 0]
     view_matrix = Matrix44.look_at(
         eye=camera_pos,
-        target=camera_target,
-        up=camera_up
+        target=project_pitch_yaw_dist(0, 0, 1),
+        up=[0, 0, 1]
     )
 
     program['view'].write(view_matrix.astype('f4').tobytes())
 
     listlock.acquire()
-    new_vertices = np.array(lidarpoints + [(0, 0, 0)], dtype='f4').flatten()
+    new_vertices = np.array(lidarpoints, dtype='f4').flatten()
     listlock.release()
 
     vbo.clear()
