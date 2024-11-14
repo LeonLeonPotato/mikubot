@@ -49,18 +49,15 @@ void run(void* args) {
 
         float av_theta = robot::theta - dtheta / 2;
 
-        lx = robot::x;
-        ly = robot::y;
-        lvx = robot::velocity_x;
-        lvy = robot::velocity_y;
 
-        robot::x -= travel_side * cos(av_theta) + travel_back * sin(av_theta);
-        robot::y += travel_side * sin(av_theta) - travel_back * cos(av_theta);
+        Eigen::Vector2f last_velocity = robot::velocity;
+        Eigen::Vector2f travel = {
+            -travel_side * cos(av_theta) - travel_back * sin(av_theta),
+            travel_side * sin(av_theta) - travel_back * cos(av_theta)
+        };
 
-        robot::velocity_x = (robot::x - lx) / dt;
-        robot::velocity_y = (robot::y - ly) / dt;
-        robot::acceleration_x = (robot::velocity_x - lvx) / dt;
-        robot::acceleration_y = (robot::velocity_y - lvy) / dt;
+        robot::velocity = travel / dt;
+        robot::acceleration = (robot::velocity - last_velocity) / dt;
 
         pros::c::delay(10);
 

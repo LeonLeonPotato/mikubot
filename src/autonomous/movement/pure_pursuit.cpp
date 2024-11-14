@@ -4,27 +4,26 @@
 using namespace movement;
 
 float PurePursuit::func(float t) const {
-    return (robot::pos() - path.compute(t)).norm() - radius;
+    return (robot::pos - path.compute(t)).norm() - radius;
 }
 
 float PurePursuit::deriv(float t) const {
-    Eigen::Vector2f diff = robot::pos() - path.compute(t);
+    Eigen::Vector2f diff = robot::pos - path.compute(t);
     return diff.dot(path.compute(t, 1)) / diff.norm();
 }
 
 Eigen::VectorXf PurePursuit::vec_func(Eigen::VectorXf& t) const {
-    return (path.compute(t).colwise() - robot::pos()).colwise().norm().array() - radius;
+    return (path.compute(t).colwise() - robot::pos).colwise().norm().array() - radius;
 }
 
 Eigen::VectorXf PurePursuit::vec_deriv(Eigen::VectorXf& t) const {
-    const Eigen::Matrix2Xf rel = path.compute(t).colwise() - robot::pos();
+    const Eigen::Matrix2Xf rel = path.compute(t).colwise() - robot::pos;
     return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 }
 
 TickResult PurePursuit::tick(float t) {
     TickResult result;
 
-    Eigen::Vector2f point = robot::pos();
     Eigen::Vector2f& dest = path.points.back();
 
     std::tie(result.t, result.error) = compute_updated_t(get_solver(), t);

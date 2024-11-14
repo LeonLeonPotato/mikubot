@@ -11,13 +11,13 @@ void test_strategy::run(void) {
     robot::set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
     auto qs = pathing::QuinticSpline();
-    qs.points.emplace_back(robot::x, robot::y);
-    qs.points.emplace_back(robot::x - 53, robot::y + 136);
-    qs.points.emplace_back(robot::x - 15, robot::y + 269);
-    qs.points.emplace_back(robot::x + 100.6, robot::y + 308.5);
-    qs.points.emplace_back(robot::x + 191, robot::y + 263);
-    qs.points.emplace_back(robot::x + 195, robot::y + 106);
-    qs.points.emplace_back(robot::x + 96, robot::y + 35.5);
+    // qs.points.emplace_back(robot::x, robot::y);
+    // qs.points.emplace_back(robot::x - 53, robot::y + 136);
+    // qs.points.emplace_back(robot::x - 15, robot::y + 269);
+    // qs.points.emplace_back(robot::x + 100.6, robot::y + 308.5);
+    // qs.points.emplace_back(robot::x + 191, robot::y + 263);
+    // qs.points.emplace_back(robot::x + 195, robot::y + 106);
+    // qs.points.emplace_back(robot::x + 96, robot::y + 35.5);
 
     auto pp = movement::PurePursuit(qs, 90);
     pp.params.always_recompute = true;

@@ -61,11 +61,13 @@ void update(void* args) {
     std::cout << "Starting vision test" << std::endl;
 
     while (true) {
-        int cnt = robot::vision.get_object_count();
+        // int cnt = robot::vision.get_object_count();
+        int cnt = 0;
         lv_label_set_text_fmt(obj_cnt, "Objects: %d", cnt);
 
         pros::vision_object_s_t object_arr[10];
-        int n = robot::vision.read_by_size(0, 10, object_arr);
+        // int n = robot::vision.read_by_size(0, 10, object_arr);
+        int n = 0;
 
         for (int i = 0; i < std::min(10, cnt); i++) {
             bbox* b = boxes[i];

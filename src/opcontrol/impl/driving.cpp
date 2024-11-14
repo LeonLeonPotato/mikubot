@@ -114,7 +114,7 @@ void driving::run() {
 		int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
         int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
-		int engine_mode = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_A) + robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_B);
+		int engine_mode = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) + robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
 
 		switch (engine_mode) {
 			case 0:
@@ -128,8 +128,10 @@ void driving::run() {
 				break;
 		}
 
-		printf("Engine mode: %d\n", robot::get_engine_mode());
-		printf("Set engine mode: %d\n", engine_mode);
+		if (it % 10 == 0) {
+			printf("Engine mode: %d\n", robot::get_engine_mode());
+			printf("Set engine mode: %d\n", engine_mode);
+		}
 
 		// swap out for other modes
 		leon_mode_velocity_based(left_x, left_y, right_x, right_y);

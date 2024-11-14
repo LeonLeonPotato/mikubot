@@ -95,7 +95,7 @@ void BaseMovement::recompute_path(int goal_i)
         }
     }
 
-    path.points[0] = Eigen::Vector2f(robot::x, robot::y);
+    path.points[0] = robot::pos;
 
     pathing::BaseParams solve_params;
     solve_params_initializer(solve_params);
@@ -115,7 +115,7 @@ void BaseMovement::init_generic_pid(controllers::PID& pid) {
 
 void BaseMovement::init_generic_solve_params(pathing::BaseParams& solve_params) {
     solve_params.start_heading = robot::theta;
-    solve_params.start_magnitude = 10 * robot::speed();
+    solve_params.start_magnitude = 10 * robot::velocity.norm();
     solve_params.end_heading = 0;
     solve_params.end_magnitude = 0;
 }
