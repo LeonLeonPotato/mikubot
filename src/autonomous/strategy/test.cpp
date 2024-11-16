@@ -13,7 +13,7 @@ void test_strategy::run(void) {
     // Pure pursuit with radius 100 cm
     movement::PurePursuit pure_pursuit(100);
 
-    auto path = pathing::QuinticSpline();
+    pathing::QuinticSpline path;
     path.points.emplace_back(0, 0);
     path.points.emplace_back(-53, 136);
     path.points.emplace_back(-15, 269);
@@ -23,11 +23,11 @@ void test_strategy::run(void) {
     path.points.emplace_back(96, 35.5);
     path.set_relative(robot::pos());
 
-    Future<movement::MovementResult> fut = pure_pursuit.follow_path_async(path, movement::MovementParams { 
+    Future<movement::MovementResult> fut = pure_pursuit.follow_path_async(path, movement::PurePursuitParams {{ 
         .force_recomputation = movement::RecomputationLevel::NONE,
         .timeout = 100,
         .delay = 20
-    });
+    }});
 
     while (!fut.available()) {
         printf("Doing other stuff while pathing!\n");
