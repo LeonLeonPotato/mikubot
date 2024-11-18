@@ -5,9 +5,8 @@
 namespace controllers {
 class PID {
     private:
-        bool registered;
         float error, last_error, integral;
-        float last_time;
+        long long last_time, cur_time;
 
     public:
         float kp, ki, kd;
