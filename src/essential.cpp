@@ -3,6 +3,7 @@
 using namespace robot;
 
 EngineMode state::engine_mode = EngineMode::HIGH_SPEED;
+
 bool state::braking = false;
 Eigen::Vector2f state::pos = Eigen::Vector2f::Zero();
 Eigen::Vector2f state::velocity = Eigen::Vector2f::Zero();
@@ -90,7 +91,7 @@ void robot::velo(float left, float right) {
     int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
     braking = false;
 
-    if (get_engine_mode() == EngineMode::HIGH_TORQUE) {
+    if (engine_mode == EngineMode::HIGH_TORQUE) {
         lv = (int) (lv * 0.6);
         rv = (int) (rv * 0.6);
     }

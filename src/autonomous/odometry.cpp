@@ -10,21 +10,18 @@ pros::task_t task;
 
 void run(void* args) {
     long long iterations = 0;
-    float ls = rad(robot::side_encoder.get_position() / 100);
-    float lb = rad(robot::back_encoder.get_position() / 100);
-    float ltheta = rad(robot::inertial.get_rotation());
-    auto ltime = pros::micros();
-    float lx = 0, ly = 0;
-    float lvx = 0, lvy = 0;
+    float ls = rad(robot::side_encoder.get_position() / 100.0f);
+    float lb = rad(robot::back_encoder.get_position() / 100.0f);
+    long long ltime = pros::micros();
 
     while (true) {
-        auto dt = (pros::micros() - ltime) / 1000000.0f;
+        long long dt = (pros::micros() - ltime) / 1000000.0f;
         ltime = pros::micros();
 
         float ctheta = rad(robot::inertial.get_rotation());
-        float dtheta = ctheta - ltheta;
-        robot::theta += dtheta;
-        ltheta = ctheta;
+        float dtheta = ctheta - robot::theta;
+        robot::theta = ctheta;
+
         if (fabs(dtheta) < rad(0.1)) dtheta = 0;
 
         robot::angular_acceleration = (dtheta / dt - robot::angular_velocity) / dt;
@@ -49,19 +46,19 @@ void run(void* args) {
 
         float av_theta = robot::theta - dtheta / 2;
 
-
         Eigen::Vector2f last_velocity = robot::velocity;
         Eigen::Vector2f travel = {
             -travel_side * cos(av_theta) - travel_back * sin(av_theta),
             travel_side * sin(av_theta) - travel_back * cos(av_theta)
         };
 
+        robot::pos += travel;
+
         robot::velocity = travel / dt;
         robot::acceleration = (robot::velocity - last_velocity) / dt;
 
-        pros::c::delay(10);
-
         iterations++;
+        pros::c::delay(10);
     }
 }
 

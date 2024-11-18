@@ -31,7 +31,7 @@ void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	}
 }
 
-inline void leon_mode_velocity_based(int left_x, int left_y, int right_x, int right_y) {
+void leon_mode_velocity_based(int left_x, int left_y, int right_x, int right_y) {
 	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
 		int left = left_y + right_x;
 		int right = left_y - right_x;
@@ -45,7 +45,7 @@ inline void leon_mode_velocity_based(int left_x, int left_y, int right_x, int ri
 	}
 }
 
-inline void tank_drive(int left_x, int left_y, int right_x, int right_y) {
+void tank_drive(int left_x, int left_y, int right_x, int right_y) {
 	if (std::min(abs(left_y), abs(right_y)) > 3) {
 		robot::volt(left_y, right_y);
 	} else {
@@ -53,7 +53,7 @@ inline void tank_drive(int left_x, int left_y, int right_x, int right_y) {
 	}
 }
 
-inline void tank_drive_velocity_based(int left_x, int left_y, int right_x, int right_y) {
+void tank_drive_velocity_based(int left_x, int left_y, int right_x, int right_y) {
 	if (std::min(abs(left_y), abs(right_y)) > 3) {
 		robot::velo(left_y, right_y);
 	} else {
@@ -114,7 +114,7 @@ void driving::run() {
 		int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
         int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
-		int engine_mode = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) + robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+		int engine_mode = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) + robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
 
 		switch (engine_mode) {
 			case 0:
