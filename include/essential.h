@@ -62,6 +62,7 @@ extern const pros::motor_brake_mode_e_t default_brake_mode;
 } // namespace config
 
 extern pros::Controller master;
+extern pros::Controller partner;
 
 extern pros::IMU inertial;
 extern pros::Rotation side_encoder;
@@ -73,6 +74,7 @@ extern pros::MotorGroup right_motors;
 int max_speed(void);
 
 void volt(int left, int right);
+void volt(float left, float right);
 void velo(int left, int right);
 void velo(float left, float right);
 

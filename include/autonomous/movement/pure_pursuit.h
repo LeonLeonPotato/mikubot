@@ -29,7 +29,7 @@ class PurePursuit : public BaseMovement {
         { }
 
         TickResult tick(float t) override;
-        MovementResult follow_path_cancellable(bool& cancel_ref) override;
+        MovementResult follow_path_cancellable(volatile bool& cancel_ref) override;
 };
 
 } // namespace movement

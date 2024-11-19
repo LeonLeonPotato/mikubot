@@ -43,7 +43,7 @@ struct BaseMovementParams {
 
     float final_threshold = 5.0;
     float distance_coeff = 5.0;
-    int max_base_speed = 127;
+    int max_base_speed = 12000;
 
     int update_iterations = 3;
     float update_threshold = 1e-1;
@@ -112,7 +112,7 @@ class BaseMovement {
         solvers::func_vec_t vec_deriv() const { return vec_deriv_; }
 
         virtual TickResult tick(float t) = 0;
-        virtual MovementResult follow_path_cancellable(bool& cancel_ref) = 0;
+        virtual MovementResult follow_path_cancellable(volatile bool& cancel_ref) = 0;
 
         MovementResult follow_path(void) {
             bool cancel = false;

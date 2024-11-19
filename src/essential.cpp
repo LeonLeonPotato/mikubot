@@ -25,6 +25,7 @@ pros::vision_signature_s_t signatures::goal = pros::Vision::signature_from_utili
 const pros::motor_brake_mode_e_t config::default_brake_mode = pros::E_MOTOR_BRAKE_COAST;
 
 pros::Controller robot::master(pros::E_CONTROLLER_MASTER);
+pros::Controller robot::partner(pros::E_CONTROLLER_PARTNER);
 
 pros::Imu robot::inertial(0);
 pros::Rotation robot::side_encoder(0);
@@ -62,27 +63,16 @@ int robot::max_speed(void) {
     }
 }
 
-void robot::volt(int left, int right) {
-    left = fminf(fmaxf(left, -127), 127);
-    right = fminf(fmaxf(right, -127), 127);
+void robot::volt(float left, float right) {
+    left = std::clamp(left, -1.0f, 1.0f) * 12000.0f;
+    right = std::clamp(right, -1.0f, 1.0f) * 12000.0f;
     braking = false;
-    left_motors.move(left);
-    right_motors.move(right);
+    left_motors.move_voltage((int) left);
+    right_motors.move_voltage((int) right);
 }
 
-void robot::velo(int left, int right) {
-    int max = max_speed();
-    int lv = (int) (std::clamp(left, -127, 127) / 127.0f * max);
-    int rv = (int) (std::clamp(right, -127, 127) / 127.0f * max);
-    braking = false;
-
-    if (get_engine_mode() == EngineMode::HIGH_TORQUE) {
-        lv = (int) (lv * 0.6);
-        rv = (int) (rv * 0.6);
-    }
-
-    left_motors.move_velocity(lv);
-    right_motors.move_velocity(rv);
+void robot::volt(int left, int right) {
+    robot::volt(left / 12000.0f, right / 12000.0f);
 }
 
 void robot::velo(float left, float right) {
@@ -92,12 +82,16 @@ void robot::velo(float left, float right) {
     braking = false;
 
     if (engine_mode == EngineMode::HIGH_TORQUE) {
-        lv = (int) (lv * 0.6);
-        rv = (int) (rv * 0.6);
+        lv = (int) (lv * 0.5);
+        rv = (int) (rv * 0.5);
     }
 
     left_motors.move_velocity(left);
     right_motors.move_velocity(right);
+}
+
+void robot::velo(int left, int right) {
+    robot::velo(left / 12000.0f, right / 12000.0f);
 }
 
 void robot::brake(void) {
@@ -119,4 +113,7 @@ void robot::init(void) {
     // vision.set_signature(signatures::blue_ring_id, &signatures::blue_ring);
     // vision.set_signature(signatures::red_ring_id, &signatures::red_ring);
     // vision.set_signature(signatures::goal_id, &signatures::goal);
+
+    master.set_text(0, 0, "Master");
+    partner.set_text(0, 0, "Partner");
 }

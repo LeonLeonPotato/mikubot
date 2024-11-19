@@ -56,7 +56,7 @@ TickResult PurePursuit::tick(float t) {
     return result;
 }
 
-MovementResult PurePursuit::follow_path_cancellable(bool& cancel_ref) {
+MovementResult PurePursuit::follow_path_cancellable(volatile bool& cancel_ref) {
     MovementResult result;
 
     int start_t = pros::millis();

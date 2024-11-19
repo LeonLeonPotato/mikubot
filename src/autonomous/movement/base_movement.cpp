@@ -105,10 +105,10 @@ void BaseMovement::recompute_path(int goal_i)
 
 // Do not question me on my generic pid parameters. Trust the femboy programmer~
 void BaseMovement::init_generic_pid(controllers::PID& pid) {
-    pid.kp = 800;
-    pid.ki = 25;
-    pid.kd = 400;
-    pid.integral_limit = 1;
+    pid.kp = 8000;
+    pid.ki = 0;
+    pid.kd = 100;
+    pid.integral_limit = 1000;
     pid.disable_integral_limit = 1;
     pid.sign_switch_reset = true;
 }

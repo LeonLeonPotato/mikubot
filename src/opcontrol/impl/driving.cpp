@@ -6,6 +6,25 @@
 
 using namespace controls;
 
+struct Scaling {
+	float dead_zone = 6.0f;
+	float turn_scale = 1.0f;
+	float speed_scale = 12000.0f;
+	float smoothing = 0.45f;
+	float max_speed = 1.0f;
+
+	const float compute(int input) const {
+		const float raw = (2 * (int) (input > 0) - 1) // sign
+			* ((int) (abs(input) > dead_zone)) // dead zone
+			* (1 - smoothing) * (abs(input) * speed_scale / 127.0f) // numerator
+			/ (1 + smoothing * (1 - 2 * abs(input) / 127.0f)); // denominator
+
+		return std::clamp(raw, -max_speed, max_speed);
+	}
+};
+
+static pros::task_t task;
+
 void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	if (abs(right_x) > 10 && abs(left_y) > 10) { // driving with turning
 		int left = left_y + right_x;
@@ -50,41 +69,60 @@ void tank_drive_velocity_based(int left_x, int left_y, int right_x, int right_y)
 	}
 }
 
-void driving::tick() {
+void leon_mode_2(int left_x, int left_y, int right_x, int right_y) {
+	// https://www.desmos.com/calculator/v88re8mjh5
+	static Scaling left_scale;
+	static Scaling right_scale = {.speed_scale = 3.0f, .smoothing = 0.75f};
 
+	const float forward = left_scale.compute(left_y);
+	const float turn = right_scale.compute(right_x);
+	
+	if (forward != 0 && turn != 0) {
+		robot::velo(forward + turn, forward - turn);
+	} else {
+		robot::brake();
+	}
+}
+
+void driving::tick() {
+	const int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
+	const int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+	const int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+	const int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
+
+	const int engine_mode = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) 
+		+ robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
+
+	switch (engine_mode) {
+		case 0:
+			robot::set_engine_mode(robot::EngineMode::DIRECT);
+			break;
+		case 1:
+			robot::set_engine_mode(robot::EngineMode::HIGH_SPEED);
+			break;
+		case 2:
+			robot::set_engine_mode(robot::EngineMode::HIGH_TORQUE);
+			break;
+	}
+
+	leon_mode_2(left_x, left_y, right_x, right_y);
 }
 
 void driving::run() {
-	float left_last_velo = robot::left_motors.get_actual_velocity();
-	float right_last_velo = robot::right_motors.get_actual_velocity();
-
 	while (true) {
-		int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
-        int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-		int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
-        int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-
-		int engine_mode = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) 
-			+ robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
-
-		switch (engine_mode) {
-			case 0:
-				robot::set_engine_mode(robot::EngineMode::DIRECT);
-				break;
-			case 1:
-				robot::set_engine_mode(robot::EngineMode::HIGH_SPEED);
-				break;
-			case 2:
-				robot::set_engine_mode(robot::EngineMode::HIGH_TORQUE);
-				break;
-		}
-
-		leon_mode_velocity_based(left_x, left_y, right_x, right_y);
-		it++;
-
-		long long dt = pros::micros() - cur_time;
-		cur_time = pros::micros();
-
+		tick();
 		pros::delay(20);
 	}
+}
+
+static void local_run(void* p) {
+	driving::run();
+}
+
+void driving::start_task() {
+	task = pros::c::task_create(local_run, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
+}
+
+void driving::stop_task() {
+	pros::c::task_delete(task);
 }
