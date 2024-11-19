@@ -9,13 +9,13 @@ using namespace controls;
 struct Scaling {
 	float dead_zone = 6.0f;
 	float turn_scale = 1.0f;
-	float speed_scale = 12000.0f;
+	float speed_scale = 1.0f;
 	float smoothing = 0.45f;
 	float max_speed = 1.0f;
 
 	const float compute(int input) const {
 		const float raw = (2 * (int) (input > 0) - 1) // sign
-			* ((int) (abs(input) > dead_zone)) // dead zone
+			* ((float) (abs(input) > dead_zone)) // dead zone
 			* (1 - smoothing) * (abs(input) * speed_scale / 127.0f) // numerator
 			/ (1 + smoothing * (1 - 2 * abs(input) / 127.0f)); // denominator
 
@@ -77,11 +77,7 @@ void leon_mode_2(int left_x, int left_y, int right_x, int right_y) {
 	const float forward = left_scale.compute(left_y);
 	const float turn = right_scale.compute(right_x);
 	
-	if (forward != 0 && turn != 0) {
-		robot::velo(forward + turn, forward - turn);
-	} else {
-		robot::brake();
-	}
+	robot::volt(forward + turn, forward - turn);
 }
 
 void driving::tick() {

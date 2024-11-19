@@ -7,8 +7,10 @@ using namespace controls;
 static pros::task_t task;
 
 void conveyor::tick() {
-    const int up = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
-    const int down = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+    const int up = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+    const int down = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+
+    
 }
 
 void conveyor::run() {

@@ -45,7 +45,9 @@ void opcontrol(void) {
 	// pros::delay(100);
 	// std::cout << "Opcontrol started" << std::endl;
 	// strategies::test_strategy::run();
-	controls::driving::run();
+	for (auto& func : controls::start_tasks) {
+		func();
+	}
 
 	//controls::lidartest::run();
 }

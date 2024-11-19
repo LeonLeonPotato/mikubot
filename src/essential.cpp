@@ -86,6 +86,8 @@ void robot::velo(float left, float right) {
         rv = (int) (rv * 0.5);
     }
 
+    printf("Moving at %d %d\n", lv, rv);
+
     left_motors.move_velocity(left);
     right_motors.move_velocity(right);
 }
@@ -114,6 +116,11 @@ void robot::init(void) {
     // vision.set_signature(signatures::red_ring_id, &signatures::red_ring);
     // vision.set_signature(signatures::goal_id, &signatures::goal);
 
+    master.clear();
+    pros::delay(200);
+    partner.clear();
+    pros::delay(200);
     master.set_text(0, 0, "Master");
+    pros::delay(200);
     partner.set_text(0, 0, "Partner");
 }
