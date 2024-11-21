@@ -38,8 +38,6 @@ void autonomous(void) {
 	std::cout << "Auton started" << std::endl;
 }
 
-#include "autonomous/controllers/pid.h"
-
 void opcontrol(void) {
 	// competition_initialize();
 	// pros::delay(100);

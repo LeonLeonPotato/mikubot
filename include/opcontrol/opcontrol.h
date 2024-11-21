@@ -4,6 +4,10 @@
 #include "opcontrol/impl/intake.h"
 #include "opcontrol/impl/conveyor.h"
 #include "opcontrol/test/lidartest.h"
+#include "opcontrol/impl/clamp.h"
+#include "opcontrol/impl/ejector.h"
+#include "opcontrol/impl/wallmech.h"
+#include "opcontrol/impl/doinker.h"
 
 #include <vector>
 #include <functional>

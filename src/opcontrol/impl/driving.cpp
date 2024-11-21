@@ -77,7 +77,7 @@ void leon_mode_2(int left_x, int left_y, int right_x, int right_y) {
 	const float forward = left_scale.compute(left_y);
 	const float turn = right_scale.compute(right_x);
 	
-	robot::volt(forward + turn, forward - turn);
+	robot::velo(forward + turn, forward - turn);
 }
 
 void driving::tick() {

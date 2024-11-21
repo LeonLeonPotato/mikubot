@@ -64,7 +64,16 @@ extern const pros::motor_brake_mode_e_t default_brake_mode;
 extern pros::Controller master;
 extern pros::Controller partner;
 
+extern pros::adi::Pneumatics doinker;
+extern pros::adi::Pneumatics ejector;
+extern pros::adi::Pneumatics clamp;
+
+extern pros::Motor conveyor;
+extern pros::Motor intake;
+extern pros::Motor wallmech;
+
 extern pros::IMU inertial;
+extern pros::Optical classifier;
 extern pros::Rotation side_encoder;
 extern pros::Rotation back_encoder;
 
