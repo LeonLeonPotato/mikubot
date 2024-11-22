@@ -31,8 +31,8 @@ void ejector::tick() {
         color = 'B';
     }
 
-    if (iters % 30 == 0)
-        printf("Hue: %f | Last detection: %lld | color: %c\n", diff, last_detection, color);
+    // if (iters % 30 == 0)
+    //     printf("Hue: %f | Last detection: %lld | color: %c\n", diff, last_detection, color);
 
     if (color != strategies::config::team && color != 'N' && last_detection != -1) {
         auto dt = (pros::micros() - last_detection) / 1000000.0f;

@@ -76,8 +76,10 @@ void leon_mode_2(int left_x, int left_y, int right_x, int right_y) {
 
 	const float forward = left_scale.compute(left_y);
 	const float turn = right_scale.compute(right_x);
+
+	// printf("Driving left: %f | Right: %f\n", forward + turn, forward - turn);
 	
-	robot::velo(forward + turn, forward - turn);
+	robot::volt(forward + turn, forward - turn);
 }
 
 void driving::tick() {
@@ -85,21 +87,6 @@ void driving::tick() {
 	const int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 	const int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 	const int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-
-	const int engine_mode = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1) 
-		+ robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
-
-	switch (engine_mode) {
-		case 0:
-			robot::set_engine_mode(robot::EngineMode::DIRECT);
-			break;
-		case 1:
-			robot::set_engine_mode(robot::EngineMode::HIGH_SPEED);
-			break;
-		case 2:
-			robot::set_engine_mode(robot::EngineMode::HIGH_TORQUE);
-			break;
-	}
 
 	leon_mode_2(left_x, left_y, right_x, right_y);
 }

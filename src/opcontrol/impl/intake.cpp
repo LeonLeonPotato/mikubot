@@ -9,9 +9,11 @@ using namespace controls;
 static pros::task_t task;
 
 void intake::tick() {
-    int speed = robot::partner.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-    speed = (int) ((speed / 127.0f) * 200.0f);
-    
+    int speed = 
+        (robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)
+        - robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+        * 200;
+
     robot::intake.move_velocity(speed);
 }
 
