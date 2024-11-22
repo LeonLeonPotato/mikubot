@@ -13,6 +13,7 @@
 #include <vector>
 
 namespace autonselector {
+bool initialized = false;
 bool finished_selection = false;
 
 lv_obj_t* logo;
@@ -178,6 +179,9 @@ void init_gif(void) {
 
 
 void init(void) {
+    if (initialized) return;
+    initialized = true;
+
     create_logo();
     team_selector();
     auton_strategy();
@@ -186,6 +190,9 @@ void init(void) {
 }
 
 void destroy(void) {
+    if (!initialized) return;
+    initialized = false;
+
     lv_obj_del(logo);
 
     delete team_selection_text;

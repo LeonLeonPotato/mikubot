@@ -7,6 +7,7 @@
 #include "gui/utils.h"
 #include "autonomous/solvers.h"
 #include "autonomous/strategies.h"
+#include "gui/opcontrolinfo.h"
 #include "opcontrol/opcontrol.h"
 
 #include "api.h"
@@ -43,6 +44,8 @@ void opcontrol(void) {
 	// pros::delay(100);
 	// std::cout << "Opcontrol started" << std::endl;
 	// strategies::test_strategy::run();
+	opcontrolinfo::init();
+	competition_initialize();
 	for (auto& func : controls::start_tasks) {
 		func();
 	}

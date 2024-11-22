@@ -33,7 +33,7 @@ void conveyor::tick() {
     if (destuck_start_time == -1) {
         robot::conveyor.move_velocity(speed);
     } else {
-        robot::conveyor.move_velocity(-speed);
+        robot::conveyor.move_velocity(speed);
     }
 }
 

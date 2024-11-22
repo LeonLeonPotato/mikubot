@@ -13,12 +13,12 @@ void wallmech::tick() {
     const int out = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_B);
 
     if (in) {
-        robot::wallmech.move_velocity(200);
+        robot::wallmech.move_velocity(150);
     } else if (out) {
-        robot::wallmech.move_velocity(-200);
+        robot::wallmech.move_velocity(-150);
     } else {
         robot::wallmech.move_velocity(0);
-    }
+    } 
 }
 
 void wallmech::run() {

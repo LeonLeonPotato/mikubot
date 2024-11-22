@@ -9,27 +9,38 @@ using namespace controls;
 
 static pros::task_t task;
 static long long last_detection = -1;
-static char color = 'n';
+static char color = 'N';
+static const double start_t = 0.05;
+static int iters = 0;
+static double default_hue = -1;
 
 void ejector::tick() {
-    auto hue = robot::classifier.get_hue();
+    if (default_hue == -1) {
+        default_hue = robot::classifier.get_hue();
+    }
 
-    if (hue < 30) {
+    auto hue = robot::classifier.get_hue();
+    iters++;
+    auto diff = fmod(hue - default_hue + 180, 360) - 180;
+
+    if (diff < -30) {
         last_detection = pros::micros();
         color = 'R';
-    } else if (hue > 50) {
+    } else if (diff > 50) {
         last_detection = pros::micros();
         color = 'B';
     }
 
-    // printf("Hue: %f | Last detection: %lld | color: %c\n", hue, last_detection, color);
+    if (iters % 30 == 0)
+        printf("Hue: %f | Last detection: %lld | color: %c\n", diff, last_detection, color);
 
-    if (color != strategies::config::team && last_detection != -1) {
+    if (color != strategies::config::team && color != 'N' && last_detection != -1) {
         auto dt = (pros::micros() - last_detection) / 1000000.0f;
-        if (dt > 0.05 && !robot::ejector.is_extended()) {
+        if (dt > start_t && !robot::ejector.is_extended()) {
             robot::ejector.extend();
-        } else if (dt > 0.10) {
+        } else if (dt > start_t + 0.2) {
             last_detection = -1;
+            color = 'N';
             robot::ejector.retract();
         }
     }

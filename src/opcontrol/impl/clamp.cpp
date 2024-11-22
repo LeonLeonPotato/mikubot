@@ -9,7 +9,7 @@ static bool last = false;
 static bool toggle = false;
 
 void clamp::tick() {
-    bool cur = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+    bool cur = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_X);
 
     if (cur == true && last == false) toggle = !toggle;
 
