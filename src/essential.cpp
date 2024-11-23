@@ -62,6 +62,7 @@ int robot::max_speed(void) {
 void robot::volt(float left, float right) {
     left = std::clamp(left, -1.0f, 1.0f) * 12000.0f;
     right = std::clamp(right, -1.0f, 1.0f) * 12000.0f;
+    // left *= 0.6;
 
     braking = false;
     left_motors.move_voltage((int) left);
@@ -76,6 +77,7 @@ void robot::velo(float left, float right) {
     int max = max_speed();
     float lv = std::clamp(left, -1.0f, 1.0f) * max;
     float rv = std::clamp(right, -1.0f, 1.0f) * max;
+    // lv *= 0.6;
     braking = false;
 
     left_motors.move_velocity((int) lv);
