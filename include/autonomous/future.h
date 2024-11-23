@@ -6,8 +6,8 @@ template <typename T>
 class Future {
     private:
         struct SharedState {
-            bool cancelled = false;
-            bool available = false;
+            volatile bool cancelled = false;
+            volatile bool available = false;
             T value;
         };
 

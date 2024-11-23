@@ -51,7 +51,7 @@ struct MovementParams {
 
     float final_threshold = 5.0;
     float distance_coeff = 5.0;
-    int max_base_speed = 127;
+    int max_base_speed = 12000;
 
     int update_iterations = 3;
     float update_threshold = 1e-1;
@@ -102,11 +102,11 @@ class BaseMovement {
             std::optional<solvers::Solver> solver_override = solvers::Solver::None
         ) : path_solver(path_solver.value()), solver_override(solver_override.value()) { }
 
-        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path) const;
-        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, const MovementParams& params) const;
-        MovementResult follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, controllers::PID& pid) const;
+        MovementResult follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path) const;
+        MovementResult follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, const MovementParams& params) const;
+        MovementResult follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, controllers::PID& pid) const;
         virtual MovementResult follow_path_cancellable(
-            bool& cancel_ref, 
+            volatile bool& cancel_ref, 
             pathing::BasePath& path,
             const MovementParams& params,
             controllers::PID& pid
@@ -114,15 +114,15 @@ class BaseMovement {
 
         template <typename... Args>
         MovementResult follow_path(Args&&... args) const {
-            bool cancel = false;
-            return follow_path_cancellable((bool&) cancel, std::forward<Args>(args)...);
+            const bool cancel = false;
+            return follow_path_cancellable((volatile bool&) cancel, std::forward<Args>(args)...);
         }
 
         template <typename... Args>
         Future<MovementResult> follow_path_async(Args&&... args) const {
             Future<MovementResult> ret;
             pros::Task task {[this, &ret, &args...]() {
-                ret.set_value(std::move(follow_path_cancellable((bool&) ret.get_state()->available, std::forward<Args>(args)...)));
+                ret.set_value(std::move(follow_path_cancellable(ret.get_state()->cancelled, std::forward<Args>(args)...)));
             }};
             return ret;
         }

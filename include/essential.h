@@ -11,40 +11,27 @@ constexpr float SIDE_TRACKING_WHEEL_OFFSET = 10.5f;
 
 inline namespace state {
 extern bool braking;
-extern double x, velocity_x, acceleration_x;
-extern double y, velocity_y, acceleration_y;
+extern Eigen::Vector2f pos, velocity, acceleration;
 extern double theta, angular_velocity, angular_acceleration;
 
-inline Eigen::Vector2f pos(void) {
-    return Eigen::Vector2f(x, y);
-}
-
-inline float speed(void) {
-    return sqrtf(velocity_x * velocity_x + velocity_y * velocity_y);
-}
-
-inline float accel(void) {
-    return sqrtf(acceleration_x * acceleration_x + acceleration_y * acceleration_y);
-}
-
-inline float angular_diff(const float desired, bool reversed = false) {
+inline float angular_diff(float desired, bool reversed = false) {
     return fmod(desired - theta + M_PI + (M_PI * (int) reversed), M_TWOPI) - M_PI;
 }
 
-inline float angular_diff(const float desired_x, const float desired_y, bool reversed = false) {
-    return angular_diff(atan2(desired_x - x, desired_y - y), reversed);
+inline float angular_diff(float desired_x, float desired_y, bool reversed = false) {
+    return angular_diff(atan2(desired_x - pos.x(), desired_y - pos.y()), reversed);
 }
 
 inline float angular_diff(const Eigen::Vector2f& point, bool reversed = false) {
-    return angular_diff(atan2(point(0) - x, point(1) - y), reversed);
+    return angular_diff(atan2(point(0) - pos.x(), point(1) - pos.y()), reversed);
 }
 
-inline float distance(const float desired_x, const float desired_y) {
-    return sqrtf((desired_x - x) * (desired_x - x) + (desired_y - y) * (desired_y - y));
+inline float distance(float desired_x, float desired_y) {
+    return sqrtf((desired_x - pos.x()) * (desired_x - pos.x()) + (desired_y - pos.y()) * (desired_y - pos.y()));
 }
 
 inline float distance(const Eigen::Vector2f& point) {
-    return sqrtf((point(0) - x) * (point(0) - x) + (point(1) - y) * (point(1) - y));
+    return sqrtf((point(0) - pos.x()) * (point(0) - pos.x()) + (point(1) - pos.y()) * (point(1) - pos.y()));
 }
 } // namespace state
 
@@ -63,87 +50,34 @@ constexpr bool velo_based_driving = true;
 extern const pros::motor_brake_mode_e_t default_brake_mode;
 } // namespace config
 
-#ifndef MIKU_TESTENV
-    extern pros::Controller master;
-    extern pros::IMU inertial;
-    extern pros::Rotation side_encoder;
-    extern pros::Rotation back_encoder;
+extern pros::Controller master;
+extern pros::Controller partner;
+
+extern pros::adi::Pneumatics doinker;
+extern pros::adi::Pneumatics ejector;
+extern pros::adi::Pneumatics clamp;
+
+extern pros::Motor conveyor;
+extern pros::Motor intake;
+extern pros::Motor wallmech;
+
+extern pros::IMU inertial;
+extern pros::Optical classifier;
+extern pros::Rotation side_encoder;
+extern pros::Rotation back_encoder;
 
     extern pros::MotorGroup left_motors;
     extern pros::MotorGroup right_motors;
 
-    extern pros::MotorGroup intake;
-    extern pros::Motor conveyor;
+int max_speed(void);
 
-    extern pros::adi::Pneumatics excluder;
-    extern pros::Optical classifier;
+void volt(int left, int right);
+void volt(float left, float right);
+void velo(int left, int right);
+void velo(float left, float right);
 
-    extern pros::Vision vision;
-#endif
-
-inline int max_speed(void) {
-    #ifndef MIKU_TESTENV
-        switch (left_motors.get_gearing()) {
-            case pros::MotorGears::blue:
-                return 600;
-            case pros::MotorGears::green:
-                return 200;
-            case pros::MotorGears::red:
-                return 100;
-            default:
-                return 200;
-        }
-    #else
-        return 200;
-    #endif
-}
-
-inline void volt(int left, int right) {
-    #ifndef MIKU_TESTENV
-        left = fminf(fmaxf(left, -127), 127);
-        right = fminf(fmaxf(right, -127), 127);
-        braking = false;
-        left_motors.move(left);
-        right_motors.move(right);
-    #endif
-}
-
-inline void velo(int left, int right) {
-    #ifndef MIKU_TESTENV
-        int max = max_speed();
-        int lv = (int) (std::clamp(left, -127, 127) / 127.0f * max);
-        int rv = (int) (std::clamp(right, -127, 127) / 127.0f * max);
-        braking = false;
-        left_motors.move_velocity(lv);
-        right_motors.move_velocity(rv);
-    #endif
-}
-
-inline void velo(float left, float right) {
-    #ifndef MIKU_TESTENV
-        int max = max_speed();
-        int lv = (int) (std::clamp(left, -1.0f, 1.0f) * max);
-        int rv = (int) (std::clamp(right, -1.0f, 1.0f) * max);
-        braking = false;
-        left_motors.move_velocity(left);
-        right_motors.move_velocity(right);
-    #endif
-}
-
-inline void brake(void) {
-    #ifndef MIKU_TESTENV
-        braking = true;
-        left_motors.brake();
-        right_motors.brake();
-    #endif
-}
-
-inline void set_brake_mode(pros::motor_brake_mode_e_t mode) {
-    #ifndef MIKU_TESTENV
-        left_motors.set_brake_mode_all(mode);
-        right_motors.set_brake_mode_all(mode);
-    #endif
-}
+void brake(void);
+void set_brake_mode(pros::motor_brake_mode_e_t mode);
 
 void init(void);
 } // namespace robot

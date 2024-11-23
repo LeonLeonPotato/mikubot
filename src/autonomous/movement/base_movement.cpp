@@ -90,17 +90,17 @@ void BaseMovement::recompute_path(pathing::BasePath& path, int goal_i) const
         }
     }
 
-    path.points[0] = Eigen::Vector2f(robot::x, robot::y);
+    path.points[0] = robot::pos;
 
     path_solver(path);
 }
 
 // Do not question me on my generic pid parameters. Trust the femboy programmer~
 void BaseMovement::init_generic_pid(controllers::PID& pid) {
-    pid.kp = 300;
-    pid.ki = 25;
-    pid.kd = 400;
-    pid.integral_limit = 1;
+    pid.kp = 8000;
+    pid.ki = 0;
+    pid.kd = 100;
+    pid.integral_limit = 1000;
     pid.disable_integral_limit = 1;
     pid.sign_switch_reset = true;
 }
@@ -109,7 +109,7 @@ void BaseMovement::solve_path_default(pathing::BasePath& path) {
     pathing::BaseParams solve_params;
 
     solve_params.start_heading = robot::theta;
-    solve_params.start_magnitude = fmax(10, robot::speed());
+    solve_params.start_magnitude = 10 * robot::velocity.norm();
     solve_params.end_heading = 0;
     solve_params.end_magnitude = 0;
 

@@ -4,8 +4,8 @@
 using namespace movement;
 
 void simple::init_generic_pid(controllers::PID& pid) {
-    pid.kp = 300;
-    pid.ki = 10;
+    pid.kp = 4000;
+    pid.ki = 0;
     pid.kd = 50;
     pid.disable_integral_limit = infinity();
     pid.integral_limit = infinity();
@@ -98,7 +98,7 @@ TickResult simple::go_to_tick(const Eigen::Vector2f& point, controllers::PID& pi
     float distance_coeff, int max_speed, int timeout, float threshold)
 {
     float dist = robot::distance(point);
-    float speed = fmin(dist * distance_coeff, 127.0f);
+    float speed = fmin(dist * distance_coeff, 12000.0f);
     float dtheta = robot::angular_diff(point);
     float ctrl = pid.get(dtheta);
     robot::volt(dist + ctrl, dist - ctrl);

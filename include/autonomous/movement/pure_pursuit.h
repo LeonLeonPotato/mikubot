@@ -40,7 +40,7 @@ class PurePursuit : public BaseMovement {
         }
 
         MovementResult follow_path_cancellable(
-            bool& cancel_ref, 
+            volatile bool& cancel_ref, 
             pathing::BasePath& path,
             const MovementParams& params,
             controllers::PID& pid

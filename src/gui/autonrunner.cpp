@@ -8,9 +8,12 @@
 #include "liblvgl/lvgl.h"
 
 namespace autonrunner {
+bool initialized = false;
 renderer::Text* text;
 
 void init(void) {
+    if (initialized) return;
+    initialized = true;
     using namespace strategies::config;
 
     text = new renderer::Text("Running auton", roboto_regular_24, 0, 0, 0xFFFFFF);
@@ -22,6 +25,9 @@ void init(void) {
 }
 
 void destroy(void) {
+    if (!initialized) return;
+    initialized = false;
+
     delete text;
 }
 }

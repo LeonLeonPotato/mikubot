@@ -21,7 +21,7 @@ void test_strategy::run(void) {
     path.points.emplace_back(191, 263);
     path.points.emplace_back(195, 106);
     path.points.emplace_back(96, 35.5);
-    path.set_relative(robot::pos());
+    path.set_relative(robot::pos);
 
     Future<movement::MovementResult> fut = pure_pursuit.follow_path_async(path, movement::PurePursuitParams {{ 
         .force_recomputation = movement::RecomputationLevel::NONE,

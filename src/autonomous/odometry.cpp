@@ -10,32 +10,24 @@ pros::task_t task;
 
 void run(void* args) {
     long long iterations = 0;
+    long long ltime = pros::micros();
     #ifndef MIKU_TESTENV
-        float ls = rad(robot::side_encoder.get_position() / 100);
-        float lb = rad(robot::back_encoder.get_position() / 100);
+        float ls = rad(robot::side_encoder.get_position() / 100.0f);
+        float lb = rad(robot::back_encoder.get_position() / 100.0f);
         float ltheta = rad(robot::inertial.get_rotation());
     #else
         float ls = 0;
         float lb = 0;
         float ltheta = 0;
     #endif
-    auto ltime = pros::micros();
-    float lx = 0, ly = 0;
-    float lvx = 0, lvy = 0;
 
     while (true) {
-        auto dt = (pros::micros() - ltime) / 1000000.0f;
+        const long long dt = (pros::micros() - ltime) / 1000000.0f;
         ltime = pros::micros();
 
-        #ifndef MIKU_TESTENV
-            float ctheta = rad(robot::inertial.get_rotation());
-        #else
-            float ctheta = 0;
-        #endif
-        float dtheta = ctheta - ltheta;
-        robot::theta += dtheta;
-        ltheta = ctheta;
-        if (fabs(dtheta) < rad(0.1)) dtheta = 0;
+        robot::theta = rad(robot::inertial.get_rotation());
+        const float dtheta = robot::theta - ltheta;
+        ltheta = robot::theta;
 
         robot::angular_acceleration = (dtheta / dt - robot::angular_velocity) / dt;
         robot::angular_velocity = dtheta / dt;
@@ -47,13 +39,10 @@ void run(void* args) {
             float cs = 0;
             float cb = 0;
         #endif
-        float ds = cs - ls;
-        float db = cb - lb;
+        float travel_side = (cs - ls) * robot::TRACKING_WHEEL_RADIUS;
+        float travel_back = (cb - lb) * robot::TRACKING_WHEEL_RADIUS;
         ls = cs;
         lb = cb;
-        
-        float travel_side = ds * robot::TRACKING_WHEEL_RADIUS;
-        float travel_back = db * robot::TRACKING_WHEEL_RADIUS;
 
         if (dtheta != 0) {
             float ch = 2 * sin(dtheta / 2);
@@ -62,24 +51,21 @@ void run(void* args) {
             travel_back = ch * (travel_back / dtheta + robot::BACK_TRACKING_WHEEL_OFFSET);
         }
 
-        float av_theta = robot::theta - dtheta / 2;
+        const float av_theta = robot::theta - dtheta / 2;
 
-        lx = robot::x;
-        ly = robot::y;
-        lvx = robot::velocity_x;
-        lvy = robot::velocity_y;
+        Eigen::Vector2f last_velocity = robot::velocity;
+        Eigen::Vector2f travel = {
+            -travel_side * cos(av_theta) - travel_back * sin(av_theta),
+            travel_side * sin(av_theta) - travel_back * cos(av_theta)
+        };
 
-        robot::x -= travel_side * cos(av_theta) + travel_back * sin(av_theta);
-        robot::y += travel_side * sin(av_theta) - travel_back * cos(av_theta);
+        robot::pos += travel;
 
-        robot::velocity_x = (robot::x - lx) / dt;
-        robot::velocity_y = (robot::y - ly) / dt;
-        robot::acceleration_x = (robot::velocity_x - lvx) / dt;
-        robot::acceleration_y = (robot::velocity_y - lvy) / dt;
-
-        pros::c::delay(10);
+        robot::velocity = travel / dt;
+        robot::acceleration = (robot::velocity - last_velocity) / dt;
 
         iterations++;
+        pros::c::delay(5);
     }
 }
 

@@ -3,21 +3,21 @@
 
 using namespace movement;
 
-float PurePursuit::func(pathing::BasePath& path, float radius, float t) const {
-    return (robot::pos() - path.compute(t)).norm() - radius;
+float PurePursuit::func(float t) const {
+    return (robot::pos - path.compute(t)).norm() - radius;
 }
 
-float PurePursuit::deriv(pathing::BasePath& path, float t) const {
-    Eigen::Vector2f diff = robot::pos() - path.compute(t);
+float PurePursuit::deriv(float t) const {
+    Eigen::Vector2f diff = robot::pos - path.compute(t);
     return diff.dot(path.compute(t, 1)) / diff.norm();
 }
 
-Eigen::VectorXf PurePursuit::vec_func(pathing::BasePath& path, float radius, Eigen::VectorXf& t) const {
-    return (path.compute(t).colwise() - robot::pos()).colwise().norm().array() - radius;
+Eigen::VectorXf PurePursuit::vec_func(Eigen::VectorXf& t) const {
+    return (path.compute(t).colwise() - robot::pos).colwise().norm().array() - radius;
 }
 
-Eigen::VectorXf PurePursuit::vec_deriv(pathing::BasePath& path, Eigen::VectorXf& t) const {
-    const Eigen::Matrix2Xf rel = path.compute(t).colwise() - robot::pos();
+Eigen::VectorXf PurePursuit::vec_deriv(Eigen::VectorXf& t) const {
+    const Eigen::Matrix2Xf rel = path.compute(t).colwise() - robot::pos;
     return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 }
 
@@ -27,7 +27,6 @@ TickResult PurePursuit::tick(
 {
     TickResult result;
 
-    Eigen::Vector2f point = robot::pos();
     Eigen::Vector2f& dest = path.points.back();
 
     bool end_of_path = fabs(t - path.maxt()) < 0.0001; // is old t the end of the path?
@@ -80,7 +79,7 @@ TickResult PurePursuit::tick(
 }
 
 MovementResult PurePursuit::follow_path_cancellable(
-    bool& cancel_ref, 
+    volatile bool& cancel_ref, 
     pathing::BasePath& path,
     const MovementParams& params,
     controllers::PID& pid) const 
