@@ -50,24 +50,26 @@ constexpr bool velo_based_driving = true;
 extern const pros::motor_brake_mode_e_t default_brake_mode;
 } // namespace config
 
-extern pros::Controller master;
-extern pros::Controller partner;
+#ifndef MIKU_TESTENV
+    extern pros::Controller master;
+    extern pros::Controller partner;
 
-extern pros::adi::Pneumatics doinker;
-extern pros::adi::Pneumatics ejector;
-extern pros::adi::Pneumatics clamp;
+    extern pros::adi::Pneumatics doinker;
+    extern pros::adi::Pneumatics ejector;
+    extern pros::adi::Pneumatics clamp;
 
-extern pros::Motor conveyor;
-extern pros::Motor intake;
-extern pros::Motor wallmech;
+    extern pros::Motor conveyor;
+    extern pros::Motor intake;
+    extern pros::Motor wallmech;
 
-extern pros::IMU inertial;
-extern pros::Optical classifier;
-extern pros::Rotation side_encoder;
-extern pros::Rotation back_encoder;
+    extern pros::IMU inertial;
+    extern pros::Optical classifier;
+    extern pros::Rotation side_encoder;
+    extern pros::Rotation back_encoder;
 
     extern pros::MotorGroup left_motors;
     extern pros::MotorGroup right_motors;
+#endif
 
 int max_speed(void);
 

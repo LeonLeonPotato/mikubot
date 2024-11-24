@@ -25,7 +25,11 @@ void run(void* args) {
         const long long dt = (pros::micros() - ltime) / 1000000.0f;
         ltime = pros::micros();
 
-        robot::theta = rad(robot::inertial.get_rotation());
+        #ifndef MIKU_TESTENV
+            robot::theta = rad(robot::inertial.get_rotation());
+        #else
+            robot::theta = 0;
+        #endif
         const float dtheta = robot::theta - ltheta;
         ltheta = robot::theta;
 

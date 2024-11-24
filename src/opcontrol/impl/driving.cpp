@@ -7,7 +7,7 @@
 using namespace controls;
 
 struct Scaling {
-	float dead_zone = 6.0f;
+	float dead_zone = 5.0f;
 	float turn_scale = 1.0f;
 	float speed_scale = 1.0f;
 	float smoothing = 0.45f;

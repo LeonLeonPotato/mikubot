@@ -9,10 +9,11 @@ int destuck_ticks = 0;
 int destuck_start_time = -1;
 
 void conveyor::tick() {
-    int speed = 
-        (robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)
-        - robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
-        * 200;
+    #ifndef MIKU_TESTENV
+        int speed = 
+            (robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)
+            - robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+            * 200;
 
     // double eff = robot::conveyor.get_efficiency();
         
@@ -31,12 +32,13 @@ void conveyor::tick() {
     //         destuck_ticks = 0;
     //     }
     // }
-
-    if (destuck_start_time == -1) {
-        robot::conveyor.move_velocity(speed);
-    } else {
-        robot::conveyor.move_velocity(speed);
-    }
+    
+        if (destuck_start_time == -1) {
+            robot::conveyor.move_velocity(speed);
+        } else {
+            robot::conveyor.move_velocity(speed);
+        }
+    #endif
 }
 
 void conveyor::run() {

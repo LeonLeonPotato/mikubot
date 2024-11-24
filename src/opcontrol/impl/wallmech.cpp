@@ -9,16 +9,18 @@ using namespace controls;
 static pros::task_t task;
 
 void wallmech::tick() {
-    const int in = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_X);
-    const int out = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_B);
+    #ifndef MIKU_TESTENV
+        const int in = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_X);
+        const int out = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_B);
 
-    if (in) {
-        robot::wallmech.move_velocity(150);
-    } else if (out) {
-        robot::wallmech.move_velocity(-150);
-    } else {
-        robot::wallmech.move_velocity(0);
-    } 
+        if (in) {
+            robot::wallmech.move_velocity(150);
+        } else if (out) {
+            robot::wallmech.move_velocity(-150);
+        } else {
+            robot::wallmech.move_velocity(0);
+        } 
+    #endif
 }
 
 void wallmech::run() {

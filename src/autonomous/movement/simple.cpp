@@ -124,7 +124,7 @@ MovementResult simple::go_to_cancellable(const Eigen::Vector2f& point, controlle
             break;
         }
 
-        if (pros::millis() - start >= timeout) {
+        if (pros::millis() - start > timeout) {
             result.code = ExitCode::TIMEOUT;
             break;
         }

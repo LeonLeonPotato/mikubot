@@ -13,22 +13,25 @@ static double compute_average(std::vector<double> vec) {
 
 static void task_func(void* args) {
     while (true) {
-        auto left_temps = robot::left_motors.get_temperature_all();
-        auto right_temps = robot::right_motors.get_temperature_all();
-        auto average_left_t = (int) round(compute_average(left_temps));
-        auto average_right_t = (int) round(compute_average(right_temps));
-        auto battery = pros::battery::get_capacity();
+        #ifndef MIKU_TESTENV
+            auto left_temps = robot::left_motors.get_temperature_all();
+            auto right_temps = robot::right_motors.get_temperature_all();
+            auto average_left_t = (int) round(compute_average(left_temps));
+            auto average_right_t = (int) round(compute_average(right_temps));
+            auto battery = pros::battery::get_capacity();
 
-        char buf_temps[64]; memset(buf_temps, sizeof(buf_temps), 0);
-        snprintf(buf_temps, sizeof(buf_temps), "Temps: %d | %d", average_left_t, average_right_t);
-        robot::partner.set_text(1, 0, buf_temps); pros::delay(150);
-        robot::master.set_text(1, 0, buf_temps); pros::delay(150);
+            char buf_temps[64]; memset(buf_temps, sizeof(buf_temps), 0);
+            snprintf(buf_temps, sizeof(buf_temps), "Temps: %d | %d", average_left_t, average_right_t);
+            robot::partner.set_text(1, 0, buf_temps); pros::delay(150);
+            robot::master.set_text(1, 0, buf_temps); pros::delay(150);
 
-        char buf_battery[64]; memset(buf_battery, sizeof(buf_battery), 0);
-        snprintf(buf_battery, sizeof(buf_battery), "Power: %.1f PCT", battery);
-        robot::partner.set_text(2, 0, buf_battery); pros::delay(150);
-        robot::master.set_text(2, 0, buf_battery); pros::delay(150);
-
+            char buf_battery[64]; memset(buf_battery, sizeof(buf_battery), 0);
+            snprintf(buf_battery, sizeof(buf_battery), "Power: %.1f PCT", battery);
+            robot::partner.set_text(2, 0, buf_battery); pros::delay(150);
+            robot::master.set_text(2, 0, buf_battery); pros::delay(150);
+        #else
+            pros::delay(100);
+        #endif
     }
 }
 

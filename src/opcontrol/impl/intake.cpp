@@ -9,12 +9,14 @@ using namespace controls;
 static pros::task_t task;
 
 void intake::tick() {
-    int speed = 
-        (robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)
-        - robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
-        * 200;
+    #ifndef MIKU_TESTENV
+        int speed = 
+            (robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)
+            - robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+            * 200;
 
-    robot::intake.move_velocity(speed);
+        robot::intake.move_velocity(speed);
+    #endif
 }
 
 void intake::run() {

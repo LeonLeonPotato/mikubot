@@ -9,17 +9,19 @@ static bool last = false;
 static bool toggle = false;
 
 void doinker::tick() {
-    bool cur = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_A);
+    #ifndef MIKU_TESTENV
+        bool cur = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_A);
 
-    if (cur == true && last == false) toggle = !toggle;
+        if (cur == true && last == false) toggle = !toggle;
 
-    if (toggle && !robot::doinker.is_extended()) {
-        robot::doinker.extend();
-    } else if (!toggle && robot::doinker.is_extended()) {
-        robot::doinker.retract();
-    }
+        if (toggle && !robot::doinker.is_extended()) {
+            robot::doinker.extend();
+        } else if (!toggle && robot::doinker.is_extended()) {
+            robot::doinker.retract();
+        }
 
-    last = cur;
+        last = cur;
+    #endif
 }
 
 void doinker::run() {

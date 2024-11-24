@@ -5,19 +5,19 @@
 
 using namespace movement;
 
-MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path) const {
+MovementResult BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path) const {
     controllers::PID pid;
     BaseMovement::init_generic_pid(pid);
     return follow_path_cancellable(cancel_ref, path, get_global_params(), pid);
 }
 
-MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, const MovementParams& params) const {
+MovementResult BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, const MovementParams& params) const {
     controllers::PID pid;
     BaseMovement::init_generic_pid(pid);
     return follow_path_cancellable(cancel_ref, path, params, pid);
 }
 
-MovementResult BaseMovement::follow_path_cancellable(bool& cancel_ref, pathing::BasePath& path, controllers::PID& pid) const {
+MovementResult BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, controllers::PID& pid) const {
     return follow_path_cancellable(cancel_ref, path, get_global_params(), pid);
 }
 
