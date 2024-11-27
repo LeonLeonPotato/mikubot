@@ -1,28 +1,37 @@
 import numpy as np
+import bisect
 
 def path(u):
     return (
-        u**3 - 2*(u ** 2) + 3*u,
+        u**3 - 3*(u ** 2) + 3*u,
         u**2 + u
     )
 
 def path_deriv(u):
     return (
-        3*(u**2) - 4*u + 3,
+        3*(u**2) - 6*u + 3,
         2*u + 1
     )
 
 def path_second_deriv(u):
     return (
-        6*u - 4,
+        6*u - 6,
         2
     )
 
 def curvature(u):
-    p = path(u)
     dp = path_deriv(u)
     ddp = path_second_deriv(u)
-    return (dp[0] * ddp[1] - dp[1] * ddp[0]) / (np.hypot(dp[0], dp[1]) ** 3)
+    return (dp[0] * ddp[1] - dp[1] * ddp[0]) / (np.hypot(dp[0], dp[1]) ** 3 + 1e-6)
+
+def gen_arc_list(res:int):
+    distances = [0]
+    for ui in range(res):
+        uf = (ui + 1) / res; ui = ui / res
+        pui = path(ui); puf = path(uf)
+        distances.append(np.hypot(puf[0] - pui[0], puf[1] - pui[1]) + distances[-1])
+    distances.append(distances[-1])
+    return distances
 
 class TrapezoidalProfile:
     def __init__(self, mv:float, ma:float, d:float):
@@ -85,19 +94,59 @@ class TrapezoidalProfile:
             t += dt
         self.discretized_v = (velocities, dt)
         return velocities
+    
+class TwoDProfile:
+    def __init__(self, mv:float, ma:float, res:int, dt:float, track_width:float):
+        self.mv = mv
+        self.ma = ma
+        self.res = res
+        self.track_width = track_width
+        self.dt = dt
+        self.t_max = 0
+        self.distances = []
+        self.velocities = []
+        self.us = []
+
+    def construct_profile(self, start_v=0, end_v=0):
+        self.velocities = []
+        self.distances = []
+        self.us = []
+
+        distances = gen_arc_list(self.res)
+            
+        v = start_v; d = 0
+        while d < distances[-1]:
+            di = bisect.bisect_left(distances, d)
+            u = di / self.res
+            ds = distances[di+1] - distances[di]
+            dsLdsC = 1 + abs(curvature(u)) * self.track_width
+            v = max(0.01, min(self.mv / dsLdsC, np.sqrt(v**2 + 2*self.ma*ds)))
+
+            self.velocities.append(v)
+            self.distances.append(d)
+            self.us.append(u)
+            d += v * self.dt
+
+        print(len(distances), len(self.velocities))
+
+        v = end_v
+        for i in range(len(self.velocities)-1, -1, -1):
+            
+
+        self.t_max = len(self.velocities) * self.dt
 
 def main():
     import matplotlib.pyplot as plt
 
-    profile = TrapezoidalProfile(1, 1, 4)
-    X = np.linspace(0, profile.t_max, 100)
-    Y = [profile.distance(x) for x in X]
-    dY = [profile.velocity(x) for x in X]
-    ddY = [profile.acceleration(x) for x in X]
+    profile = TwoDProfile(1, 1, 1000, 0.01, 1)
+    profile.construct_profile()
+
+    X = np.linspace(0, profile.t_max, len(profile.velocities))
+    Y = profile.velocities
+    CY = [1/(1+abs(curvature(u))) for u in profile.us]
 
     plt.plot(X, Y)
-    plt.plot(X, dY)
-    plt.plot(X, ddY)
+    plt.plot(X, CY)
     plt.show()
 
 
