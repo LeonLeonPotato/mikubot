@@ -59,5 +59,6 @@ float BasePath::angular_velocity(float t) const {
 
 float BasePath::curvature(float t) const {
     float n = compute(t, 1).norm();
-    return compute(t, 2).norm() / powf(1 + n * n, 1.5);
+    // x^3/2 = sqrt(x) * x
+    return compute(t, 2).norm() / (sqrtf(1 + n * n) * (1 + n * n));
 }

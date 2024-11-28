@@ -45,8 +45,6 @@ class TrapezoidalProfile:
         self.__c_s_coast = 0.5 * self.ma * self.t1**2
         self.__c_s_decel = 0.5 * self.ma * self.t1**2 - self.v_eff * self.t1
         self.__c_v_decel = self.v_eff + self.ma * self.t2
-        self.__discretized_s = None
-        self.__discretized_v = None
     
     def distance(self, t):
         if 0 <= t < self.t1:
@@ -96,59 +94,60 @@ class TrapezoidalProfile:
         return velocities
     
 class TwoDProfile:
-    def __init__(self, mv:float, ma:float, res:int, dt:float, track_width:float):
+    def __init__(self, mv:float, ma:float, res:int, ds:float, track_width:float):
         self.mv = mv
         self.ma = ma
         self.res = res
         self.track_width = track_width
-        self.dt = dt
-        self.t_max = 0
-        self.distances = []
+        self.ds = ds
         self.velocities = []
         self.us = []
 
     def construct_profile(self, start_v=0, end_v=0):
-        self.velocities = []
-        self.distances = []
-        self.us = []
+        self.velocities = [start_v]
+        self.us = [0]
 
         distances = gen_arc_list(self.res)
+        curvature_cache = [-1]
             
-        v = start_v; d = 0
-        while d < distances[-1]:
-            di = bisect.bisect_left(distances, d)
-            u = di / self.res
-            ds = distances[di+1] - distances[di]
-            dsLdsC = 1 + abs(curvature(u)) * self.track_width
-            v = max(0.01, min(self.mv / dsLdsC, np.sqrt(v**2 + 2*self.ma*ds)))
+        u = start_v; d = 0
+        while d <= distances[-1]:
+            arc_t = bisect.bisect_left(distances, d) / self.res
+            dsLdsC = 1 + abs(curvature(arc_t)) * self.track_width
+            v = max(0.01, min(self.mv / dsLdsC, np.sqrt(u**2 + 2*self.ma*self.ds)))
 
             self.velocities.append(v)
-            self.distances.append(d)
-            self.us.append(u)
-            d += v * self.dt
+            self.us.append(arc_t)
+            curvature_cache.append(dsLdsC)
 
-        print(len(distances), len(self.velocities))
+            u = v
+            d += self.ds
 
-        v = end_v
-        for i in range(len(self.velocities)-1, -1, -1):
-            
+        u = end_v
+        for i in range(len(self.velocities)-1, 0, -1):
+            dsLdsC = curvature_cache[i]
+            v = max(0.01, min(self.mv / dsLdsC, np.sqrt(u**2 + 2*self.ma*self.ds)))
+            self.velocities[i] = min(self.velocities[i], v)
 
-        self.t_max = len(self.velocities) * self.dt
+            u = v
+            d -= self.ds
 
 def main():
     import matplotlib.pyplot as plt
 
-    profile = TwoDProfile(1, 1, 1000, 0.01, 1)
-    profile.construct_profile()
+    profile = TwoDProfile(0.1, 0.1, 100000, 0.001, 9)
+    profile.construct_profile(start_v=0)
 
-    X = np.linspace(0, profile.t_max, len(profile.velocities))
+    X = np.linspace(0, gen_arc_list(profile.res)[-1], len(profile.velocities))
+    print(X)
     Y = profile.velocities
-    CY = [1/(1+abs(curvature(u))) for u in profile.us]
+    CY = [1/(1+abs(curvature(u)) * profile.track_width) for u in profile.us]
+
+    print(len(Y))
 
     plt.plot(X, Y)
     plt.plot(X, CY)
     plt.show()
-
 
 if __name__ == "__main__":
     main()
