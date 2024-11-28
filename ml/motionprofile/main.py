@@ -135,7 +135,7 @@ class TwoDProfile:
 def main():
     import matplotlib.pyplot as plt
 
-    profile = TwoDProfile(0.1, 0.1, 100000, 0.001, 9)
+    profile = TwoDProfile(1, 0.01, 100000, 0.001, 9)
     profile.construct_profile(start_v=0)
 
     X = np.linspace(0, gen_arc_list(profile.res)[-1], len(profile.velocities))

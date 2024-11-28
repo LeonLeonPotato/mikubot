@@ -208,6 +208,9 @@ void destroy(void) {
     lv_obj_del(selected_auton_box);
     lv_style_reset(selected_auton_box_style);
 
-    lv_obj_del(miku_gif);
+    if (FILE *file = fopen("S/kaito-miku.gif", "r")) {
+        fclose(file);
+        lv_obj_del(miku_gif);
+    }
 }
 }
