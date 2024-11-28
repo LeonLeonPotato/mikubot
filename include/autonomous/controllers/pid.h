@@ -3,6 +3,13 @@
 #include <string>
 
 namespace controllers {
+struct PIDArgs {
+    float kp, ki, kd;
+    float integral_limit = infinityf();
+    float disable_integral_limit = infinityf();
+    bool sign_switch_reset;
+};
+
 class PID {
     private:
         bool registered;
@@ -10,24 +17,17 @@ class PID {
         float last_time;
 
     public:
-        float kp, ki, kd;
-        float integral_limit;
-        float disable_integral_limit;
-        bool sign_switch_reset;
+        const PIDArgs& args;
 
-        PID() { reset(); }
-        PID(
-            float kp, float ki, float kd, 
-            float integral_limit, float disable_integral_limit,
-            bool sign_switch_reset
-        ) : kp(kp), ki(ki), kd(kd), integral_limit(integral_limit), disable_integral_limit(disable_integral_limit), sign_switch_reset(sign_switch_reset) 
-        {
-            reset(); 
-        }
+        PID() : args(PIDArgs()) { reset(); }
+        PID(const PIDArgs& args) : args(args) { reset(); };
+
         void reset(void);
-        void register_error(float error);
+
+        void register_error(const float error);
+
         float get(void);
-        float get(float error) {
+        float get(const float error) {
             register_error(error);
             return get();
         }
