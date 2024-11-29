@@ -35,10 +35,10 @@ const pros::motor_brake_mode_e_t config::default_brake_mode
     pros::Motor robot::intake(-9);
     pros::Motor robot::wallmech(-11);
 
-    pros::Imu robot::inertial(6);
-    pros::Optical robot::classifier(4);
-    pros::Rotation robot::side_encoder(0);
-    pros::Rotation robot::back_encoder(7);
+    pros::Imu robot::inertial(7);
+    pros::Optical robot::classifier(0);
+    pros::Rotation robot::side_encoder(4);
+    pros::Rotation robot::back_encoder(5);
 
     pros::MotorGroup robot::left_motors({1, -2, -3}, pros::MotorGearset::blue);
     pros::MotorGroup robot::right_motors({11, 12, -13}, pros::MotorGearset::blue);

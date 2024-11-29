@@ -41,11 +41,29 @@ void autonomous(void) {
 }
 
 void opcontrol(void) {
-	competition_initialize();
-	autonomous();
+	// competition_initialize();
+	// autonomous();
 	// pros::delay(100);
 	// std::cout << "Opcontrol started" << std::endl;
-	strategies::test_strategy::run();
+	// strategies::test_strategy::run();
+
+	int st = pros::millis();
+	std::vector<std::pair<float, float>> vals;
+	while (pros::millis() - st < 10000) {
+		robot::volt(12000, -12000);
+		vals.push_back({ robot::pos.x(), robot::pos.y() });
+		pros::delay(20);
+	}
+
+	printf("Start\n");
+	for (auto& val : vals) {
+		std::cout << val.first << ", " << val.second << std::endl;
+	}
+	printf("End\n");
+
+	for (auto& task : controls::start_tasks) {
+		task();
+	}
 
 	//controls::lidartest::run();
 }

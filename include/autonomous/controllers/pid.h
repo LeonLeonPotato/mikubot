@@ -1,12 +1,13 @@
 #pragma once
 
 #include <string>
+#include <cmath>
 
 namespace controllers {
 struct PIDArgs {
     float kp, ki, kd;
-    float integral_limit = infinityf();
-    float disable_integral_limit = infinityf();
+    float integral_limit = 99999999.0f;
+    float disable_integral_limit = 99999999.0f;
     bool sign_switch_reset;
 };
 

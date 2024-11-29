@@ -4,12 +4,7 @@
 using namespace movement;
 
 void simple::init_generic_pid(controllers::PID& pid) {
-    pid.kp = 4000;
-    pid.ki = 0;
-    pid.kd = 50;
-    pid.disable_integral_limit = infinity();
-    pid.integral_limit = infinity();
-    pid.sign_switch_reset = true;
+    printf("sigma");
 }
 
 TickResult simple::turn_towards_tick(float angle, controllers::PID& pid,

@@ -64,6 +64,7 @@ void run(void* args) {
         };
 
         robot::pos += travel;
+        //std::cout << robot::pos.transpose() << std::endl;
 
         robot::velocity = travel / dt;
         robot::acceleration = (robot::velocity - last_velocity) / dt;
