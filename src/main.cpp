@@ -16,8 +16,8 @@ void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
 	robot::init();
-	odometry::init();
-	renderer::init();
+	// odometry::init();
+	// renderer::init();
 }
 
 void disabled(void) {
@@ -38,28 +38,30 @@ void competition_initialize(void) {
 void autonomous(void) {
 	std::cout << "Auton started" << std::endl;
 	autonrunner::init();
+	strategies::test_strategy::run();
 }
 
 void opcontrol(void) {
-	// competition_initialize();
-	// autonomous();
-	// pros::delay(100);
-	// std::cout << "Opcontrol started" << std::endl;
-	// strategies::test_strategy::run();
+	competition_initialize();
 
-	int st = pros::millis();
-	std::vector<std::pair<float, float>> vals;
-	while (pros::millis() - st < 10000) {
-		robot::volt(12000, -12000);
-		vals.push_back({ robot::pos.x(), robot::pos.y() });
-		pros::delay(20);
-	}
+	autonomous();
+	pros::delay(100);
 
-	printf("Start\n");
-	for (auto& val : vals) {
-		std::cout << val.first << ", " << val.second << std::endl;
-	}
-	printf("End\n");
+	std::cout << "Opcontrol started" << std::endl;
+
+	// int st = pros::millis();
+	// std::vector<std::pair<float, float>> vals;
+	// while (pros::millis() - st < 10000) {
+	// 	robot::volt(12000, -12000);
+	// 	vals.push_back({ robot::pos.x(), robot::pos.y() });
+	// 	pros::delay(20);
+	// }
+
+	// printf("Start\n");
+	// for (auto& val : vals) {
+	// 	std::cout << val.first << ", " << val.second << std::endl;
+	// }
+	// printf("End\n");
 
 	for (auto& task : controls::start_tasks) {
 		task();

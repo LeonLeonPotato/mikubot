@@ -33,7 +33,7 @@ const pros::motor_brake_mode_e_t config::default_brake_mode
 
     pros::Motor robot::conveyor(21, pros::MotorGearset::green);
     pros::Motor robot::intake(-9);
-    pros::Motor robot::wallmech(-11);
+    pros::Motor robot::wallmech(0);
 
     pros::Imu robot::inertial(7);
     pros::Optical robot::classifier(0);
@@ -61,7 +61,7 @@ int robot::max_speed(void) {
                 break;
         }
     #else
-        return 100;
+        return 1;
     #endif
 }
 

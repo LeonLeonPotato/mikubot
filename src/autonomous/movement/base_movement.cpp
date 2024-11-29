@@ -5,20 +5,8 @@
 
 using namespace movement;
 
-MovementResult BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path) const {
-    controllers::PID pid;
-    BaseMovement::init_generic_pid(pid);
-    return follow_path_cancellable(cancel_ref, path, get_global_params(), pid);
-}
-
-MovementResult BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, const MovementParams& params) const {
-    controllers::PID pid;
-    BaseMovement::init_generic_pid(pid);
-    return follow_path_cancellable(cancel_ref, path, params, pid);
-}
-
-MovementResult BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, controllers::PID& pid) const {
-    return follow_path_cancellable(cancel_ref, path, get_global_params(), pid);
+MovementResult&& BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, PIDGroup pids) const {
+    return follow_path_cancellable(cancel_ref, path, get_global_params(), pids);
 }
 
 std::pair<float, float> BaseMovement::compute_initial_t(
@@ -66,8 +54,8 @@ std::pair<float, float> BaseMovement::compute_updated_t(
             return solvers::newton_single(funcs, t, 0, path.maxt(), params.update_iterations, params.update_threshold);
         }
         case solvers::Solver::Secant: {
-            float t1 = fmin(t + 1, path.maxt());
-            float t0 = t - ((int) (t1 == t)) * 0.1;
+            const float t1 = fmin(t + 1, path.maxt());
+            const float t0 = t - ((int) (t1 == t)) * 0.1;
             return solvers::secant_single(funcs, t0, t1, 0, path.maxt(), params.update_iterations, params.update_threshold);
         }
         case solvers::Solver::GradientDescent: {
@@ -77,6 +65,8 @@ std::pair<float, float> BaseMovement::compute_updated_t(
             throw std::runtime_error("Invalid / Unsupported solver: " + std::to_string((int) solver));
         }
     }
+
+    __builtin_unreachable();
 }
 
 void BaseMovement::recompute_path(pathing::BasePath& path, int goal_i) const
@@ -95,15 +85,11 @@ void BaseMovement::recompute_path(pathing::BasePath& path, int goal_i) const
     path_solver(path);
 }
 
-void BaseMovement::init_generic_pid(controllers::PID& pid) {
-
-}
-
 void BaseMovement::solve_path_default(pathing::BasePath& path) {
     pathing::BaseParams solve_params;
 
     solve_params.start_heading = robot::theta;
-    solve_params.start_magnitude = 10 * robot::velocity.norm();
+    solve_params.start_magnitude = robot::velocity.norm();
     solve_params.end_heading = 0;
     solve_params.end_magnitude = 0;
 

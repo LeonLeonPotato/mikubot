@@ -174,6 +174,12 @@ void confirm_selection(void) {
 void init_gif(void) {
     miku_gif = lv_gif_create(lv_scr_act());
     lv_obj_set_pos(miku_gif, 380, 10);
+
+    FILE* miku_test = fopen("kaito-miku.gif", "r");
+    if (miku_test == NULL) {
+        printf("Failed to open miku gif\n");
+        return;
+    }
     lv_gif_set_src(miku_gif, "S/kaito-miku.gif");
 }
 
