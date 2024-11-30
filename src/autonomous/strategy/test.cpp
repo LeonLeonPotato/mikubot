@@ -2,6 +2,7 @@
 #include "autonomous/movement.h"
 #include "autonomous/pathing.h"
 #include "essential.h"
+#include "config.h"
 
 #include "api.h"
 
@@ -11,6 +12,7 @@ void test_strategy::run(void) {
     robot::set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
     movement::PurePursuit pure_pursuit(100); // Pure pursuit controller with radius 100 cm
+    pure_pursuit.solver_override = solvers::Solver::Newton;
     controllers::PID linear {0.1, 0, 0.01}; // Example pids (I will tune tmrw)
     controllers::PID angular {0.1, 0, 0.01};
 
@@ -48,5 +50,5 @@ void test_strategy::run(void) {
     printf("Numerical error: %f\n", result.error);
     printf("Spline parameter: %f\n", result.t);
 
-    robot::set_brake_mode(robot::config::default_brake_mode);
+    robot::set_brake_mode(config::default_brake_mode);
 }
