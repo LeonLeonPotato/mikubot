@@ -3,18 +3,18 @@
 
 using namespace controllers;
 
-void PID::register_error(float error) {
+void PID::register_error(const float error) {
     if (!registered) {
         last_error = error;
         registered = true;
     } else {
         last_error = this->error;
 
-        if (fabs(error) > disable_integral_limit || (std::signbit(error) != std::signbit(last_error) && sign_switch_reset)) {
+        if (fabs(error) > args.disable_integral_limit || (std::signbit(error) != std::signbit(last_error) && args.sign_switch_reset)) {
             integral = 0;
         } else {
-            float integral_inc = error * (pros::micros() - last_time) / 1000000.0;
-            integral = std::clamp(integral + integral_inc, -integral_limit, integral_limit);
+            const float integral_inc = error * (pros::micros() - last_time) / 1000000.0;
+            integral = std::clamp(integral + integral_inc, -args.integral_limit, args.integral_limit);
         }
     }
     last_time = pros::micros();
@@ -29,7 +29,7 @@ void PID::reset() {
 }
 
 float PID::get(void) {
-    float dt = (pros::micros() - last_time) / 1000000.0;
-    float derivative = (error - last_error) * (int) registered / dt;
-    return kp * error + ki * integral - kd * derivative;
+    const float dt = (pros::micros() - last_time) / 1000000.0;
+    const float derivative = (error - last_error) * (int) registered / dt;
+    return args.kp * error + args.ki * integral - args.kd * derivative;
 }

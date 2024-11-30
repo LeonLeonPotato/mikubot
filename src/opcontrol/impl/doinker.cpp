@@ -1,18 +1,19 @@
 #include "opcontrol/impl/doinker.h"
 #include "essential.h"
+#include "config.h"
 #include "api.h"
 
 using namespace controls;
 
-static pros::task_t task;
+static pros::task_t task = nullptr;
 static bool last = false;
 static bool toggle = false;
 
 void doinker::tick() {
     #ifndef MIKU_TESTENV
-        bool cur = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_A);
+        const bool cur = robot::partner.get_digital(config::keybinds::doinker);
 
-        if (cur == true && last == false) toggle = !toggle;
+        if (cur && !last) toggle = !toggle;
 
         if (toggle && !robot::doinker.is_extended()) {
             robot::doinker.extend();
@@ -36,9 +37,22 @@ static void local_run(void* p) {
 }
 
 void doinker::start_task() {
+    if (task != nullptr) return;
     task = pros::c::task_create(local_run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "conveyor");
 }
 
+void doinker::pause() {
+    if (task == nullptr) return;
+    pros::c::task_suspend(task);
+}
+
+void doinker::resume() {
+    if (task == nullptr) return;
+    pros::c::task_resume(task);
+}
+
 void doinker::stop_task() {
+    if (task == nullptr) return;
     pros::c::task_delete(task);
+    task = nullptr;
 }

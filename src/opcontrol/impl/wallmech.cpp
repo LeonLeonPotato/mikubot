@@ -1,25 +1,20 @@
 #include "opcontrol/impl/wallmech.h"
 #include "essential.h"
+#include "config.h"
 #include "api.h"
-
-#include <iostream>
 
 using namespace controls;
 
-static pros::task_t task;
+static pros::task_t task = nullptr;
 
 void wallmech::tick() {
     #ifndef MIKU_TESTENV
-        const int in = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_X);
-        const int out = robot::partner.get_digital(pros::E_CONTROLLER_DIGITAL_B);
+        const int speed = 
+            (robot::partner.get_digital(config::keybinds::wallmech_up)
+            - robot::partner.get_digital(config::keybinds::wallmech_down))
+            * 200;
 
-        if (in) {
-            robot::wallmech.move_velocity(150);
-        } else if (out) {
-            robot::wallmech.move_velocity(-150);
-        } else {
-            robot::wallmech.move_velocity(0);
-        } 
+        robot::wallmech.move_velocity(speed);
     #endif
 }
 
@@ -35,9 +30,22 @@ static void local_run(void* p) {
 }
 
 void wallmech::start_task() {
-    task = pros::c::task_create(local_run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
+    if (task != nullptr) return;
+    task = pros::c::task_create(local_run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "wallmech");
+}
+
+void wallmech::pause() {
+    if (task == nullptr) return;
+    pros::c::task_suspend(task);
+}
+
+void wallmech::resume() {
+    if (task == nullptr) return;
+    pros::c::task_resume(task);
 }
 
 void wallmech::stop_task() {
+    if (task == nullptr) return;
     pros::c::task_delete(task);
+    task = nullptr;
 }

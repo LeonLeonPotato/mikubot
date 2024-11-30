@@ -1,4 +1,5 @@
 #include "essential.h"
+#include "config.h"
 
 using namespace robot;
 
@@ -6,22 +7,12 @@ bool state::braking = false;
 Eigen::Vector2f state::pos = Eigen::Vector2f::Zero();
 Eigen::Vector2f state::velocity = Eigen::Vector2f::Zero();
 Eigen::Vector2f state::acceleration = Eigen::Vector2f::Zero();
-double state::theta = 0;
-double state::angular_velocity = 0;
-double state::angular_acceleration = 0;
+float state::theta = 0;
+float state::angular_velocity = 0;
+float state::angular_acceleration = 0;
 
-pros::vision_signature_s_t signatures::blue_ring = pros::Vision::signature_from_utility(
-    signatures::blue_ring_id, -3407, -3069, -3238, 9197, 10055, 9626, 4.300, 0
-);
-pros::vision_signature_s_t signatures::red_ring = pros::Vision::signature_from_utility(
-    signatures::red_ring_id, 7489, 9515, 8502, 79, 509, 294, 3.000, 0
-);
-pros::vision_signature_s_t signatures::goal = pros::Vision::signature_from_utility(
-    signatures::goal_id, -3265, -2831, -3048, -5487, -4767, -5127, 9.900, 0
-);
-
-const pros::motor_brake_mode_e_t config::default_brake_mode 
-    = pros::E_MOTOR_BRAKE_COAST;
+char robot::match::team = 'R';
+int robot::match::side = 1;
 
 #ifndef MIKU_TESTENV
     pros::Controller robot::master(pros::E_CONTROLLER_MASTER);
@@ -33,12 +24,12 @@ const pros::motor_brake_mode_e_t config::default_brake_mode
 
     pros::Motor robot::conveyor(21, pros::MotorGearset::green);
     pros::Motor robot::intake(-9);
-    pros::Motor robot::wallmech(-11);
+    pros::Motor robot::wallmech(0);
 
-    pros::Imu robot::inertial(6);
-    pros::Optical robot::classifier(4);
-    pros::Rotation robot::side_encoder(0);
-    pros::Rotation robot::back_encoder(7);
+    pros::Imu robot::inertial(7);
+    pros::Optical robot::classifier(0);
+    pros::Rotation robot::side_encoder(4);
+    pros::Rotation robot::back_encoder(5);
 
     pros::MotorGroup robot::left_motors({1, -2, -3}, pros::MotorGearset::blue);
     pros::MotorGroup robot::right_motors({11, 12, -13}, pros::MotorGearset::blue);
@@ -61,7 +52,7 @@ int robot::max_speed(void) {
                 break;
         }
     #else
-        return 100;
+        return 1;
     #endif
 }
 
@@ -119,14 +110,11 @@ void robot::init(void) {
         left_motors.set_brake_mode_all(config::default_brake_mode);
         right_motors.set_brake_mode_all(config::default_brake_mode);
 
-        // vision.set_signature(signatures::blue_ring_id, &signatures::blue_ring);
-        // vision.set_signature(signatures::red_ring_id, &signatures::red_ring);
-        // vision.set_signature(signatures::goal_id, &signatures::goal);
-
         master.clear();
         pros::delay(150);
         partner.clear();
         pros::delay(150);
+
         master.set_text(0, 0, "Master");
         pros::delay(150);
         partner.set_text(0, 0, "Partner");

@@ -43,8 +43,8 @@ std::pair<float, float> solvers::secant_vec(
         Eigen::VectorXf diff = ft1 - ft0;
         diff.array() += (diff.array() == 0).cast<float>() * 1e-6;
 
-        Eigen::VectorXf t2 = t1 - ft1.cwiseProduct(t1 - t0).cwiseQuotient(diff);
-        t2 = t2.cwiseMax(start_bound).cwiseMin(end_bound);
+        Eigen::VectorXf t2 = (t1 - ft1.cwiseProduct(t1 - t0).cwiseQuotient(diff))
+            .cwiseMax(start_bound).cwiseMin(end_bound);
         t0 = t1; t1 = t2;
     }
 

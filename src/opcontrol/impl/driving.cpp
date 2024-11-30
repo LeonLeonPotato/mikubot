@@ -23,7 +23,7 @@ struct Scaling {
 	}
 };
 
-static pros::task_t task;
+static pros::task_t task = nullptr;
 
 void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	// https://www.desmos.com/calculator/v88re8mjh5
@@ -32,8 +32,6 @@ void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 
 	const float forward = left_scale.compute(left_y);
 	const float turn = right_scale.compute(right_x);
-
-	// printf("Driving left: %f | Right: %f\n", forward + turn, forward - turn);
 	
 	robot::volt(forward + turn, forward - turn);
 }
@@ -58,7 +56,7 @@ void driving::run() {
 	while (true) {
 		driving::tick();
 
-		pros::delay(20);
+		pros::delay(10);
 	}
 }
 
@@ -67,9 +65,22 @@ static void local_run(void* p) {
 }
 
 void driving::start_task() {
+	if (task != nullptr) return;
 	task = pros::c::task_create(local_run, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
 }
 
+void driving::pause() {
+    if (task == nullptr) return;
+    pros::c::task_suspend(task);
+}
+
+void driving::resume() {
+    if (task == nullptr) return;
+    pros::c::task_resume(task);
+}
+
 void driving::stop_task() {
-	pros::c::task_delete(task);
+    if (task == nullptr) return;
+    pros::c::task_delete(task);
+    task = nullptr;
 }

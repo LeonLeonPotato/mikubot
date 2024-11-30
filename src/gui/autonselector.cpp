@@ -55,19 +55,19 @@ void create_logo(void) {
 }
 
 void team_switch_callback(lv_event_t* e) {
-    if (strategies::config::team == 'R') {
-        strategies::config::team = 'B';
+    if (robot::match::team == 'R') {
+        robot::match::team = 'B';
         team_button->bg_color(0x0000FF);
     } else {
-        strategies::config::team = 'R';
+        robot::match::team = 'R';
         team_button->bg_color(0xFF0000);
     }
-    team_button->rename(strategies::config::get_team_name());
+    team_button->rename(robot::match::get_team_name());
 }
 
 void side_switch_callback(lv_event_t* e) {
-    strategies::config::side = -strategies::config::side;
-    side_button->rename(strategies::config::get_side_name());
+    robot::match::side = -robot::match::side;
+    side_button->rename(robot::match::get_side_name());
 }
 
 void team_selector(void) {
@@ -77,13 +77,13 @@ void team_selector(void) {
         10, 70
     );
     team_button = new renderer::NamedButton(
-        strategies::config::get_team_name(), 
+        robot::match::get_team_name(), 
         roboto_regular_bold_16, 
         110, 60, 120, 50, 
         0xFF0000
     );
     side_button = new renderer::NamedButton(
-        strategies::config::get_side_name(), 
+        robot::match::get_side_name(), 
         roboto_regular_bold_16, 
         240, 60, 120, 50,
         0x838482
@@ -130,7 +130,7 @@ void auton_strategy(void) {
 
         auton_buttons.emplace_back(strat.first, btn);
 
-        if (strat.first == strategies::default_strategy) {
+        if (strat.first == strategies::chosen_strategy) {
             btn->set_font(roboto_regular_bold_16);
 
             selected_auton_box = lv_obj_create(lv_scr_act());
@@ -174,6 +174,12 @@ void confirm_selection(void) {
 void init_gif(void) {
     miku_gif = lv_gif_create(lv_scr_act());
     lv_obj_set_pos(miku_gif, 380, 10);
+
+    FILE* miku_test = fopen("kaito-miku.gif", "r");
+    if (miku_test == NULL) {
+        printf("Failed to open miku gif\n");
+        return;
+    }
     lv_gif_set_src(miku_gif, "S/kaito-miku.gif");
 }
 

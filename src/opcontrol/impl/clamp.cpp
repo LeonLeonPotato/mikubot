@@ -1,18 +1,19 @@
 #include "opcontrol/impl/clamp.h"
 #include "essential.h"
+#include "config.h"
 #include "api.h"
 
 using namespace controls;
 
-static pros::task_t task;
+static pros::task_t task = nullptr;
 static bool last = false;
 static bool toggle = false;
 
 void clamp::tick() {
     #ifndef MIKU_TESTENV
-        bool cur = robot::master.get_digital(pros::E_CONTROLLER_DIGITAL_X);
+        const bool cur = robot::master.get_digital(config::keybinds::clamp);
 
-        if (cur == true && last == false) toggle = !toggle;
+        if (cur && !last) toggle = !toggle;
 
         if (toggle && !robot::clamp.is_extended()) {
             robot::clamp.extend();
@@ -36,9 +37,22 @@ static void local_run(void* p) {
 }
 
 void clamp::start_task() {
+    if (task != nullptr) return;
     task = pros::c::task_create(local_run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "clamp");
 }
 
+void clamp::pause() {
+    if (task == nullptr) return;
+    pros::c::task_suspend(task);
+}
+
+void clamp::resume() {
+    if (task == nullptr) return;
+    pros::c::task_resume(task);
+}
+
 void clamp::stop_task() {
+    if (task == nullptr) return;
     pros::c::task_delete(task);
+    task = nullptr;
 }

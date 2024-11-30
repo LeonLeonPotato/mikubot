@@ -22,12 +22,12 @@ Eigen::VectorXf PurePursuit::vec_deriv(pathing::BasePath& path, Eigen::VectorXf&
 }
 
 TickResult PurePursuit::tick(
-    pathing::BasePath& path, const MovementParams& params, controllers::PID& pid, 
+    pathing::BasePath& path, const MovementParams& params, PIDGroup pids, 
     const solvers::FunctionGroup& funcs, float t) const 
 {
     TickResult result;
 
-    Eigen::Vector2f& dest = path.points.back();
+    const Eigen::Vector2f& dest = path.points.back();
 
     bool end_of_path = fabs(t - path.maxt()) < 0.0001; // is old t the end of the path?
     if (!end_of_path) { // lets update t and store it in result
@@ -63,15 +63,16 @@ TickResult PurePursuit::tick(
     }
 
     // Anyways, we have a valid new t now (or we have aborted), so lets do speed calculations
-    Eigen::Vector2f res = path.compute(result.t);
-    float speed = fmin(robot::distance(dest) * params.distance_coeff, params.max_base_speed);
-    float turn = pid.get(robot::angular_diff(res, params.reversed));
+    const Eigen::Vector2f res = path.compute(result.t);
+    const float res_dist = (res - robot::pos).norm();
+    float speed = fmin(pids.linear.get(res_dist), params.max_base_speed);
+    float turn = pids.angular.get(robot::angular_diff(res, params.reversed));
     if (params.reversed) speed = -speed;
 
     // Move the robot
     robot::volt(
-        (int) (speed + turn),
-        (int) (speed - turn)
+        speed + turn,
+        speed - turn
     );
 
     result.code = ExitCode::SUCCESS;
@@ -82,7 +83,7 @@ MovementResult PurePursuit::follow_path_cancellable(
     volatile bool& cancel_ref, 
     pathing::BasePath& path,
     const MovementParams& params,
-    controllers::PID& pid) const 
+    PIDGroup pids) const 
 {
     MovementResult result;
 
@@ -117,7 +118,7 @@ MovementResult PurePursuit::follow_path_cancellable(
         }
 
         if (robot::distance(path.points.back()) <= radius) result.t = path.maxt(); // we are capable of reaching the end
-        TickResult tick_result = tick(path, params, pid, funcs, result.t);
+        TickResult tick_result = tick(path, params, pids, funcs, result.t);
 
         if (tick_result.code != ExitCode::SUCCESS) { // Any error that happened during the tick = exit
             result.code = tick_result.code;

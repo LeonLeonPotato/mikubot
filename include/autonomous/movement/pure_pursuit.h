@@ -8,9 +8,11 @@
 
 namespace movement {
 
-struct PurePursuitParams : public MovementParams {
+struct PurePursuitParamsPOD {
     float radius = 30;
 };
+
+struct PurePursuitParams : public MovementParams, public PurePursuitParamsPOD { };
 
 class PurePursuit : public BaseMovement {
     private:
@@ -24,7 +26,7 @@ class PurePursuit : public BaseMovement {
         }
 
         TickResult tick(
-            pathing::BasePath& path, const MovementParams& params, controllers::PID& pid, 
+            pathing::BasePath& path, const MovementParams& params, PIDGroup pids, 
             const solvers::FunctionGroup& funcs, float t
         ) const override;
 
@@ -43,7 +45,7 @@ class PurePursuit : public BaseMovement {
             volatile bool& cancel_ref, 
             pathing::BasePath& path,
             const MovementParams& params,
-            controllers::PID& pid
+            PIDGroup pids
         ) const override;
 };
 
