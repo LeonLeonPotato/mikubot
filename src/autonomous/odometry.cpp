@@ -37,8 +37,8 @@ void run(void* args) {
         robot::angular_velocity = dtheta / dt;
 
         #ifndef MIKU_TESTENV
-            float cs = rad(robot::side_encoder.get_position() / 100.0);
-            float cb = rad(robot::back_encoder.get_position() / 100.0);
+            const float cs = rad(robot::side_encoder.get_position() / 100.0);
+            const float cb = rad(robot::back_encoder.get_position() / 100.0);
         #else
             float cs = 0;
             float cb = 0;
@@ -49,7 +49,7 @@ void run(void* args) {
         lb = cb;
 
         if (dtheta != 0) {
-            float ch = 2 * sin(dtheta / 2);
+            const float ch = 2 * sin(dtheta / 2);
             // ITS MINUS AND PLUS COMBINATION!!! DO NOT CHANGE!!!!
             travel_side = ch * (travel_side / dtheta - robot::SIDE_TRACKING_WHEEL_OFFSET);
             travel_back = ch * (travel_back / dtheta + robot::BACK_TRACKING_WHEEL_OFFSET);

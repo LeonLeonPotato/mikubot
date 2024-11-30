@@ -504,6 +504,7 @@ info = """
 formatted = []
 for line in info.split("\n"):
     if line:
-        formatted.append(tuple(map(float, line.split(", "))))
+        x, y = tuple(map(float, line.split(", ")))
+        formatted.append((round(x, 4), round(y, 4)))
 
 print(formatted)
