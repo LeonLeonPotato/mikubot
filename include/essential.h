@@ -6,8 +6,8 @@
 
 namespace robot {
 constexpr float TRACKING_WHEEL_RADIUS = 4.1275f;
-constexpr float BACK_TRACKING_WHEEL_OFFSET = 0.0f;
-constexpr float SIDE_TRACKING_WHEEL_OFFSET = 0.0f;
+constexpr float BACK_TRACKING_WHEEL_OFFSET = 0.676f;
+constexpr float SIDE_TRACKING_WHEEL_OFFSET = -8.315f;
 
 inline namespace state {
 extern bool braking;

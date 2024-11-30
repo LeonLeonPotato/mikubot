@@ -5,7 +5,7 @@
 
 using namespace movement;
 
-MovementResult&& BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, PIDGroup pids) const {
+MovementResult BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, PIDGroup pids) const {
     return follow_path_cancellable(cancel_ref, path, get_global_params(), pids);
 }
 

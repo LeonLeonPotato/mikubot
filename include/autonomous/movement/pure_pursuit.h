@@ -25,7 +25,7 @@ class PurePursuit : public BaseMovement {
             return params;
         }
 
-        TickResult&& tick(
+        TickResult tick(
             pathing::BasePath& path, const MovementParams& params, PIDGroup pids, 
             const solvers::FunctionGroup& funcs, float t
         ) const override;
@@ -41,7 +41,7 @@ class PurePursuit : public BaseMovement {
             params.radius = radius;
         }
 
-        MovementResult&& follow_path_cancellable(
+        MovementResult follow_path_cancellable(
             volatile bool& cancel_ref, 
             pathing::BasePath& path,
             const MovementParams& params,

@@ -21,7 +21,7 @@ class PID {
         const PIDArgs& args;
 
         PID() : args(PIDArgs()) { reset(); }
-        PID(const float kp, const float ki, const float kd) : args({ kp, ki, kd }) { reset(); }
+        PID(const float kp, const float ki, const float kd) : args(PIDArgs {kp, ki, kd}) { reset(); }
         PID(const PIDArgs& args) : args(args) { reset(); };
 
         void reset(void);

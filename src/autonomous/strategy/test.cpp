@@ -16,12 +16,8 @@ void test_strategy::run(void) {
 
     pathing::QuinticSpline path; // Empty quintic spline
     path.points.emplace_back(0, 0);
-    path.points.emplace_back(-53, 136);
-    path.points.emplace_back(-15, 269);
-    path.points.emplace_back(100.6, 308.5);
-    path.points.emplace_back(191, 263);
-    path.points.emplace_back(195, 106);
-    path.points.emplace_back(96, 35.5); // Populate with points
+    path.points.emplace_back(0, 100);
+    path.points.emplace_back(100, 100); // Populate with points
     path.set_relative(robot::pos); // Add all points with robot::pos
 
     // We do not need to solve the coefficients because pathing will for us (:

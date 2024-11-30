@@ -92,7 +92,7 @@ class BaseMovement {
             return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
         }
 
-        virtual TickResult&& tick(
+        virtual TickResult tick(
             pathing::BasePath& path, const MovementParams& params, PIDGroup pids, 
             const solvers::FunctionGroup& funcs, float t
         ) const = 0;
@@ -106,8 +106,8 @@ class BaseMovement {
             std::optional<solvers::Solver> solver_override = solvers::Solver::None
         ) : path_solver(path_solver.value()), solver_override(solver_override.value()) { }
 
-        MovementResult&& follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, PIDGroup pids) const;
-        virtual MovementResult&& follow_path_cancellable(
+        MovementResult follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, PIDGroup pids) const;
+        virtual MovementResult follow_path_cancellable(
             volatile bool& cancel_ref, 
             pathing::BasePath& path,
             const MovementParams& params,
@@ -116,7 +116,7 @@ class BaseMovement {
 
         // Manual overloaders in shambles
         template <typename... Args>
-        MovementResult&& follow_path(Args&&... args) const {
+        MovementResult follow_path(Args&&... args) const {
             const bool cancel = false;
             return follow_path_cancellable((volatile bool&) cancel, std::forward<Args>(args)...);
         }
@@ -125,7 +125,9 @@ class BaseMovement {
         Future<MovementResult> follow_path_async(Args&&... args) const {
             Future<MovementResult> ret;
             pros::Task task {[this, &ret, &args...]() {
-                ret.set_value(follow_path_cancellable(ret.get_state()->cancelled, std::forward<Args>(args)...));
+                ret.set_value(std::move(
+                    follow_path_cancellable(ret.get_state()->cancelled, std::forward<Args>(args)...)
+                ));
             }};
             return ret;
         }

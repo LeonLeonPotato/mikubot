@@ -21,7 +21,7 @@ Eigen::VectorXf PurePursuit::vec_deriv(pathing::BasePath& path, Eigen::VectorXf&
     return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 }
 
-TickResult&& PurePursuit::tick(
+TickResult PurePursuit::tick(
     pathing::BasePath& path, const MovementParams& params, PIDGroup pids, 
     const solvers::FunctionGroup& funcs, float t) const 
 {
@@ -58,7 +58,7 @@ TickResult&& PurePursuit::tick(
             // Error is still too high or intersection still not found
             // We have to abort since compute_initial_t is deterministic, so we can't just call it again
             result.code = ExitCode::RECOMPUTATION_ERROR;
-            return std::move(result);
+            return result;
         }
     }
 
@@ -76,10 +76,10 @@ TickResult&& PurePursuit::tick(
     );
 
     result.code = ExitCode::SUCCESS;
-    return std::move(result);
+    return result;
 }
 
-MovementResult&& PurePursuit::follow_path_cancellable(
+MovementResult PurePursuit::follow_path_cancellable(
     volatile bool& cancel_ref, 
     pathing::BasePath& path,
     const MovementParams& params,
@@ -138,5 +138,5 @@ MovementResult&& PurePursuit::follow_path_cancellable(
     if (result.code == ExitCode::TBD) result.code = ExitCode::SUCCESS; // if we reached here and code has not been set, we are successful
     result.time_taken_ms = pros::millis() - start_t;
 
-    return std::move(result);
+    return result;
 }

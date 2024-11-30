@@ -8,11 +8,11 @@ namespace movement::simple {
 
 ////// Turn in place
 
-TickResult&& turn_towards_tick(const float angle, controllers::PID& in_place_pid,
+TickResult turn_towards_tick(const float angle, controllers::PID& in_place_pid,
     const int timeout = 2000, const float threshold = deg(2));
-MovementResult&& turn_towards_cancellable(const float angle, controllers::PID& pid,
+MovementResult turn_towards_cancellable(const float angle, controllers::PID& pid,
     volatile bool& cancel_ref, const int timeout = 2000, const float threshold = deg(2));
-MovementResult&& turn_towards(const float angle, controllers::PID& pid, 
+MovementResult turn_towards(const float angle, controllers::PID& pid, 
     const int timeout = 2000, const float threshold = deg(2));
 Future<MovementResult> turn_towards_async(const float angle, controllers::PID& pid,
     const int timeout = 2000, const float threshold = deg(2));

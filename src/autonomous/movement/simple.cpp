@@ -5,7 +5,7 @@ using namespace movement;
 
 ////// Turn in place
 
-TickResult&& simple::turn_towards_tick(const float angle, controllers::PID& in_place_pid,
+TickResult simple::turn_towards_tick(const float angle, controllers::PID& in_place_pid,
     const int timeout, const float threshold)
 {
     const float diff = robot::angular_diff(angle);
@@ -14,8 +14,8 @@ TickResult&& simple::turn_towards_tick(const float angle, controllers::PID& in_p
     return { ExitCode::SUCCESS, 0, diff, RecomputationLevel::NONE };
 }
 
-MovementResult&& simple::turn_towards_cancellable(float angle, controllers::PID& pid,
-    bool& cancel_ref, int timeout, float threshold)
+MovementResult simple::turn_towards_cancellable(const float angle, controllers::PID& pid,
+    volatile bool& cancel_ref, const int timeout, const float threshold)
 {
     MovementResult result;
 
@@ -45,10 +45,10 @@ MovementResult&& simple::turn_towards_cancellable(float angle, controllers::PID&
 
     result.time_taken_ms = pros::millis() - start;
 
-    return std::move(result);
+    return result;
 }
 
-MovementResult&& simple::turn_towards(const float angle, controllers::PID& pid,
+MovementResult simple::turn_towards(const float angle, controllers::PID& pid,
     const int timeout, const float threshold)
 {
     bool dummy_ref = false;
@@ -60,7 +60,8 @@ Future<MovementResult> simple::turn_towards_async(const float angle, controllers
 {
     Future<MovementResult> future;
     pros::Task task([angle, &pid, timeout, threshold, &future]() {
-        future.set_value(turn_towards(angle, pid, timeout, threshold));
+        future.set_value(turn_towards_cancellable(angle, pid, 
+            future.get_state()->cancelled, timeout, threshold));
     });
     return future;
 }
@@ -113,45 +114,20 @@ MovementResult simple::swing_to_cancellable(const Eigen::Vector2f& point, PIDGro
     return result;
 }
 
-MovementResult simple::go_to_cancellable(const Eigen::Vector2f& point, bool& cancel_ref,
-    float distance_coeff, int max_speed, int timeout, float threshold)
-{
-    controllers::PID pid; init_generic_pid(pid);
-    return go_to_cancellable(point, pid, cancel_ref, distance_coeff, max_speed, timeout, threshold);
-}
-
-MovementResult simple::go_to(const Eigen::Vector2f& point, controllers::PID& pid,
-    float distance_coeff, int max_speed, int timeout, float threshold)
+MovementResult simple::swing_to(const Eigen::Vector2f& point, PIDGroup pids,
+    const bool reversed, const int timeout, const float max_base_speed, const float threshold)
 {
     bool cancel = false;
-    return go_to_cancellable(point, pid, cancel, distance_coeff, max_speed, timeout, threshold);
+    return swing_to_cancellable(point, pids, cancel, reversed, timeout, max_base_speed, threshold);
 }
 
-MovementResult simple::go_to(const Eigen::Vector2f& point,
-    float distance_coeff, int max_speed, int timeout, float threshold)
-{
-    bool cancel = false;
-    controllers::PID pid; init_generic_pid(pid);
-    return go_to_cancellable(point, pid, cancel, distance_coeff, max_speed, timeout, threshold);
-}
-
-Future<MovementResult> simple::go_to_async(const Eigen::Vector2f& point, controllers::PID& pid,
-    float distance_coeff, int max_speed, int timeout, float threshold)
+Future<MovementResult> simple::swing_to_async(const Eigen::Vector2f& point, PIDGroup pids,
+    const bool reversed, const int timeout, const float max_base_speed, const float threshold)
 {
     Future<MovementResult> future;
-    pros::Task task([point, &pid, distance_coeff, max_speed, timeout, threshold, &future]() {
-        future.set_value(go_to(point, pid, distance_coeff, max_speed, timeout, threshold));
-    });
-    return future;
-}
-
-Future<MovementResult> simple::go_to_async(const Eigen::Vector2f& point,
-    float distance_coeff, int max_speed, int timeout, float threshold)
-{
-    controllers::PID pid; init_generic_pid(pid);
-    Future<MovementResult> future;
-    pros::Task task([point, &pid, distance_coeff, max_speed, timeout, threshold, &future]() {
-        future.set_value(go_to(point, pid, distance_coeff, max_speed, timeout, threshold));
+    pros::Task task([point, &pids, reversed, timeout, max_base_speed, threshold, &future]() {
+        future.set_value(swing_to_cancellable(point, pids, 
+            future.get_state()->cancelled, reversed, timeout, max_base_speed, threshold));
     });
     return future;
 }
