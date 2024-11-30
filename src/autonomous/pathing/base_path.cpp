@@ -34,11 +34,11 @@ void BasePath::solve_lengths(int resolution) {
 
 float BasePath::time_parameter(const float s) const {
     int i = std::lower_bound(lengths.begin(), lengths.end(), s) - lengths.begin();
-    return (float) i / lengths.size() * (points.size() - 1);
+    return (float) i / (lengths.size() - 1) * (points.size() - 1);
 }
 
 float BasePath::arc_parameter(const float t) const {
-    return lengths[(int) (t / (points.size() - 1) * lengths.size())];
+    return lengths[(int) round((t / (points.size() - 1) * (lengths.size() - 1)))];
 }
 
 Eigen::Vector2f BasePath::normal(float t) const {
@@ -58,6 +58,6 @@ float BasePath::angular_velocity(float t) const {
 }
 
 float BasePath::curvature(float t) const {
-    float n = compute(t, 1).norm();
-    return compute(t, 2).norm() / powf(1 + n * n, 1.5);
+    float n = compute(t, 1).squaredNorm();
+    return compute(t, 2).norm() / (sqrtf(1 + n) * (1 + n));
 }

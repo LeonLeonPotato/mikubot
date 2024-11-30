@@ -9,7 +9,7 @@
 
 using namespace controls;
 
-static pros::task_t task;
+static pros::task_t task = nullptr;
 static long long last_detection = -1;
 static char color = 'N';
 static const double start_t = 0.05;
@@ -32,7 +32,7 @@ void ejector::tick() {
             color = 'B';
         }
 
-        if (color != strategies::config::team && color != 'N' && last_detection != -1) {
+        if (color != robot::match::team && color != 'N' && last_detection != -1) {
             auto dt = (pros::micros() - last_detection) / 1000000.0f;
             if (dt > start_t && !robot::ejector.is_extended()) {
                 robot::ejector.extend();
@@ -57,9 +57,22 @@ static void local_run(void* p) {
 }
 
 void ejector::start_task() {
+    if (task != nullptr) return;
     task = pros::c::task_create(local_run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
 }
 
+void ejector::pause() {
+    if (task == nullptr) return;
+    pros::c::task_suspend(task);
+}
+
+void ejector::resume() {
+    if (task == nullptr) return;
+    pros::c::task_resume(task);
+}
+
 void ejector::stop_task() {
+    if (task == nullptr) return;
     pros::c::task_delete(task);
+    task = nullptr;
 }

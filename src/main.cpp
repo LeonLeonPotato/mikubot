@@ -16,8 +16,7 @@ void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
 	robot::init();
-	odometry::init();
-	renderer::init();
+	// odometry::start_task();
 }
 
 void disabled(void) {
@@ -38,14 +37,15 @@ void competition_initialize(void) {
 void autonomous(void) {
 	std::cout << "Auton started" << std::endl;
 	autonrunner::init();
+
+	strategies::functions.at(strategies::chosen_strategy)();
 }
 
 void opcontrol(void) {
 	competition_initialize();
 	autonomous();
 	// pros::delay(100);
-	// std::cout << "Opcontrol started" << std::endl;
-	strategies::test_strategy::run();
+	std::cout << "Opcontrol started" << std::endl;
 
 	//controls::lidartest::run();
 }

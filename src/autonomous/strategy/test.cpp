@@ -2,6 +2,7 @@
 #include "autonomous/movement.h"
 #include "autonomous/pathing.h"
 #include "essential.h"
+#include "config.h"
 
 #include "api.h"
 
@@ -12,6 +13,7 @@ void test_strategy::run(void) {
 
     // Pure pursuit with radius 100 cm
     movement::PurePursuit pure_pursuit(100);
+    pure_pursuit.solver_override = solvers::Solver::Newton;
 
     pathing::QuinticSpline path;
     path.points.emplace_back(0, 0);
@@ -22,6 +24,8 @@ void test_strategy::run(void) {
     path.points.emplace_back(195, 106);
     path.points.emplace_back(96, 35.5);
     path.set_relative(robot::pos);
+
+    std::cout << robot::pos.transpose() << std::endl;
 
     Future<movement::MovementResult> fut = pure_pursuit.follow_path_async(path, movement::PurePursuitParams {{ 
         .force_recomputation = movement::RecomputationLevel::NONE,
@@ -42,5 +46,5 @@ void test_strategy::run(void) {
     printf("Error: %f\n", result.error);
     printf("T: %f\n", result.t);
 
-    robot::set_brake_mode(robot::config::default_brake_mode);
+    robot::set_brake_mode(config::default_brake_mode);
 }

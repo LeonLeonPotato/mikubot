@@ -30,23 +30,21 @@ std::pair<float, float> solvers::gradient_descent_vec(
     while (iterations--) {
         Eigen::VectorXf den = deriv(guess).array() * step_size;
 
-        guess.noalias() -= den;
-        guess.noalias() = guess.cwiseMax(start_bound);
-        guess.noalias() = guess.cwiseMin(end_bound);
+        guess = (guess - den).cwiseMax(start_bound).cwiseMin(end_bound);
     }
 
     Eigen::VectorXf f_guess = deriv(guess);
 
-    float max_guess = -1;
-    float max_key = -1;
+    float min_guess = -1;
+    float min_key = -1;
     for (int i = 0; i < guess.size(); i++) {
-        if (f_guess(i) < max_key) {
-            max_guess = guess(i);
-            max_key = f_guess(i);
+        if (f_guess(i) < min_key) {
+            min_guess = guess(i);
+            min_key = f_guess(i);
         }
     }
 
-    return {max_guess, max_key};
+    return {min_guess, min_key};
 }
 
 std::pair<float, float> solvers::gradient_descent_vec(
