@@ -8,27 +8,56 @@
 
 using namespace strategies;
 
-void test_strategy::run(void) {
-    robot::set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+static const controllers::PIDArgs linear_args {
+    .kp = 0.8,
+    .ki = 0,
+    .kd = -0.01,
+    .integral_limit = 99999999.0f,
+    .disable_integral_limit = 99999999.0f,
+    .sign_switch_reset = false
+};
 
-    movement::PurePursuit pure_pursuit(100); // Pure pursuit controller with radius 100 cm
-    pure_pursuit.solver_override = solvers::Solver::Newton;
-    controllers::PID linear {0.1, 0, 0.01}; // Example pids (I will tune tmrw)
-    controllers::PID angular {0.1, 0, 0.01};
+static const controllers::PIDArgs angular_args {
+    .kp = 0.5,
+    .ki = 0,
+    .kd = 0,
+    .integral_limit = 99999999.0f,
+    .disable_integral_limit = 99999999.0f,
+    .sign_switch_reset = false
+};
+
+static const controllers::PIDArgs in_place_args {
+    .kp = 1,
+    .ki = 0,
+    .kd = -0.025,
+    .integral_limit = 99999999.0f,
+    .disable_integral_limit = 99999999.0f,
+    .sign_switch_reset = false
+};
+
+void t1() {
+    // robot::set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+
+    movement::PurePursuit pure_pursuit(30); // Pure pursuit controller with radius 100 cm
+    pure_pursuit.solver_override = solvers::Solver::Secant;
+    controllers::PID linear(linear_args);
+    controllers::PID angular(angular_args);
 
     pathing::QuinticSpline path; // Empty quintic spline
     path.points.emplace_back(0, 0);
     path.points.emplace_back(0, 100);
-    path.points.emplace_back(100, 100); // Populate with points
+    path.points.emplace_back(70, 100);
     path.set_relative(robot::pos); // Add all points with robot::pos
 
     // We do not need to solve the coefficients because pathing will for us (:
     Future<movement::MovementResult> fut = pure_pursuit.follow_path_async(
         path, 
         movement::PurePursuitParams {{ 
+            .final_threshold=10.0,
+            .max_base_speed = 0.7,
             .force_recomputation = movement::RecomputationLevel::NONE,
-            .timeout = 100,
-            .delay = 20
+            .timeout = 6000,
+            .delay = 20,
         }}, 
         movement::PIDGroup {
             .angular = angular,
@@ -38,7 +67,8 @@ void test_strategy::run(void) {
 
     // Demonstration of async ability
     while (!fut.available()) {
-        printf("Doing other stuff while pathing!\n");
+        printf("Pos: (%f, %f) Theta diff: %f, dist: %f\n", robot::pos.x(), robot::pos.y(), 
+            robot::angular_diff(path.points.back()), robot::distance(path.points.back()));
         pros::delay(20);
     }
 
@@ -52,3 +82,34 @@ void test_strategy::run(void) {
 
     robot::set_brake_mode(config::default_brake_mode);
 }
+
+void t2() {
+    
+    controllers::PID linear(linear_args);
+    controllers::PID angular(in_place_args);
+    movement::PIDGroup group {
+        .angular = angular,
+        .linear = linear
+    };
+
+    robot::intake.move_velocity(200);
+    robot::conveyor.move_velocity(200);
+
+    movement::simple::swing_to({0, 50}, group, false, 10000, 1.0, 10);
+    linear.reset(); angular.reset();
+
+    movement::simple::swing_to({-60, 150}, group, false, 10000, 1.0, 10);
+
+    linear.reset(); angular.reset();
+    robot::brake();
+    pros::delay(2000);
+    robot::intake.move_velocity(0);
+    robot::conveyor.move_velocity(0);
+
+    // robot::brake();
+}
+
+void test_strategy::run(void) {
+    t2();
+}
+

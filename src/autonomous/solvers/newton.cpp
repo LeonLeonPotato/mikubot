@@ -29,6 +29,7 @@ std::pair<float, float> solvers::newton_single(
     return newton_single(funcs.funcs[0], funcs.funcs[1], guess, start_bound, end_bound, iterations, threshold);
 }
 
+#include <iostream>
 std::pair<float, float> solvers::newton_vec(
     func_vec_t func, func_vec_t deriv,
     Eigen::VectorXf guess, float start_bound, float end_bound, int iterations, float threshold

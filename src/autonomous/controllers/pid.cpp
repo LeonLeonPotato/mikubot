@@ -9,6 +9,7 @@ void PID::register_error(const float error) {
         registered = true;
     } else {
         last_error = this->error;
+        last_time = cur_time;
 
         if (fabs(error) > args.disable_integral_limit || (std::signbit(error) != std::signbit(last_error) && args.sign_switch_reset)) {
             integral = 0;
@@ -17,7 +18,7 @@ void PID::register_error(const float error) {
             integral = std::clamp(integral + integral_inc, -args.integral_limit, args.integral_limit);
         }
     }
-    last_time = pros::micros();
+    cur_time = pros::micros();
     this->error = error;
 }
 
@@ -29,7 +30,7 @@ void PID::reset() {
 }
 
 float PID::get(void) {
-    const float dt = (pros::micros() - last_time) / 1000000.0;
+    const float dt = (cur_time - last_time) / 1000000.0;
     const float derivative = (error - last_error) * (int) registered / dt;
     return args.kp * error + args.ki * integral - args.kd * derivative;
 }

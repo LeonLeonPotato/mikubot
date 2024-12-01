@@ -15,7 +15,7 @@ class PID {
     private:
         bool registered;
         float error, last_error, integral;
-        float last_time;
+        float last_time, cur_time;
 
     public:
         const PIDArgs& args;

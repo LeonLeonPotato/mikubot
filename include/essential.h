@@ -5,10 +5,10 @@
 #include "Eigen/Dense"
 
 namespace robot {
-constexpr float TRACKING_WHEEL_RADIUS = 4.1275f;
+constexpr float TRACKING_WHEEL_RADIUS = 4.12f;
 constexpr float DRIVETRAIN_WHEEL_RADIUS = 4.1275f;
 constexpr float BACK_TRACKING_WHEEL_OFFSET = 0.018f;
-constexpr float SIDE_TRACKING_WHEEL_OFFSET = -7.596f;
+constexpr float SIDE_TRACKING_WHEEL_OFFSET = 7.596f;
 
 inline namespace state {
 extern bool braking;
@@ -16,7 +16,7 @@ extern Eigen::Vector2f pos, velocity, acceleration;
 extern float theta, angular_velocity, angular_acceleration;
 
 inline const float angular_diff(const float desired, bool reversed = false) {
-    return fmod(desired - theta + (M_PI * (int) !reversed), M_TWOPI) - M_PI;
+    return fmod(desired - theta + M_PI, M_TWOPI) - M_PI;
 }
 
 inline const float angular_diff(const float desired_x, const float desired_y, const bool reversed = false) {
