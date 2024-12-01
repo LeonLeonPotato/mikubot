@@ -52,12 +52,12 @@ struct MovementParams {
     float final_threshold = 5.0;
     float max_base_speed = 1.0;
 
-    int update_iterations = 3;
+    int update_iterations = 10;
     float update_threshold = 1e-1;
     float grad_desc_step_size = 0.1;
 
     RecomputationLevel force_recomputation = RecomputationLevel::NONE;
-    int recomputation_guesses = 32;
+    int recomputation_guesses = 16;
     float recomputation_threshold = 1.5;
     int recomputation_iterations = 12;
 

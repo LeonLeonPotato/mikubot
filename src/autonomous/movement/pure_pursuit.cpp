@@ -65,12 +65,13 @@ TickResult PurePursuit::tick(
     // Anyways, we have a valid new t now (or we have aborted), so lets do speed calculations
     const Eigen::Vector2f res = path.compute(result.t);
     const float res_dist = (res - robot::pos).norm();
-    float speed = fmin(pids.linear.get(res_dist), params.max_base_speed);
-    float turn = pids.angular.get(robot::angular_diff(res, params.reversed));
+    const float angular_diff = robot::angular_diff(res, params.reversed);
+    float speed = fmin(pids.linear.get(res_dist), params.max_base_speed) * fmax(0, cosf(angular_diff));
+    float turn = pids.angular.get(angular_diff);
     if (params.reversed) speed = -speed;
 
     // Move the robot
-    robot::volt(
+    robot::velo(
         speed + turn,
         speed - turn
     );

@@ -180,6 +180,7 @@ void init_gif(void) {
         printf("Failed to open miku gif\n");
         return;
     }
+    fclose(file);
     lv_gif_set_src(miku_gif, "S/kaito-miku.gif");
 }
 

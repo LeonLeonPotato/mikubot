@@ -72,10 +72,12 @@ TickResult simple::swing_to_tick(const Eigen::Vector2f& point, PIDGroup pids,
     const bool reversed, const int timeout, const float max_base_speed, const float threshold)
 {
     const float dist = robot::distance(point);
-    float speed = fmin(pids.linear.get(dist), max_base_speed);
-    float turn = pids.angular.get(robot::angular_diff(point, reversed));
+    const float angle_diff = robot::angular_diff(point, reversed);
+    float speed = fmin(pids.linear.get(dist), max_base_speed) * fmax(0, cosf(angle_diff));
+    float turn = pids.angular.get(angle_diff);
     if (reversed) speed = -speed;
-    robot::volt(speed + turn, speed - turn);
+    printf("Speed: %f, Turn: %f, Angular: %f, Reversed: %d, Dist: %f, Base: %f\n", speed, turn, angle_diff, reversed, dist, max_base_speed);
+    robot::velo(speed + turn, speed - turn);
 
     return { ExitCode::SUCCESS, 0, dist, RecomputationLevel::NONE };
 }
@@ -103,7 +105,7 @@ MovementResult simple::swing_to_cancellable(const Eigen::Vector2f& point, PIDGro
             break;
         }
 
-        auto res = swing_to_tick(point, pids, max_base_speed, timeout, threshold);
+        auto res = swing_to_tick(point, pids, reversed, timeout, max_base_speed, threshold);
         result.error = res.error;
 
         pros::delay(20);

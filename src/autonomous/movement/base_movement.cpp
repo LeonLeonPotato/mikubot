@@ -83,6 +83,7 @@ void BaseMovement::recompute_path(pathing::BasePath& path, int goal_i) const
     path.points[0] = robot::pos;
 
     path_solver(path);
+    printf("Recomputed path\n");
 }
 
 void BaseMovement::solve_path_default(pathing::BasePath& path) {

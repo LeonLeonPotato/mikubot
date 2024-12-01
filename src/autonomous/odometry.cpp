@@ -20,8 +20,9 @@ void run(void* args) {
         float ltheta = 0;
     #endif
 
+    pros::delay(5);
     while (true) {
-        const long long dt = (pros::micros() - ltime) / 1000000.0f;
+        const double dt = (pros::micros() - ltime) / 1000000.0f;
         ltime = pros::micros();
 
         #ifndef MIKU_TESTENV
@@ -57,8 +58,8 @@ void run(void* args) {
 
         const Eigen::Vector2f last_velocity = robot::velocity;
         const Eigen::Vector2f travel = {
-            -travel_side * cosf(av_theta) - travel_back * sinf(av_theta),
-            travel_side * sinf(av_theta) - travel_back * cosf(av_theta)
+            -travel_side * sinf(av_theta) + travel_back * cosf(av_theta),
+            -travel_side * cosf(av_theta) - travel_back * sinf(av_theta)
         };
 
         robot::pos += travel;
