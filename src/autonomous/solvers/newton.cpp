@@ -47,7 +47,7 @@ std::pair<float, float> solvers::newton_vec(
     float max_guess = -1;
     float max_key = -1;
     for (int i = 0; i < guess.size(); i++) {
-        if (f_guess(i) < threshold && guess(i) > max_guess) {
+        if (f_guess(i) < threshold && guess(i) < max_guess) {
             max_guess = guess(i);
             max_key = f_guess(i);
         }

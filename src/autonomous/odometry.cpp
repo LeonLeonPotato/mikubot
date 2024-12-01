@@ -58,8 +58,8 @@ void run(void* args) {
 
         const Eigen::Vector2f last_velocity = robot::velocity;
         const Eigen::Vector2f travel = {
-            -travel_side * sinf(av_theta) + travel_back * cosf(av_theta),
-            -travel_side * cosf(av_theta) - travel_back * sinf(av_theta)
+            travel_side * sinf(av_theta) - travel_back * cosf(av_theta),
+            travel_side * cosf(av_theta) + travel_back * sinf(av_theta)
         };
 
         robot::pos += travel;

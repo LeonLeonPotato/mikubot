@@ -15,9 +15,25 @@ struct BaseParams {
     std::pair<float, float> end_cartesian() const;
 };
 
+struct ProfilePoint {
+    float s, t;
+    float curvature;
+    float left_v, center_v, right_v;
+};
+
+struct ProfileParams {
+    float start_v, end_v;
+    float max_speed;
+    float accel, decel;
+    float track_width;
+    float ds = 0.1;
+    int resolution = 10000;
+};
+
 class BasePath {
     protected:
         std::vector<float> lengths;
+        std::vector<ProfilePoint> profile;
 
     public:
         std::vector<Eigen::Vector2f> points;
@@ -30,9 +46,13 @@ class BasePath {
         virtual solvers::Solver get_solver() const { return solvers::Solver::Newton; }
         virtual int maxt() const { return points.size() - 1; }
 
-        virtual void solve_lengths(int resolution = 5000);
         virtual float time_parameter(const float s) const;
         virtual float arc_parameter(const float t) const;
+        virtual void solve_lengths(int resolution = 5000);
+
+        virtual void profile_path(const ProfileParams& params);
+        virtual ProfilePoint profile_point(const float s) const;
+        virtual const std::vector<ProfilePoint>& get_profile(void) const;
 
         virtual void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const = 0;
         virtual Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const = 0;

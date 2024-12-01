@@ -35,7 +35,7 @@ static const controllers::PIDArgs in_place_args {
     .sign_switch_reset = false
 };
 
-void t1() {
+static void t1() {
     // robot::set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
     movement::PurePursuit pure_pursuit(30); // Pure pursuit controller with radius 100 cm
@@ -53,7 +53,7 @@ void t1() {
     Future<movement::MovementResult> fut = pure_pursuit.follow_path_async(
         path, 
         movement::PurePursuitParams {{ 
-            .final_threshold=10.0,
+            .final_threshold = 10.0,
             .max_base_speed = 0.7,
             .force_recomputation = movement::RecomputationLevel::NONE,
             .timeout = 6000,
@@ -83,7 +83,7 @@ void t1() {
     robot::set_brake_mode(config::default_brake_mode);
 }
 
-void t2() {
+static void t2() {
     
     controllers::PID linear(linear_args);
     controllers::PID angular(in_place_args);

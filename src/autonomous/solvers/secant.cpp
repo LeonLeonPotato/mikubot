@@ -53,7 +53,7 @@ std::pair<float, float> solvers::secant_vec(
     float max_guess = -1;
     float max_key = -1;
     for (int i = 0; i < t1.size(); i++) {
-        if (ft1(i) < threshold && t1(i) > max_guess) {
+        if (ft1(i) < threshold && t1(i) < max_guess) {
             max_guess = t1(i);
             max_key = ft1(i);
         }

@@ -41,6 +41,24 @@ void autonomous(void) {
 	strategies::functions.at(strategies::chosen_strategy)();
 }
 
+static void thug(std::string name, std::vector<float>& X, std::vector<float>& Y) {
+	std::stringstream sts;
+	sts << name << " = [";
+
+	for (int i = 0; i < X.size(); i++) {
+		float x = ((int) roundf(X[i] * 1000)) / 1000.0f;
+		float y = ((int) roundf(Y[i] * 1000)) / 1000.0f;
+		sts << "(" << x << ", " << y << ")";
+
+		if (i != X.size() - 1) {
+			sts << ", ";
+		}
+	}
+	sts << "]";
+
+	std::cout << sts.str() << std::endl;
+}
+
 void opcontrol(void) {
 	//competition_initialize();
 
@@ -49,14 +67,92 @@ void opcontrol(void) {
 	// printf("Test 1: %f\n", robot::angular_diff(Eigen::Vector2f(1, 0), false));
 	// printf("Test 2: %f\n", robot::angular_diff(Eigen::Vector2f(2, 1), false));
 
-	autonomous();
-	pros::delay(100);
+	// autonomous();
+	// pros::delay(100);
 
-	std::cout << "Opcontrol started" << std::endl;
+	pathing::QuinticSpline test;
+	test.points.emplace_back(0, 0);
+	test.points.emplace_back(0, 100);
+	test.points.emplace_back(70, 100);
+	test.solve_coeffs(pathing::BaseParams {
+		.start_heading = 0,
+		.start_magnitude = 0,
+		.end_heading = 0,
+		.end_magnitude = 0
+	});
+	std::cout << test.debug_out() << std::endl;
 
-	for (auto& task : controls::start_tasks) {
-		task();
+	double start = pros::micros() / 1e6f;
+	test.profile_path({
+		.start_v = 0,
+		.end_v = 0,
+		.max_speed = 5,
+		.accel = 10,
+		.decel = 10,
+		.track_width = 40,
+		.ds = 0.5,
+		.resolution = 10000
+	});
+	printf("Profile path took %f seconds\n", pros::micros() / 1e6f - start);
+
+	std::vector<float> X; X.reserve(1000);
+	std::vector<float> Y_left; Y_left.reserve(1000);
+	std::vector<float> Y_center; Y_center.reserve(1000);
+	std::vector<float> Y_right; Y_right.reserve(1000);
+
+	for (auto& point : test.get_profile()) {
+		X.push_back(point.s);
+		Y_left.push_back(point.left_v);
+		Y_center.push_back(point.center_v);
+		Y_right.push_back(point.right_v);
 	}
 
-	//controls::lidartest::run();
+	thug("Y_left", X, Y_left);
+	printf("\n");
+	thug("Y_center", X, Y_center);
+	printf("\n");
+	thug("Y_right", X, Y_right);
+
+	// pros::Motor motor(1, pros::MotorGears::blue);
+
+	// std::vector<float> rots; rots.reserve(1000);
+	// std::vector<float> currents; currents.reserve(1000);
+	// std::vector<float> times; times.reserve(1000);
+
+	// long long start = pros::micros();
+
+	// while (true) {
+	// 	double t = (pros::micros() - start) / 1e6f;
+	// 	motor.move_voltage((int) (std::signbit(cosf(t * M_TWOPI)) * 2 - 1) * 12000);
+
+	// 	rots.push_back(motor.get_actual_velocity() * M_TWOPI / 60.0f);
+	// 	currents.push_back(motor.get_current_draw());
+	// 	times.push_back(t);
+
+	// 	if (times.size() > 300) break;
+	// 	pros::delay(15);
+	// }
+
+	// motor.move_voltage(0);
+
+	// std::stringstream stz;
+	// stz << "I = [";
+	// for (int i = 0; i < rots.size(); i++) {
+	// 	float x = ((int) roundf(times[i] * 1000)) / 1000.0f;
+	// 	float y = ((int) roundf(currents[i] * 1000)) / 1000.0f;
+	// 	stz << "(" << x << ", " << y << ")";
+
+	// 	if (i != rots.size() - 1) {
+	// 		stz << ", ";
+	// 	}
+	// }
+	// stz << "]";
+
+	// std::cout << stz.str() << std::endl;
+	
+	// std::cout << "Opcontrol started" << std::endl;
+
+	// for (auto& task : controls::start_tasks) {
+	// 	task();
+	// }
 }

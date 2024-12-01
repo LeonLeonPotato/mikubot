@@ -28,8 +28,8 @@ int robot::match::side = 1;
 
     pros::Imu robot::inertial(7);
     pros::Optical robot::classifier(0);
-    pros::Rotation robot::side_encoder(4);
-    pros::Rotation robot::back_encoder(5);
+    pros::Rotation robot::side_encoder(-4);
+    pros::Rotation robot::back_encoder(-5);
 
     pros::MotorGroup robot::left_motors({1, -2, -3}, pros::MotorGearset::blue);
     pros::MotorGroup robot::right_motors({11, 12, -13}, pros::MotorGearset::blue);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "autonomous/strategy/peak_strat.h"
 #include "autonomous/strategy/test.h"
 
 #include <map>
@@ -7,9 +8,8 @@
 
 namespace strategies {
 enum class Strategy {
-    GOAT,
-    Skills,
-    TEST_1
+    PeakStrat,
+    Test
 };
 
 extern const std::map<Strategy, std::string> names;

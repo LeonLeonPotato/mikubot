@@ -179,8 +179,9 @@ inline float Polynomial2D<N>::angular_velocity(float t) const {
 
 template <int N>
 inline float Polynomial2D<N>::curvature(float t) const {
-    float n = compute(t, 1).norm();
-    return compute(t, 2).norm() / pow(1 + n * n, 1.5);
+    const Eigen::Vector2f d1 = compute(t, 1);
+    const Eigen::Vector2f d2 = compute(t, 2);
+    return (d1(0) * d2(1) - d1(1) * d2(0)) / (d1.dot(d1) * d1.norm() + 1e-6);
 }
 
 } // namespace pathing
