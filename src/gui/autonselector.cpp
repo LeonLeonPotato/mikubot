@@ -30,7 +30,7 @@ lv_style_t* selected_auton_box_style;
 
 renderer::NamedButton* confirm_button;
 
-lv_obj_t* miku_gif;
+lv_obj_t* miku_gif = nullptr;
 
 void create_logo(void) {
     logo = lv_spangroup_create(lv_scr_act());
@@ -172,8 +172,8 @@ void confirm_selection(void) {
 }
 
 void init_gif(void) {
-    FILE* miku_test = fopen("kaito-miku.gif", "r");
-    if (miku_test == NULL) {
+    FILE* miku_test = fopen("/usd/kaito-miku.gif", "rb");
+    if (!miku_test) {
         printf("Failed to open miku gif\n");
         return;
     }
@@ -215,10 +215,6 @@ void destroy(void) {
     lv_obj_del(selected_auton_box);
     lv_style_reset(selected_auton_box_style);
 
-    FILE* miku_test = fopen("kaito-miku.gif", "r");
-    if (miku_test != NULL) {
-        fclose(miku_test);
-        lv_obj_del(miku_gif);
-    }
+    if (miku_gif != nullptr) lv_obj_del(miku_gif);
 }
 }

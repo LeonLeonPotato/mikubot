@@ -28,7 +28,7 @@ class PurePursuit : public BaseMovement {
         TickResult tick(
             pathing::BasePath& path, const MovementParams& params, PIDGroup pids, 
             const solvers::FunctionGroup& funcs, float t
-        ) const override;
+        ) const;
 
     public:
         PurePursuitParams params;

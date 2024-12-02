@@ -22,13 +22,14 @@ std::pair<float, float> BaseParams::end_cartesian() const {
     );
 }
 
-float BasePath::time_parameter(const float s) const {
-    int i = std::lower_bound(lengths.begin(), lengths.end(), s) - lengths.begin();
+float BasePath::time_parameter(const float s, int b_off, int e_off) const {
+    if (s > lengths.back()) return maxt();
+    int i = std::lower_bound(lengths.begin() + b_off, lengths.end() - e_off, s) - lengths.begin();
     return (float) i / (lengths.size() - 1) * (points.size() - 1);
 }
 
 float BasePath::arc_parameter(const float t) const {
-    return lengths[(int) round((t / (points.size() - 1) * (lengths.size() - 1)))];
+    return lengths[(int) roundf((t / (points.size() - 1) * (lengths.size() - 1)))];
 }
 
 void BasePath::solve_lengths(int resolution) {
@@ -47,8 +48,10 @@ void BasePath::profile_path(const ProfileParams& params) {
     profile.reserve((int) ceil(lengths.back() / params.ds) + 1); // safe +1 bc idk how to math it out (thug it out rahhh)
 
     float center_v = params.start_v;
+    int i = 0;
     for (float s = 0; s <= lengths.back(); s += params.ds) {
-        float time_param = time_parameter(s);
+        i = std::lower_bound(lengths.begin() + i, lengths.end(), s) - lengths.begin();
+        float time_param = (float) i / (lengths.size() - 1) * (points.size() - 1);
         float curve = curvature(time_param);
         float scale = fabs(curve) * params.track_width / 2.0f;
         profile.emplace_back(s, time_param, curve, 0, center_v, 0);
@@ -98,5 +101,5 @@ float BasePath::angular_velocity(float t) const {
 float BasePath::curvature(float t) const {
     const Eigen::Vector2f d1 = compute(t, 1);
     const Eigen::Vector2f d2 = compute(t, 2);
-    return (d1(0) * d2(1) - d1(1) * d2(0)) / (d1.dot(d1) * d1.norm() + 1e-6);
+    return (d1.coeffRef(0) * d2.coeffRef(1) - d1.coeffRef(1) * d2.coeffRef(0)) / (d1.dot(d1) * d1.norm() + 1e-6);
 }

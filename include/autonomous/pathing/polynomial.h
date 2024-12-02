@@ -181,7 +181,7 @@ template <int N>
 inline float Polynomial2D<N>::curvature(float t) const {
     const Eigen::Vector2f d1 = compute(t, 1);
     const Eigen::Vector2f d2 = compute(t, 2);
-    return (d1(0) * d2(1) - d1(1) * d2(0)) / (d1.dot(d1) * d1.norm() + 1e-6);
+    return (d1.coeffRef(0) * d2.coeffRef(1) - d1.coeffRef(1) * d2.coeffRef(0)) / (d1.dot(d1) * d1.norm() + 1e-6);
 }
 
 } // namespace pathing

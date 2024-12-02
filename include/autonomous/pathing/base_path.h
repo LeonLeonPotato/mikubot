@@ -46,7 +46,7 @@ class BasePath {
         virtual solvers::Solver get_solver() const { return solvers::Solver::Newton; }
         virtual int maxt() const { return points.size() - 1; }
 
-        virtual float time_parameter(const float s) const;
+        virtual float time_parameter(const float s, int b_off = 0, int e_off = 0) const;
         virtual float arc_parameter(const float t) const;
         virtual void solve_lengths(int resolution = 5000);
 

@@ -1,27 +1,29 @@
 #include "telemetry.h"
 #include "essential.h"
 #include <numeric>
+#include <queue>
 
 using namespace telemetry;
 
 volatile int telemetry::delay = 10;
 
 static pros::task_t task = nullptr;
-static volatile int mode = 0b01 | 0b10;
+static volatile int mode = 0b10;
 static FILE* file = nullptr;
 static std::string filename;
+static std::queue<std::string> log_queue;
 
-static void get_log_file(void) {
+static void initialize_log_file(void) {
     FILE* numfile = fopen("/usd/lognum.txt", "r");
     int num = 0;
-    if (numfile != nullptr) {
+    if (numfile) {
         fscanf(numfile, "%d", &num);
         fclose(numfile);
     }
+    printf("[Telemetry] Log number: %d\n", num);
 
     numfile = fopen("/usd/lognum.txt", "w");
     if (numfile == nullptr) return;
-
     fprintf(numfile, "%d", num + 1);
     fclose(numfile);
 
@@ -30,7 +32,7 @@ static void get_log_file(void) {
 }
 
 template <typename T>
-static T average(const std::vector<T>& v){
+static T average(const std::vector<T>& v) {
     if (v.empty()) return 0;
 
     auto const count = static_cast<float>(v.size());
@@ -39,13 +41,18 @@ static T average(const std::vector<T>& v){
 
 static void logging_task(void* args) {
     #ifndef MIKU_TESTENV
-    get_log_file();
+    initialize_log_file();
+    bool will_log_file = (bool) (mode & 0b10) >> 1;
+
     if (file == nullptr) {
         printf("[Telemetry] Log file could not be opened\n");
-        return;
+        will_log_file = false;
+    } else {
+        printf("[Telemetry] Log file opened\n");
+        printf("[Telemetry] Log file: %s\n", filename.c_str());
     }
-    printf("[Telemetry] Log file opened\n");
 
+    int last_dump_time = pros::millis();
     while (true) {
         char buffer[256]; memset(buffer, 0, 256);
         sprintf(buffer, "%f,%f,%f,%d,%d,%d,%d,%f,%f,%f,%f\n",
@@ -62,8 +69,16 @@ static void logging_task(void* args) {
             printf("%s", buffer);
         }
 
-        if ((bool) (mode & 0b10) >> 1) {
-            fprintf(file, "%s", buffer);
+        if (will_log_file) {
+            log_queue.push(std::string(buffer));
+            if (pros::millis() - last_dump_time > 500) {
+                last_dump_time = pros::millis();
+                while (!log_queue.empty()) {
+                    fprintf(file, "%s", log_queue.front().c_str());
+                    log_queue.pop();
+                }
+                fflush(file);
+            }
         }
 
         pros::delay(delay);
