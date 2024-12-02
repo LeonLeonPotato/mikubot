@@ -14,9 +14,12 @@ inline namespace state {
 extern bool braking;
 extern Eigen::Vector2f pos, velocity, acceleration;
 extern float theta, angular_velocity, angular_acceleration;
+extern int left_set_velocity, right_set_velocity;
+extern int left_set_voltage, right_set_voltage;
 
 inline const float angular_diff(const float desired, bool reversed = false) {
-    return fmod(desired - theta + (M_PI * (int) !reversed), M_TWOPI) - M_PI;
+    const float res = fmod(desired - theta + (M_PI * (int) !reversed), M_TWOPI) - M_PI;
+    return res + (res < -M_PI) * M_TWOPI;
 }
 
 inline const float angular_diff(const float desired_x, const float desired_y, const bool reversed = false) {

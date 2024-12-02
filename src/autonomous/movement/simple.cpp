@@ -76,7 +76,7 @@ TickResult simple::swing_to_tick(const Eigen::Vector2f& point, PIDGroup pids,
     float speed = fmin(pids.linear.get(dist), max_base_speed) * fmax(0, cosf(angle_diff));
     float turn = pids.angular.get(angle_diff);
     if (reversed) speed = -speed;
-    // printf("Speed: %f, Turn: %f, Angular: %f, Reversed: %d, Dist: %f, Base: %f\n", speed, turn, angle_diff, reversed, dist, max_base_speed);
+    // printf("Speed: %f, Turn: %f, Angular: %f, Reversed: %d, Dist: %f, Pos: [%f, %f]\n", speed, turn, angle_diff, reversed, dist, robot::pos.x(), robot::pos.y());
     robot::velo(speed + turn, speed - turn);
 
     return { ExitCode::SUCCESS, 0, dist, RecomputationLevel::NONE };

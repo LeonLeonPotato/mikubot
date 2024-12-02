@@ -68,6 +68,11 @@ struct MovementParams {
 struct PIDGroup {
     controllers::PID& angular;
     controllers::PID& linear;
+
+    void reset(void) const {
+        angular.reset();
+        linear.reset();
+    }
 };
 
 class BaseMovement {

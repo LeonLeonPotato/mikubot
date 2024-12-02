@@ -11,6 +11,11 @@ float state::theta = 0;
 float state::angular_velocity = 0;
 float state::angular_acceleration = 0;
 
+int state::left_set_velocity = 0;
+int state::right_set_velocity = 0;
+int state::left_set_voltage = 0;
+int state::right_set_voltage = 0;
+
 char robot::match::team = 'R';
 int robot::match::side = 1;
 
@@ -31,7 +36,7 @@ int robot::match::side = 1;
     pros::Rotation robot::side_encoder(-4);
     pros::Rotation robot::back_encoder(-5);
 
-    pros::MotorGroup robot::left_motors({1, -2, -3}, pros::MotorGearset::blue);
+    pros::MotorGroup robot::left_motors({1, -2}, pros::MotorGearset::blue);
     pros::MotorGroup robot::right_motors({11, 12, -13}, pros::MotorGearset::blue);
 #endif
 
@@ -57,14 +62,14 @@ int robot::max_speed(void) {
 }
 
 void robot::volt(float left, float right) {
-    left = std::clamp(left, -1.0f, 1.0f) * 12000.0f;
-    right = std::clamp(right, -1.0f, 1.0f) * 12000.0f;
+    left_set_voltage = std::clamp(left, -1.0f, 1.0f) * 12000.0f;
+    right_set_voltage = std::clamp(right, -1.0f, 1.0f) * 12000.0f;
 
     braking = false;
 
     #ifndef MIKU_TESTENV
-        left_motors.move_voltage((int) left);
-        right_motors.move_voltage((int) right);
+        left_motors.move_voltage((int) left_set_voltage);
+        right_motors.move_voltage((int) right_set_voltage);
     #endif
 }
 
@@ -74,13 +79,13 @@ void robot::volt(int left, int right) {
 
 void robot::velo(float left, float right) {
     int max = max_speed();
-    left = std::clamp(left, -1.0f, 1.0f) * max;
-    right = std::clamp(right, -1.0f, 1.0f) * max;
+    left_set_velocity = std::clamp(left, -1.0f, 1.0f) * max;
+    right_set_velocity = std::clamp(right, -1.0f, 1.0f) * max;
     braking = false;
 
     #ifndef MIKU_TESTENV
-        left_motors.move_velocity((int) left);
-        right_motors.move_velocity((int) right);
+        left_motors.move_velocity((int) left_set_velocity);
+        right_motors.move_velocity((int) right_set_velocity);
     #endif
 }
 

@@ -17,4 +17,4 @@ const std::map<Strategy, void (*)()> strategies::functions = {
     {Strategy::PeakStrat, peak_strat::run}
 };
 
-Strategy strategies::chosen_strategy = Strategy::Test;
+Strategy strategies::chosen_strategy = Strategy::PeakStrat;

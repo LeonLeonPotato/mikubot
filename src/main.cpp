@@ -9,6 +9,7 @@
 #include "autonomous/strategies.h"
 #include "gui/opcontrolinfo.h"
 #include "opcontrol/opcontrol.h"
+#include "telemetry.h"
 
 #include "api.h"
 
@@ -16,7 +17,8 @@ void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
 
 	robot::init();
-	// odometry::start_task();
+	odometry::start_task();
+	telemetry::start_task();
 }
 
 void disabled(void) {
@@ -62,56 +64,51 @@ static void thug(std::string name, std::vector<float>& X, std::vector<float>& Y)
 void opcontrol(void) {
 	//competition_initialize();
 
-	// robot::pos = Eigen::Vector2f(1, 1);
-	// robot::theta = 0;
-	// printf("Test 1: %f\n", robot::angular_diff(Eigen::Vector2f(1, 0), false));
-	// printf("Test 2: %f\n", robot::angular_diff(Eigen::Vector2f(2, 1), false));
-
-	// autonomous();
+	autonomous();
 	// pros::delay(100);
 
-	pathing::QuinticSpline test;
-	test.points.emplace_back(0, 0);
-	test.points.emplace_back(0, 100);
-	test.points.emplace_back(70, 100);
-	test.solve_coeffs(pathing::BaseParams {
-		.start_heading = 0,
-		.start_magnitude = 0,
-		.end_heading = 0,
-		.end_magnitude = 0
-	});
-	std::cout << test.debug_out() << std::endl;
+	// pathing::QuinticSpline test;
+	// test.points.emplace_back(0, 0);
+	// test.points.emplace_back(0, 100);
+	// test.points.emplace_back(70, 100);
+	// test.solve_coeffs(pathing::BaseParams {
+	// 	.start_heading = 0,
+	// 	.start_magnitude = 0,
+	// 	.end_heading = 0,
+	// 	.end_magnitude = 0
+	// });
+	// std::cout << test.debug_out() << std::endl;
 
-	double start = pros::micros() / 1e6f;
-	test.profile_path({
-		.start_v = 0,
-		.end_v = 0,
-		.max_speed = 5,
-		.accel = 10,
-		.decel = 10,
-		.track_width = 40,
-		.ds = 0.5,
-		.resolution = 10000
-	});
-	printf("Profile path took %f seconds\n", pros::micros() / 1e6f - start);
+	// double start = pros::micros() / 1e6f;
+	// test.profile_path({
+	// 	.start_v = 0,
+	// 	.end_v = 0,
+	// 	.max_speed = 5,
+	// 	.accel = 10,
+	// 	.decel = 10,
+	// 	.track_width = 40,
+	// 	.ds = 0.5,
+	// 	.resolution = 10000
+	// });
+	// printf("Profile path took %f seconds\n", pros::micros() / 1e6f - start);
 
-	std::vector<float> X; X.reserve(1000);
-	std::vector<float> Y_left; Y_left.reserve(1000);
-	std::vector<float> Y_center; Y_center.reserve(1000);
-	std::vector<float> Y_right; Y_right.reserve(1000);
+	// std::vector<float> X; X.reserve(1000);
+	// std::vector<float> Y_left; Y_left.reserve(1000);
+	// std::vector<float> Y_center; Y_center.reserve(1000);
+	// std::vector<float> Y_right; Y_right.reserve(1000);
 
-	for (auto& point : test.get_profile()) {
-		X.push_back(point.s);
-		Y_left.push_back(point.left_v);
-		Y_center.push_back(point.center_v);
-		Y_right.push_back(point.right_v);
-	}
+	// for (auto& point : test.get_profile()) {
+	// 	X.push_back(point.s);
+	// 	Y_left.push_back(point.left_v);
+	// 	Y_center.push_back(point.center_v);
+	// 	Y_right.push_back(point.right_v);
+	// }
 
-	thug("Y_left", X, Y_left);
-	printf("\n");
-	thug("Y_center", X, Y_center);
-	printf("\n");
-	thug("Y_right", X, Y_right);
+	// thug("Y_left", X, Y_left);
+	// printf("\n");
+	// thug("Y_center", X, Y_center);
+	// printf("\n");
+	// thug("Y_right", X, Y_right);
 
 	// pros::Motor motor(1, pros::MotorGears::blue);
 
@@ -150,9 +147,9 @@ void opcontrol(void) {
 
 	// std::cout << stz.str() << std::endl;
 	
-	// std::cout << "Opcontrol started" << std::endl;
+	std::cout << "Opcontrol started" << std::endl;
 
-	// for (auto& task : controls::start_tasks) {
-	// 	task();
-	// }
+	for (auto& task : controls::start_tasks) {
+		task();
+	}
 }
