@@ -67,6 +67,7 @@ void BasePath::profile_path(const ProfileParams& params) {
         p.center_v = fmin(p.center_v, center_v);
         p.left_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
         p.right_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
+        p.angular_v = (p.left_v - p.right_v) / params.track_width;
         center_v = std::clamp(sqrtf(center_v*center_v + 2*params.decel*params.ds), 0.0f, params.max_speed / (1 + scale));
     }
 }

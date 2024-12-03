@@ -24,7 +24,7 @@ enum class RecomputationLevel {
 struct TickResult {
     ExitCode code = ExitCode::TBD;
 
-    float progress = 0;
+    float t = 0;
     float error = 0;
     RecomputationLevel recomputation_level = RecomputationLevel::NONE;
 };
@@ -35,13 +35,13 @@ struct MovementResult {
     int time_taken_ms = 0;
     int num_path_recomputations = 0;
     int num_time_recomputations = 0;
-    float progress = 0;
+    float t = 0;
     float error = 0;
 
     std::string debug_out(void) const {
         char buffer[256];
         sprintf(buffer, "MovementResult {Code: %d, Time taken: %d, Path recomputations: %d, Time recomputations: %d, Progress: %f, Error: %f}", 
-            code, time_taken_ms, num_path_recomputations, num_time_recomputations, progress, error);
+            code, time_taken_ms, num_path_recomputations, num_time_recomputations, t, error);
         return std::string(buffer);
     }
 };
