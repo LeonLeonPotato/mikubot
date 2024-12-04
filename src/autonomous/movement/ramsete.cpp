@@ -1,14 +1,19 @@
 #include "autonomous/movement/ramsete.h"
 #include "essential.h"
 
+using namespace movement::ramsete;
 using namespace movement;
 
-TickResult Ramsete::tick(pathing::BasePath& path, const MovementParams& params, PIDGroup pids, 
-    const solvers::FunctionGroup& funcs, float t) const
-{
-    TickResult result;
+static float safe_sinc(float x) {
+    if (fabsf(x) < 1e-3) return 1 - (x*x/6.0f) + (x*x*x*x/120.0f);
+    return sinf(x) / x;
+}
 
-    int i = path.arc_parameter(t);
+static RamseteResult tick(
+    pathing::BasePath& path, 
+    const RamseteParams& params, 
+    int i)
+{
     Eigen::Vector2f goal; Eigen::Vector2f deriv;
     while (true) {
         const pathing::ProfilePoint& p = path.get_profile()[i];
@@ -34,56 +39,68 @@ TickResult Ramsete::tick(pathing::BasePath& path, const MovementParams& params, 
     float angle_local = robot::angular_diff(angle, params.reversed);
     
     const pathing::ProfilePoint& p = path.get_profile()[i];
-    const float zeta = ((const RamseteParams&) params).zeta;
-    const float beta = ((const RamseteParams&) params).beta;
     const float angular = p.angular_v * (2 * std::signbit(params.reversed) - 1);
-    const float gain = 2 * zeta
+    const float gain = 2 * params.zeta
         * sqrtf(p.angular_v * p.angular_v
-             + beta * p.center_v * p.center_v);
+             + params.beta * p.center_v * p.center_v);
 
     float v = p.center_v * cosf(angle_local)
          + gain * crosstrack_local.x();
 
     float w = angular 
         + gain * angle_local
-             + beta * p.center_v * sinf(angle_local) * crosstrack_local.y() / (angle_local + 1e-6);
+             + params.beta * p.center_v * safe_sinc(angle_local) * crosstrack_local.y();
 
     float motor_v = v / robot::DRIVETRAIN_WHEEL_RADIUS;
     float motor_w = w / robot::DRIVETRAIN_WHEEL_RADIUS;
     if (params.reversed) motor_v *= -1;
+    motor_v = std::clamp(motor_v, -params.max_linear_speed, params.max_linear_speed);
 
     robot::velo(
-        motor_v - motor_w,
-        motor_v + motor_w
+        motor_v + motor_w,
+        motor_v - motor_w
     );
 
-    return {ExitCode::SUCCESS, path.get_profile()[i].t, crosstrack.norm()};
+    return {ExitCode::SUCCESS, crosstrack.norm(), 0, i};
 }
 
-MovementResult Ramsete::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, 
-    const MovementParams& params, PIDGroup pids) const
+RamseteResult ramsete::follow_path_cancellable(    
+    volatile bool& cancel_ref, 
+    pathing::BasePath& path,
+    const RamseteParams& params)
 {
-    const solvers::FunctionGroup dummy_funcs;
     const int start_t = pros::millis();
 
-    float t = 0, error = 0;
-    while (robot::distance(path.points.back()) > params.goal_threshold) {
+    RamseteResult last_tick;
+    while (robot::distance(path.points.back()) > params.exit_threshold) {
         if (cancel_ref) {
-            return {
-                ExitCode::CANCELLED,
-                pros::millis() - start_t,
-                0, 0,
-                t, 0;
-            }
+            return {ExitCode::CANCELLED, last_tick.error, (int) (pros::millis() - start_t), last_tick.i};
         }
 
-        TickResult result = tick(path, params, pids, funcs, t);
-        if (result.exit_code != ExitCode::SUCCESS) {
-            return {result.exit_code, result.t};
+        if (pros::millis() - start_t > params.timeout) {
+            return {ExitCode::TIMEOUT, last_tick.error, (int) (pros::millis() - start_t), last_tick.i};
         }
 
-        t = result.t;
+        last_tick = tick(path, params, last_tick.i);
+
+        if (last_tick.code != ExitCode::SUCCESS) {
+            last_tick.time_taken_ms = pros::millis() - start_t;
+            return last_tick;
+        }
     }
 
-    return {ExitCode::SUCCESS, path.maxt()};
+    return {ExitCode::SUCCESS, last_tick.error, (int) (pros::millis() - start_t), last_tick.i};
+}
+
+RamseteResult ramsete::follow_path_cancellable(
+    volatile bool& cancel_ref, 
+    pathing::BasePath& path,
+    const float beta, const float zeta,
+    const SimpleMovementParams& params) 
+{
+    RamseteParams new_params;
+    new_params.copy_from(params);
+    new_params.beta = beta;
+    new_params.zeta = zeta;
+    return follow_path_cancellable(cancel_ref, path, new_params);
 }

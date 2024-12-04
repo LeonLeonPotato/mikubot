@@ -5,71 +5,62 @@
 
 using namespace movement;
 
-MovementResult BaseMovement::follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, PIDGroup pids) const {
-    return follow_path_cancellable(cancel_ref, path, get_global_params(), pids);
-}
-
-std::pair<float, float> BaseMovement::compute_initial_t(
-    const pathing::BasePath& path, const MovementParams& params,
-    const solvers::FunctionGroup& funcs, 
-    solvers::Solver solver) const 
+std::pair<float, float> utils::compute_initial_t(
+    const pathing::BasePath& path, 
+    const float guesses,
+    const NumericalRecomputationParams& params) 
 {
-    if (solver == solvers::Solver::None) {
-        solver = get_solver(path);
-    }
-
-    switch (solver) {
+    switch (params.solver) {
         case solvers::Solver::Newton: {
-            Eigen::VectorXf guess = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.01, path.maxt() - 0.01);
+            Eigen::VectorXf guess = Eigen::VectorXf::LinSpaced(guesses, 0.01, path.maxt() - 0.01);
 
-            return solvers::newton_vec(funcs, guess, 0, path.maxt(), params.recomputation_iterations, params.recomputation_threshold);
+            return solvers::newton_vec(params.funcs, guess, 0, path.maxt(), params.iterations, params.threshold);
             break;
         }
         case solvers::Solver::Secant: {
-            Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.05, path.maxt() - 0.10);
-            Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(params.recomputation_guesses, 0.10, path.maxt() - 0.05);
+            Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(guesses, 0.05, path.maxt() - 0.10);
+            Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(guesses, 0.10, path.maxt() - 0.05);
 
-            return solvers::secant_vec(funcs, t0, t1, 0, path.maxt(), params.recomputation_iterations, params.recomputation_threshold);
+            return solvers::secant_vec(params.funcs, t0, t1, 0, path.maxt(), params.iterations, params.threshold);
             break;
         }
         default: {
-            throw std::runtime_error("Invalid / Unsupported solver: " + std::to_string((int) solver));
+            throw std::runtime_error("Invalid / Unsupported solver: " + std::to_string((int) params.solver));
         }
     }
 
     __builtin_unreachable();
 }
 
-std::pair<float, float> BaseMovement::compute_updated_t(
-    pathing::BasePath& path, const MovementParams& params,
-    const solvers::FunctionGroup& funcs, float t, 
-    solvers::Solver solver) const 
+std::pair<float, float> utils::compute_updated_t(
+    pathing::BasePath& path, 
+    const float t,
+    const NumericalRecomputationParams& params)
 {
-    if (solver == solvers::Solver::None) {
-        solver = get_solver(path);
-    }
-
-    switch (solver) {
+    switch (params.solver) {
         case solvers::Solver::Newton: {
-            return solvers::newton_single(funcs, t, 0, path.maxt(), params.update_iterations, params.update_threshold);
+            return solvers::newton_single(params.funcs, t, 0, path.maxt(), params.iterations, params.threshold);
         }
         case solvers::Solver::Secant: {
             const float t1 = fmin(t + 1, path.maxt());
             const float t0 = t - ((int) (t1 == t)) * 0.1;
-            return solvers::secant_single(funcs, t0, t1, 0, path.maxt(), params.update_iterations, params.update_threshold);
+            return solvers::secant_single(params.funcs, t0, t1, 0, path.maxt(), params.iterations, params.threshold);
         }
         case solvers::Solver::GradientDescent: {
-            return solvers::gradient_descent_single(funcs, t, 0, path.maxt(), params.grad_desc_step_size, params.update_iterations);
+            return solvers::gradient_descent_single(params.funcs, t, 0, path.maxt(), params.step_size, params.iterations);
         }
         default: {
-            throw std::runtime_error("Invalid / Unsupported solver: " + std::to_string((int) solver));
+            throw std::runtime_error("Invalid / Unsupported solver: " + std::to_string((int) params.solver));
         }
     }
 
     __builtin_unreachable();
 }
 
-void BaseMovement::recompute_path(pathing::BasePath& path, int goal_i) const
+void utils::recompute_path(
+    pathing::BasePath& path, 
+    const path_solver_t path_solver,    
+    const int goal_i)
 {
     if (goal_i > 1) {
         for (int i = goal_i; i < path.points.size(); i++) {
@@ -86,7 +77,7 @@ void BaseMovement::recompute_path(pathing::BasePath& path, int goal_i) const
     printf("Recomputed path\n");
 }
 
-void BaseMovement::solve_path_default(pathing::BasePath& path) {
+void utils::solve_path_default(pathing::BasePath& path) {
     pathing::BaseParams solve_params;
 
     solve_params.start_heading = robot::theta;

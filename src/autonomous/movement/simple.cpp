@@ -5,131 +5,138 @@ using namespace movement;
 
 ////// Turn in place
 
-TickResult simple::turn_towards_tick(const float angle, controllers::PID& in_place_pid,
-    const int timeout, const float threshold)
+SimpleResult simple::turn_towards_tick(
+    const float angle, 
+    const SimpleMovementParams& params,
+    controllers::PID& in_place_pid)
 {
-    const float diff = robot::angular_diff(angle);
+    const float diff = robot::angular_diff(angle, params.reversed);
     const float ctrl = in_place_pid.get(diff);
     robot::volt(ctrl, -ctrl);
-    return { ExitCode::SUCCESS, 0, diff, RecomputationLevel::NONE };
+    return { ExitCode::SUCCESS, diff, 0 };
 }
 
-MovementResult simple::turn_towards_cancellable(const float angle, controllers::PID& pid,
-    volatile bool& cancel_ref, const int timeout, const float threshold)
+SimpleResult simple::turn_towards_cancellable(
+    const float angle, 
+    const SimpleMovementParams& params,
+    controllers::PID& pid,
+    volatile bool& cancel_ref)
 {
-    MovementResult result;
-
     const int start = pros::millis();
-    while (true) {
+    SimpleResult last_tick;
+    while (robot::angular_diff(angle, params.reversed) > params.exit_threshold) {
         if (cancel_ref) {
-            result.code = ExitCode::CANCELLED;
-            break;
+            return { ExitCode::CANCELLED, last_tick.error, (int) (pros::millis() - start) };
         }
 
-        const float diff = robot::angular_diff(angle);
-        if (fabs(diff) < threshold) {
-            result.code = ExitCode::SUCCESS;
-            break;
+        if (pros::millis() - start >= params.timeout) {
+            return { ExitCode::TIMEOUT, last_tick.error, (int) (pros::millis() - start) };
         }
 
-        if (pros::millis() - start >= timeout) {
-            result.code = ExitCode::TIMEOUT;
-            break;
+        last_tick = turn_towards_tick(angle, params, pid);
+
+        if (last_tick.code != ExitCode::SUCCESS) {
+            return { last_tick.code, last_tick.error, (int) (pros::millis() - start) };
         }
 
-        auto res = turn_towards_tick(angle, pid, timeout, threshold);
-        result.error = res.error;
-
-        pros::delay(20);
+        pros::delay(params.delay);
     }
 
-    result.time_taken_ms = pros::millis() - start;
-
-    return result;
+    return { ExitCode::SUCCESS, last_tick.error, (int) (pros::millis() - start) };
 }
 
-MovementResult simple::turn_towards(const float angle, controllers::PID& pid,
-    const int timeout, const float threshold)
+SimpleResult simple::turn_towards(
+    const float angle, 
+    const SimpleMovementParams& params,
+    controllers::PID& pid)
 {
     bool dummy_ref = false;
-    return turn_towards_cancellable(angle, pid, dummy_ref, timeout, threshold);
+    return turn_towards_cancellable(angle, params, pid, dummy_ref);
 }
 
-Future<MovementResult> simple::turn_towards_async(const float angle, controllers::PID& pid, 
-    const int timeout, const float threshold)
+Future<SimpleResult> simple::turn_towards_async(
+    const float angle, 
+    const SimpleMovementParams& params,
+    controllers::PID& pid)
 {
-    Future<MovementResult> future;
-    pros::Task task([angle, &pid, timeout, threshold, &future]() {
-        future.set_value(turn_towards_cancellable(angle, pid, 
-            future.get_state()->cancelled, timeout, threshold));
+    Future<SimpleResult> future;
+    pros::Task task([&future, angle, &pid, &params]() {
+        future.set_value(turn_towards_cancellable(
+            angle, params, pid, 
+            future.get_state()->cancelled
+        ));
     });
     return future;
 }
 
 ////// Swing to position
 
-TickResult simple::swing_to_tick(const Eigen::Vector2f& point, PIDGroup pids, 
-    const bool reversed, const int timeout, const float max_base_speed, const float threshold)
+SimpleResult simple::swing_to_tick(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    PIDGroup pids)
 {
     const float dist = robot::distance(point);
-    const float angle_diff = robot::angular_diff(point, reversed);
-    float speed = fmin(pids.linear.get(dist), max_base_speed) * fmax(0, cosf(angle_diff));
+    const float angle_diff = robot::angular_diff(point, params.reversed);
+    float speed = pids.linear.get(dist);
     float turn = pids.angular.get(angle_diff);
-    if (reversed) speed = -speed;
+    if (params.reversed) speed = -speed;
+    if (params.use_cosine_scaling) speed *= fmax(0, cosf(angle_diff));
+    speed = std::clamp(speed, -params.max_linear_speed, params.max_linear_speed);
     // printf("Speed: %f, Turn: %f, Angular: %f, Reversed: %d, Dist: %f, Pos: [%f, %f]\n", speed, turn, angle_diff, reversed, dist, robot::pos.x(), robot::pos.y());
     robot::velo(speed + turn, speed - turn);
 
-    return { ExitCode::SUCCESS, 0, dist, RecomputationLevel::NONE };
+    return { ExitCode::SUCCESS, dist, 0 };
 }
 
-MovementResult simple::swing_to_cancellable(const Eigen::Vector2f& point, PIDGroup pids,
-    volatile bool& cancel_ref, const bool reversed, const int timeout, const float max_base_speed, const float threshold)
+SimpleResult simple::swing_to_cancellable(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    PIDGroup pids,
+    volatile bool& cancel_ref)
 {
-    MovementResult result;
-
-    int start = pros::millis();
-    while (true) {
+    const int start = pros::millis();
+    SimpleResult last_tick;
+    while (robot::distance(point) > params.exit_threshold) {
         if (cancel_ref) {
-            result.code = ExitCode::CANCELLED;
-            break;
+            return { ExitCode::CANCELLED, last_tick.error, (int) (pros::millis() - start) };
         }
 
-        float dist = robot::distance(point);
-        if (dist < threshold) {
-            result.code = ExitCode::SUCCESS;
-            break;
+        if (pros::millis() - start > params.timeout) {
+            return { ExitCode::TIMEOUT, last_tick.error, (int) (pros::millis() - start) };
         }
 
-        if (pros::millis() - start > timeout) {
-            result.code = ExitCode::TIMEOUT;
-            break;
+        last_tick = swing_to_tick(point, params, pids);
+        if (last_tick.code != ExitCode::SUCCESS) {
+            return { last_tick.code, last_tick.error, (int) (pros::millis() - start) };
         }
 
-        auto res = swing_to_tick(point, pids, reversed, timeout, max_base_speed, threshold);
-        result.error = res.error;
-
-        pros::delay(20);
+        pros::delay(params.delay);
     }
 
-    result.time_taken_ms = pros::millis() - start;
-
-    return result;
+    return { ExitCode::SUCCESS, last_tick.error, (int) (pros::millis() - start) };
 }
 
-MovementResult simple::swing_to(const Eigen::Vector2f& point, PIDGroup pids,
-    const bool reversed, const int timeout, const float max_base_speed, const float threshold)
+SimpleResult simple::swing_to(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    PIDGroup pids)
 {
     bool cancel = false;
-    return swing_to_cancellable(point, pids, cancel, reversed, timeout, max_base_speed, threshold);
+    return swing_to_cancellable(point, params, pids, cancel);
 }
 
-Future<MovementResult> simple::swing_to_async(const Eigen::Vector2f& point, PIDGroup pids,
-    const bool reversed, const int timeout, const float max_base_speed, const float threshold)
+Future<SimpleResult> simple::swing_to_async(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    PIDGroup pids)
 {
-    Future<MovementResult> future;
-    pros::Task task([point, &pids, reversed, timeout, max_base_speed, threshold, &future]() {
-        future.set_value(swing_to_cancellable(point, pids, 
-            future.get_state()->cancelled, reversed, timeout, max_base_speed, threshold));
+    Future<SimpleResult> future;
+    pros::Task task([&point, &params, &pids, &future] () {
+        future.set_value(swing_to_cancellable(
+            point, params, pids, 
+            future.get_state()->cancelled
+        ));
     });
     return future;
 }

@@ -6,47 +6,61 @@
 #include "autonomous/controllers.h"
 #include "autonomous/future.h"
 
-namespace movement {
-
+namespace movement::purepursuit {
 struct PurePursuitParamsPOD {
+    int update_iterations = 10;
+    float update_threshold = 1e-1;
+
+    NumericalRecomputation force_recomputation = NumericalRecomputation::NONE;
+    solvers::Solver solver = solvers::Solver::Newton;
+    int recomputation_guesses = 16;
+    float recomputation_threshold = 1.5;
+    int recomputation_iterations = 12;
+
     float radius = 30;
 };
 
-struct PurePursuitParams : public MovementParams, public PurePursuitParamsPOD { };
+struct PurePursuitParams 
+    : public SimpleMovementParams, public PurePursuitParamsPOD { };
 
-class PurePursuit : public BaseMovement {
-    private:
-        float func(pathing::BasePath& path, float radius, float t) const;
-        float deriv(pathing::BasePath& path, float t) const;
-        Eigen::VectorXf vec_func(pathing::BasePath& path, float radius, Eigen::VectorXf& t) const;
-        Eigen::VectorXf vec_deriv(pathing::BasePath& path, Eigen::VectorXf& t) const;
-
-        const PurePursuitParams& get_global_params() const override {
-            return params;
-        }
-
-        TickResult tick(
-            pathing::BasePath& path, const MovementParams& params, PIDGroup pids, 
-            const solvers::FunctionGroup& funcs, float t
-        ) const;
-
-    public:
-        PurePursuitParams params;
-
-        PurePursuit(
-            float radius = 30,
-            std::optional<path_solver_t> initializer = solve_path_default, 
-            std::optional<solvers::Solver> solver_override = solvers::Solver::None
-        ) : BaseMovement(initializer, solver_override) { 
-            params.radius = radius;
-        }
-
-        MovementResult follow_path_cancellable(
-            volatile bool& cancel_ref, 
-            pathing::BasePath& path,
-            const MovementParams& params,
-            PIDGroup pids
-        ) const override;
+struct PurePursuitResult : public SimpleResult {
+    float t = 0;
+    int num_path_recomputations = 0;
+    int num_time_recomputations = 0;
+    NumericalRecomputation recomputation_level = NumericalRecomputation::NONE;
 };
 
-} // namespace movement
+PurePursuitResult follow_path_cancellable(
+    volatile bool& cancel_ref, 
+    pathing::BasePath& path,
+    const PurePursuitParams& params,
+    const PIDGroup pids,
+    path_solver_t path_solver = utils::solve_path_default
+);
+
+PurePursuitResult follow_path_cancellable(
+    volatile bool& cancel_ref, 
+    pathing::BasePath& path,
+    const float radius,
+    const SimpleMovementParams& params,
+    const PIDGroup pids,
+    path_solver_t path_solver = utils::solve_path_default
+);
+
+template <typename... Args>
+PurePursuitResult follow_path(Args&&... args) {
+    const bool cancel = false;
+    return follow_path_cancellable((volatile bool&) cancel, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+Future<PurePursuitResult> follow_path_async(Args&&... args) {
+    Future<PurePursuitResult> ret;
+    pros::Task task {[&ret, &args...]() {
+        ret.set_value(std::move(
+            follow_path_cancellable(ret.get_state()->cancelled, std::forward<Args>(args)...)
+        ));
+    }};
+    return ret;
+}
+} // namespace movement::purepursuit

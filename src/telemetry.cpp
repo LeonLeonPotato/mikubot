@@ -42,7 +42,7 @@ static T average(const std::vector<T>& v) {
 static void logging_task(void* args) {
     #ifndef MIKU_TESTENV
     initialize_log_file();
-    bool will_log_file = (bool) (mode & 0b10) >> 1;
+    bool will_log_file = (mode & 0b10) >> 1;
 
     if (file == nullptr) {
         printf("[Telemetry] Log file could not be opened\n");
@@ -52,10 +52,14 @@ static void logging_task(void* args) {
         printf("[Telemetry] Log file: %s\n", filename.c_str());
     }
 
+    fprintf(file, "time,x,y,theta,left_voltage,right_voltage,left_velocity,right_velocity,left_actual_velocity,right_actual_velocity,left_actual_voltage,right_actual_voltage\n");
+    fflush(file);
+
     int last_dump_time = pros::millis();
     while (true) {
         char buffer[256]; memset(buffer, 0, 256);
-        sprintf(buffer, "%f,%f,%f,%d,%d,%d,%d,%f,%f,%f,%f\n",
+        sprintf(buffer, "%lld,%f,%f,%f,%d,%d,%d,%d,%f,%f,%f,%f\n",
+            pros::micros(),
             robot::pos.x(), robot::pos.y(), robot::theta,
             robot::left_set_voltage, robot::right_set_voltage,
             robot::left_set_velocity, robot::right_set_velocity,
@@ -71,12 +75,14 @@ static void logging_task(void* args) {
 
         if (will_log_file) {
             log_queue.push(std::string(buffer));
+
             if (pros::millis() - last_dump_time > 500) {
                 last_dump_time = pros::millis();
                 while (!log_queue.empty()) {
                     fprintf(file, "%s", log_queue.front().c_str());
                     log_queue.pop();
                 }
+
                 fflush(file);
             }
         }

@@ -27,17 +27,17 @@ int robot::match::side = 1;
     pros::adi::Pneumatics robot::ejector('c', false, false);
     pros::adi::Pneumatics robot::clamp('d', false, false);
 
-    pros::Motor robot::conveyor(21, pros::MotorGearset::green);
+    pros::Motor robot::conveyor(10, pros::MotorGearset::green);
     pros::Motor robot::intake(-9);
     pros::Motor robot::wallmech(0);
 
-    pros::Imu robot::inertial(7);
+    pros::Imu robot::inertial(19);
     pros::Optical robot::classifier(0);
-    pros::Rotation robot::side_encoder(-4);
-    pros::Rotation robot::back_encoder(-5);
+    pros::Rotation robot::side_encoder(-20);
+    pros::Rotation robot::back_encoder(-14);
 
-    pros::MotorGroup robot::left_motors({1, -2}, pros::MotorGearset::blue);
-    pros::MotorGroup robot::right_motors({11, 12, -13}, pros::MotorGearset::blue);
+    pros::MotorGroup robot::left_motors({-11, 12, -13}, pros::MotorGearset::blue);
+    pros::MotorGroup robot::right_motors({1, -2, 4}, pros::MotorGearset::blue);
 #endif
 
 int robot::max_speed(void) {

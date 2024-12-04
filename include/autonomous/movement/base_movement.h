@@ -7,6 +7,8 @@
 #include "Eigen/Dense"
 
 namespace movement {
+using path_solver_t = std::function<void(pathing::BasePath& path)>;
+
 enum class ExitCode {
     TBD = -1,
     SUCCESS = 0,
@@ -15,54 +17,45 @@ enum class ExitCode {
     CANCELLED = 3
 };
 
-enum class RecomputationLevel {
+enum class NumericalRecomputation {
     NONE = 0,
     TIME = 1,
     PATH_AND_TIME = 2
 };
 
-struct TickResult {
-    ExitCode code = ExitCode::TBD;
+struct NumericalRecomputationParams {
+    int iterations = 10;
+    float threshold = 1e-1;
+    float step_size = 0.1;
 
-    float t = 0;
-    float error = 0;
-    RecomputationLevel recomputation_level = RecomputationLevel::NONE;
+    const solvers::FunctionGroup& funcs;
+    const solvers::Solver solver;
 };
 
-struct MovementResult {
+struct SimpleResult {
     ExitCode code = ExitCode::TBD;
-
+    float error = 0;
     int time_taken_ms = 0;
-    int num_path_recomputations = 0;
-    int num_time_recomputations = 0;
-    float t = 0;
-    float error = 0;
-
-    std::string debug_out(void) const {
-        char buffer[256];
-        sprintf(buffer, "MovementResult {Code: %d, Time taken: %d, Path recomputations: %d, Time recomputations: %d, Progress: %f, Error: %f}", 
-            code, time_taken_ms, num_path_recomputations, num_time_recomputations, t, error);
-        return std::string(buffer);
-    }
 };
 
-struct MovementParams {
+struct SimpleMovementParams {
     bool reversed = false;
+    float exit_threshold = 5.0;
 
-    float final_threshold = 5.0;
-    float max_base_speed = 1.0;
+    float max_linear_speed = 1.0;
+    bool use_cosine_scaling = true;
 
-    int update_iterations = 10;
-    float update_threshold = 1e-1;
-    float grad_desc_step_size = 0.1;
-
-    RecomputationLevel force_recomputation = RecomputationLevel::NONE;
-    int recomputation_guesses = 16;
-    float recomputation_threshold = 1.5;
-    int recomputation_iterations = 12;
-
-    int timeout = 5000;
+    int timeout = 2000;
     int delay = 20;
+
+    void copy_from(const SimpleMovementParams& other) {
+        reversed = other.reversed;
+        exit_threshold = other.exit_threshold;
+        max_linear_speed = other.max_linear_speed;
+        use_cosine_scaling = other.use_cosine_scaling;
+        timeout = other.timeout;
+        delay = other.delay;
+    }
 };
 
 struct PIDGroup {
@@ -74,64 +67,23 @@ struct PIDGroup {
         linear.reset();
     }
 };
-
-class BaseMovement {
-    protected:
-        using path_solver_t = std::function<void(pathing::BasePath& path)>;
-
-        std::pair<float, float> compute_initial_t(
-            const pathing::BasePath& path, const MovementParams& params,
-            const solvers::FunctionGroup& funcs, 
-            solvers::Solver solver = solvers::Solver::None) const;
-
-        std::pair<float, float> compute_updated_t(
-            pathing::BasePath& path, const MovementParams& params,
-            const solvers::FunctionGroup& funcs, float t, 
-            solvers::Solver solver = solvers::Solver::None) const;
-
-        void recompute_path(pathing::BasePath& path, int goal_i) const;
-
-        virtual const MovementParams& get_global_params() const = 0;
-
-        virtual solvers::Solver get_solver(const pathing::BasePath& path) const {
-            return solver_override == solvers::Solver::None ? path.get_solver() : solver_override;
-        }
-
-    public:
-        path_solver_t path_solver;
-        solvers::Solver solver_override;
-
-        BaseMovement(
-            std::optional<path_solver_t> path_solver = solve_path_default, 
-            std::optional<solvers::Solver> solver_override = solvers::Solver::None
-        ) : path_solver(path_solver.value()), solver_override(solver_override.value()) { }
-
-        MovementResult follow_path_cancellable(volatile bool& cancel_ref, pathing::BasePath& path, PIDGroup pids) const;
-        virtual MovementResult follow_path_cancellable(
-            volatile bool& cancel_ref, 
-            pathing::BasePath& path,
-            const MovementParams& params,
-            PIDGroup pids
-        ) const = 0;
-
-        // Manual overloaders in shambles
-        template <typename... Args>
-        MovementResult follow_path(Args&&... args) const {
-            const bool cancel = false;
-            return follow_path_cancellable((volatile bool&) cancel, std::forward<Args>(args)...);
-        }
-
-        template <typename... Args>
-        Future<MovementResult> follow_path_async(Args&&... args) const {
-            Future<MovementResult> ret;
-            pros::Task task {[this, &ret, &args...]() {
-                ret.set_value(std::move(
-                    follow_path_cancellable(ret.get_state()->cancelled, std::forward<Args>(args)...)
-                ));
-            }};
-            return ret;
-        }
-
-        static void solve_path_default(pathing::BasePath& path);
-};
 } // namespace movement
+
+namespace movement::utils {
+std::pair<float, float> compute_initial_t(
+    const pathing::BasePath& path, 
+    const float guesses,
+    const NumericalRecomputationParams& params);
+
+std::pair<float, float> compute_updated_t(
+    pathing::BasePath& path, 
+    const float t,
+    const NumericalRecomputationParams& params);
+
+void recompute_path(
+    pathing::BasePath& path, 
+    const path_solver_t path_solver,    
+    const int goal_i);
+
+void solve_path_default(pathing::BasePath& path);
+}

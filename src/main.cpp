@@ -18,7 +18,7 @@ void initialize(void) {
 
 	robot::init();
 	odometry::start_task();
-	// telemetry::start_task();
+	opcontrolinfo::init();
 }
 
 void disabled(void) {
@@ -41,6 +41,7 @@ void autonomous(void) {
 	autonrunner::init();
 
 	strategies::functions.at(strategies::chosen_strategy)();
+	autonrunner::destroy();
 }
 
 static void thug(std::string name, std::vector<float>& X, std::vector<float>& Y) {
@@ -62,44 +63,47 @@ static void thug(std::string name, std::vector<float>& X, std::vector<float>& Y)
 }
 
 void opcontrol(void) {
-	// competition_initialize();
+	competition_initialize();
+	// ONLY Call this after competition_initialize because
+	// PROS cannot handle multiple tasks all calling filesystem
+	telemetry::start_task();
 
-	Eigen::Vector2f goal = {1, 1};
-	Eigen::Vector2f crosstrack = goal - robot::pos;
-    Eigen::Matrix2f rotator;
-	rotator << cosf(0.1), -sinf(0.1),
-		sinf(0.1), cosf(0.1);
-	Eigen::Vector2f crosstrack_local = rotator * crosstrack;
-	printf("Rotated: (%f, %f)\n", crosstrack_local(0), crosstrack_local(1));
+	// Eigen::Vector2f goal = {1, 1};
+	// Eigen::Vector2f crosstrack = goal - robot::pos;
+    // Eigen::Matrix2f rotator;
+	// rotator << cosf(0.1), -sinf(0.1),
+	// 	sinf(0.1), cosf(0.1);
+	// Eigen::Vector2f crosstrack_local = rotator * crosstrack;
+	// printf("Rotated: (%f, %f)\n", crosstrack_local(0), crosstrack_local(1));
 
-	// autonomous();
-	// pros::delay(100);
+	autonomous();
+	// // pros::delay(100);
 
-	pathing::QuinticSpline test;
-	test.points.emplace_back(0, 0);
-	test.points.emplace_back(0, 68);
-	test.solve_coeffs(pathing::BaseParams {
-		.start_heading = 0,
-		.start_magnitude = 0,
-		.end_heading = 0,
-		.end_magnitude = 0
-	});
-	std::cout << test.debug_out() << std::endl;
+	// pathing::QuinticSpline test;
+	// test.points.emplace_back(0, 0);
+	// test.points.emplace_back(0, 68);
+	// test.solve_coeffs(pathing::BaseParams {
+	// 	.start_heading = 0,
+	// 	.start_magnitude = 0,
+	// 	.end_heading = 0,
+	// 	.end_magnitude = 0
+	// });
+	// std::cout << test.debug_out() << std::endl;
 
-	double start = pros::micros() / 1e6f;
-	test.profile_path({
-		.start_v = 0,
-		.end_v = 0,
-		.max_speed = 5,
-		.accel = 10,
-		.decel = 10,
-		.track_width = 40,
-		.ds = 0.1,
-		.resolution = 5000
-	});
-	printf("Sigma boy 1: %f\n", test.arc_parameter(0));
-	printf("Sigma boy 2: %f\n", test.time_parameter(-1));
-	printf("Profile path took %f seconds\n", pros::micros() / 1e6f - start);
+	// double start = pros::micros() / 1e6f;
+	// test.profile_path({
+	// 	.start_v = 0,
+	// 	.end_v = 0,
+	// 	.max_speed = 5,
+	// 	.accel = 10,
+	// 	.decel = 10,
+	// 	.track_width = 40,
+	// 	.ds = 0.1,
+	// 	.resolution = 5000
+	// });
+	// printf("Sigma boy 1: %f\n", test.arc_parameter(0));
+	// printf("Sigma boy 2: %f\n", test.time_parameter(-1));
+	// printf("Profile path took %f seconds\n", pros::micros() / 1e6f - start);
 
 	// std::vector<float> X; X.reserve(1000);
 	// std::vector<float> Y_left; Y_left.reserve(1000);

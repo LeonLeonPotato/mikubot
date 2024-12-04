@@ -6,46 +6,46 @@
 #include "autonomous/controllers.h"
 #include "autonomous/future.h"
 
-namespace movement {
-
+namespace movement::ramsete {
 struct RamseteParamsPOD {
     float beta, zeta;
     bool use_tropical_solver = true;
 };
 
-struct RamseteParams : public MovementParams, public RamseteParamsPOD { };
+struct RamseteParams 
+    : public SimpleMovementParams, public RamseteParamsPOD { };
 
-class Ramsete : public BaseMovement {
-    private:
-        const RamseteParams& get_global_params() const override {
-            return params;
-        }
-
-        TickResult tick(
-            pathing::BasePath& path, const MovementParams& params, PIDGroup pids, 
-            const solvers::FunctionGroup& funcs, float t
-        ) const;
-
-    public:
-        RamseteParams params;
-
-        Ramsete(
-            float beta, float zeta,
-            bool use_tropical_solver = true,
-            std::optional<path_solver_t> initializer = solve_path_default, 
-            std::optional<solvers::Solver> solver_override = solvers::Solver::None
-        ) : BaseMovement(initializer, solver_override) { 
-            params.beta = beta;
-            params.zeta = zeta;
-            params.use_tropical_solver = use_tropical_solver;
-        }
-
-        MovementResult follow_path_cancellable(
-            volatile bool& cancel_ref, 
-            pathing::BasePath& path,
-            const MovementParams& params,
-            PIDGroup pids
-        ) const override;
+struct RamseteResult : public SimpleResult {
+    int i = 0;
 };
 
-} // namespace movement
+RamseteResult follow_path_cancellable(
+    volatile bool& cancel_ref, 
+    pathing::BasePath& path,
+    const RamseteParams& params
+);
+
+RamseteResult follow_path_cancellable(
+    volatile bool& cancel_ref, 
+    pathing::BasePath& path,
+    const float beta, const float zeta,
+    const SimpleMovementParams& params
+);
+
+template <typename... Args>
+RamseteResult follow_path(Args&&... args) {
+    const bool cancel = false;
+    return follow_path_cancellable((volatile bool&) cancel, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+Future<RamseteResult> follow_path_async(Args&&... args) {
+    Future<RamseteResult> ret;
+    pros::Task task {[&ret, &args...]() {
+        ret.set_value(std::move(
+            follow_path_cancellable(ret.get_state()->cancelled, std::forward<Args>(args)...)
+        ));
+    }};
+    return ret;
+}
+} // namespace movement::ramsete

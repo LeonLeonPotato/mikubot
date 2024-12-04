@@ -21,9 +21,9 @@ static const controllers::PIDArgs angular_args {
 };
 
 static const controllers::PIDArgs in_place_args {
-    .kp = 1,
+    .kp = 2.0,
     .ki = 0,
-    .kd = -0.025
+    .kd = -0.1
 };
 
 static controllers::PID linear_pid(linear_args);
@@ -36,31 +36,55 @@ static const movement::PIDGroup path_group {
 };
 
 static const movement::PIDGroup swing_group {
-    .angular = in_place_pid,
+    .angular = angular_pid,
     .linear = linear_pid
 };
 
 void peak_strat::run(void) {
-    movement::simple::swing_to({0, -95}, swing_group, true, 1000, 0.6f);
-    robot::brake();
+    movement::simple::swing_to(
+        {0, -95}, 
+        {.reversed=true, .max_linear_speed=0.6f, .timeout=1000}, 
+        swing_group);
+        
     swing_group.reset();
+
+    robot::brake();
     pros::delay(200);
 
     robot::clamp.extend();
     robot::intake.move_voltage(12000);
     robot::conveyor.move_voltage(12000);
     pros::delay(500);
-    
-    movement::simple::swing_to({-55, -95}, swing_group, false, 2000, 1.0f);
-    
-    robot::brake();
-    pros::delay(100);
 
-    movement::simple::turn_towards(-M_PI, in_place_pid, 2000, 0.01);
+    movement::simple::turn_towards(
+        -M_PI_2, 
+        {.exit_threshold=0.017, .timeout=2000}, 
+        in_place_pid);
+
     in_place_pid.reset();
+    pros::delay(1000);
     
-    pros::delay(100);
-    movement::simple::swing_to({-45, -135}, swing_group, false, 1000, 0.5f);
+    // movement::simple::swing_to(
+    //     {-55, -95}, 
+    //     {.max_linear_speed=1.0f, .timeout=2000}, 
+    //     swing_group);
+    
+    // robot::brake();
+    // pros::delay(100);
+
+    // movement::simple::turn_towards(
+    //     -M_PI, 
+    //     {.exit_threshold=0.017, .timeout=2000}, 
+    //     in_place_pid);
+
+    // in_place_pid.reset();
+    
+    // pros::delay(100);
+    // movement::simple::swing_to(
+    //     {-45, -135}, 
+    //     {.exit_threshold=0.5f, .timeout=1000},
+    //     swing_group);
+
     robot::brake();
 
     pros::delay(5000);
