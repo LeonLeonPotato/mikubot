@@ -62,14 +62,13 @@ int robot::max_speed(void) {
 }
 
 void robot::volt(float left, float right) {
-    left_set_voltage = std::clamp(left, -1.0f, 1.0f) * 12000.0f;
-    right_set_voltage = std::clamp(right, -1.0f, 1.0f) * 12000.0f;
-
+    left_set_voltage = (int) (std::clamp(left, -1.0f, 1.0f) * 12000.0f);
+    right_set_voltage = (int) (std::clamp(right, -1.0f, 1.0f) * 12000.0f);
     braking = false;
 
     #ifndef MIKU_TESTENV
-        left_motors.move_voltage((int) left_set_voltage);
-        right_motors.move_voltage((int) right_set_voltage);
+        left_motors.move_voltage(left_set_voltage);
+        right_motors.move_voltage(right_set_voltage);
     #endif
 }
 
@@ -79,13 +78,13 @@ void robot::volt(int left, int right) {
 
 void robot::velo(float left, float right) {
     int max = max_speed();
-    left_set_velocity = std::clamp(left, -1.0f, 1.0f) * max;
-    right_set_velocity = std::clamp(right, -1.0f, 1.0f) * max;
+    left_set_velocity = (int) (std::clamp(left, -1.0f, 1.0f) * max);
+    right_set_velocity = (int) (std::clamp(right, -1.0f, 1.0f) * max);
     braking = false;
 
     #ifndef MIKU_TESTENV
-        left_motors.move_velocity((int) left_set_velocity);
-        right_motors.move_velocity((int) right_set_velocity);
+        left_motors.move_velocity(left_set_velocity);
+        right_motors.move_velocity(right_set_velocity);
     #endif
 }
 

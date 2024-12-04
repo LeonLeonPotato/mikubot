@@ -48,7 +48,7 @@ void ejector::tick() {
 void ejector::run() {
     while (true) {
         tick();
-        pros::delay(5);
+        pros::delay(20);
     }
 }
 

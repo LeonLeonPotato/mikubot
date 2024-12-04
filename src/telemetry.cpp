@@ -32,10 +32,10 @@ static void initialize_log_file(void) {
 }
 
 template <typename T>
-static T average(const std::vector<T>& v) {
+static float average(const std::vector<T>& v) {
     if (v.empty()) return 0;
 
-    auto const count = static_cast<float>(v.size());
+    const float count = static_cast<float>(v.size());
     return std::reduce(v.begin(), v.end()) / count;
 }
 
@@ -69,7 +69,7 @@ static void logging_task(void* args) {
             average(robot::right_motors.get_voltage_all())
         );
 
-        if ((bool) (mode & 0b01) >> 0) {
+        if (mode & 0b01) {
             printf("%s", buffer);
         }
 

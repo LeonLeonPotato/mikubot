@@ -12,7 +12,7 @@ SimpleResult simple::turn_towards_tick(
 {
     const float diff = robot::angular_diff(angle, params.reversed);
     const float ctrl = in_place_pid.get(diff);
-    robot::volt(ctrl, -ctrl);
+    robot::velo(ctrl, -ctrl);
     return { ExitCode::SUCCESS, diff, 0 };
 }
 
