@@ -45,7 +45,6 @@ void peak_strat::run(void) {
         {0, -95}, 
         {.reversed=true, .max_linear_speed=0.6f, .timeout=1000}, 
         swing_group);
-        
     swing_group.reset();
 
     robot::brake();

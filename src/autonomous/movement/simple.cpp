@@ -24,7 +24,7 @@ SimpleResult simple::turn_towards_cancellable(
 {
     const int start = pros::millis();
     SimpleResult last_tick;
-    while (robot::angular_diff(angle, params.reversed) > params.exit_threshold) {
+    while (fabs(robot::angular_diff(angle, params.reversed)) > params.exit_threshold) {
         if (cancel_ref) {
             return { ExitCode::CANCELLED, last_tick.error, (int) (pros::millis() - start) };
         }
