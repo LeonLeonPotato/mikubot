@@ -44,24 +44,6 @@ void autonomous(void) {
 	autonrunner::destroy();
 }
 
-static void thug(std::string name, std::vector<float>& X, std::vector<float>& Y) {
-	std::stringstream sts;
-	sts << name << " = [";
-
-	for (int i = 0; i < X.size(); i++) {
-		float x = ((int) roundf(X[i] * 1000)) / 1000.0f;
-		float y = ((int) roundf(Y[i] * 1000)) / 1000.0f;
-		sts << "(" << x << ", " << y << ")";
-
-		if (i != X.size() - 1) {
-			sts << ", ";
-		}
-	}
-	sts << "]";
-
-	std::cout << sts.str() << std::endl;
-}
-
 void opcontrol(void) {
 	competition_initialize();
 	// ONLY Call this after competition_initialize because

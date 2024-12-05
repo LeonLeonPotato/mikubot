@@ -41,7 +41,6 @@ static float average(const std::vector<T>& v) {
 
 static void logging_task(void* args) {
     #ifndef MIKU_TESTENV
-    initialize_log_file();
     bool will_log_file = (mode & 0b10) >> 1;
 
     if (!file) {
@@ -51,7 +50,7 @@ static void logging_task(void* args) {
         printf("[Telemetry] Log file opened\n");
         printf("[Telemetry] Log file: %s\n", filename.c_str());
 
-        fprintf(file, "time,x,y,theta,left_voltage,right_voltage,left_velocity,right_velocity,left_actual_velocity,right_actual_velocity,left_actual_voltage,right_actual_voltage\n");
+        fprintf(file, "time,x,y,theta,left_velocity,right_velocity,left_voltage,right_voltage,left_actual_velocity,right_actual_velocity,left_actual_voltage,right_actual_voltage\n");
         fflush(file);
     }
 
@@ -61,8 +60,8 @@ static void logging_task(void* args) {
         sprintf(buffer, "%lld,%f,%f,%f,%d,%d,%d,%d,%f,%f,%f,%f\n",
             pros::micros(),
             robot::pos.x(), robot::pos.y(), robot::theta,
-            robot::left_set_voltage, robot::right_set_voltage,
             robot::left_set_velocity, robot::right_set_velocity,
+            robot::left_set_voltage, robot::right_set_voltage,
             average(robot::left_motors.get_actual_velocity_all()),
             average(robot::right_motors.get_actual_velocity_all()),
             average(robot::left_motors.get_voltage_all()),
@@ -76,7 +75,7 @@ static void logging_task(void* args) {
         if (will_log_file) {
             log_queue.push(std::string(buffer));
 
-            if (pros::millis() - last_dump_time > 500) {
+            if (pros::millis() - last_dump_time > 250) {
                 last_dump_time = pros::millis();
                 while (!log_queue.empty()) {
                     fprintf(file, "%s", log_queue.front().c_str());
@@ -97,6 +96,8 @@ void telemetry::set_mode(int m) {
 }
 
 void telemetry::start_task(void) {
+    if (file == nullptr) initialize_log_file();
+
     #ifndef MIKU_TESTENV
     if (task == nullptr) {
         task = pros::c::task_create(logging_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Telemetry");
