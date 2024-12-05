@@ -8,7 +8,7 @@ using namespace telemetry;
 volatile int telemetry::delay = 10;
 
 static pros::task_t task = nullptr;
-static volatile int mode = 0b10;
+static volatile int mode = 0b10 | 0b01;
 static FILE* file = nullptr;
 static std::string filename;
 static std::queue<std::string> log_queue;
@@ -23,7 +23,7 @@ static void initialize_log_file(void) {
     printf("[Telemetry] Log number: %d\n", num);
 
     numfile = fopen("/usd/lognum.txt", "w");
-    if (numfile == nullptr) return;
+    if (!numfile) return;
     fprintf(numfile, "%d", num + 1);
     fclose(numfile);
 
@@ -44,16 +44,16 @@ static void logging_task(void* args) {
     initialize_log_file();
     bool will_log_file = (mode & 0b10) >> 1;
 
-    if (file == nullptr) {
+    if (!file) {
         printf("[Telemetry] Log file could not be opened\n");
         will_log_file = false;
     } else {
         printf("[Telemetry] Log file opened\n");
         printf("[Telemetry] Log file: %s\n", filename.c_str());
-    }
 
-    fprintf(file, "time,x,y,theta,left_voltage,right_voltage,left_velocity,right_velocity,left_actual_velocity,right_actual_velocity,left_actual_voltage,right_actual_voltage\n");
-    fflush(file);
+        fprintf(file, "time,x,y,theta,left_voltage,right_voltage,left_velocity,right_velocity,left_actual_velocity,right_actual_velocity,left_actual_voltage,right_actual_voltage\n");
+        fflush(file);
+    }
 
     int last_dump_time = pros::millis();
     while (true) {
