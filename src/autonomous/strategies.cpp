@@ -4,7 +4,7 @@ using namespace strategies;
 
 const std::map<Strategy, std::string> strategies::names = {
     {Strategy::Test, "Test"},
-    {Strategy::Playback, "Playback"}
+    {Strategy::Playback, "Playback"},
     {Strategy::PeakStrat, "Peak Strat"}
 };
 

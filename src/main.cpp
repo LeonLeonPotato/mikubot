@@ -49,6 +49,7 @@ void opcontrol(void) {
 	// ONLY Call this after competition_initialize because
 	// PROS cannot handle multiple tasks all calling filesystem
 	telemetry::start_task();
+	autonomous();
 
 	// Eigen::Vector2f goal = {1, 1};
 	// Eigen::Vector2f crosstrack = goal - robot::pos;
@@ -58,7 +59,6 @@ void opcontrol(void) {
 	// Eigen::Vector2f crosstrack_local = rotator * crosstrack;
 	// printf("Rotated: (%f, %f)\n", crosstrack_local(0), crosstrack_local(1));
 
-	autonomous();
 	// // pros::delay(100);
 
 	// pathing::QuinticSpline test;

@@ -25,7 +25,7 @@ int robot::match::side = 1;
 
     pros::adi::Pneumatics robot::doinker('b', false, true);
     pros::adi::Pneumatics robot::ejector('c', false, false);
-    pros::adi::Pneumatics robot::clamp('d', false, false);
+    pros::adi::Pneumatics robot::clamp('e', false, false);
 
     pros::Motor robot::conveyor(10, pros::MotorGearset::green);
     pros::Motor robot::intake(-9);

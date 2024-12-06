@@ -17,13 +17,13 @@ static const controllers::PIDArgs linear_args {
 };
 
 static const controllers::PIDArgs angular_args {
-    .kp = 0.8,
+    .kp = 1.0,
     .ki = 0,
     .kd = -0.0
 };
 
 static const controllers::PIDArgs in_place_args {
-    .kp = 0.5,
+    .kp = 0.8,
     .ki = 0,
     .kd = -0.1
 };
@@ -43,9 +43,11 @@ static const movement::PIDGroup swing_group {
 };
 
 static void blue_right(void) {
+    robot::clamp.retract();
+    
     movement::simple::swing_to(
         {0, -95}, 
-        {.reversed=true, .max_linear_speed=0.6f, .timeout=1000}, 
+        {.reversed=true, .max_linear_speed=0.5f, .timeout=1000}, 
         swing_group);
     swing_group.reset();
 
@@ -53,7 +55,7 @@ static void blue_right(void) {
 
     pros::delay(100);
     robot::clamp.extend();
-    pros::delay(100);
+    pros::delay(500);
 
     movement::simple::swing_to(
         {0, -75}, 
@@ -63,25 +65,29 @@ static void blue_right(void) {
 
     robot::intake.move_voltage(12000);
     robot::conveyor.move_voltage(12000);
-    pros::delay(500);
+    pros::delay(750);
+    robot::intake.move_voltage(-12000);
+    robot::conveyor.move_voltage(-12000);
 
     movement::simple::turn_towards(
-        -M_PI_2, 
+        rad(-120), 
         {
             .exit_threshold=rad(5), 
-            .timeout=2000
+            .timeout=750
         }, 
         in_place_pid);
     in_place_pid.reset();
     robot::brake();
 
-    pros::delay(500);
+    pros::delay(200);
+    robot::intake.move_voltage(12000);
+    robot::conveyor.move_voltage(12000);
     
     movement::simple::swing_to(
-        {-55, -95}, 
+        {-55-5, -95-5}, 
         {
-            .max_linear_speed=0.5f, 
-            .timeout=2000
+            .max_linear_speed=0.8f, 
+            .timeout=1500
         }, 
         swing_group);
     swing_group.reset();
@@ -93,25 +99,25 @@ static void blue_right(void) {
         -M_PI, 
         {
             .exit_threshold=rad(5), 
-            .timeout=2000
+            .timeout=1000
         }, 
         in_place_pid);
     in_place_pid.reset();
     
-    // pros::delay(100);
+    pros::delay(100);
 
-    // movement::simple::swing_to(
-    //     {-45, -135}, 
-    //     {
-    //         .exit_threshold=0.5f, 
-    //         .max_linear_speed=0.5f,
-    //         .timeout=1000
-    //     },
-    //     swing_group);
-    // swing_group.reset();
-    // robot::brake();
+    movement::simple::swing_to(
+        {-45, -135}, 
+        {
+            .exit_threshold=0.5f, 
+            .max_linear_speed=0.5f,
+            .timeout=1000
+        },
+        swing_group);
+    swing_group.reset();
+    robot::brake();
 
-    pros::delay(2000);
+    pros::delay(3000);
 }
 
 void peak_strat::run(void) {
