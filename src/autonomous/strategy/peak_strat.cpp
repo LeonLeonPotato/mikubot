@@ -59,7 +59,11 @@ static void blue_right(void) {
 
     movement::simple::swing_to(
         {0, -75}, 
-        {.reversed=false, .max_linear_speed=0.3f, .timeout=300}, 
+        {
+            .reversed=false, 
+            .max_linear_speed=0.3f, 
+            .timeout=300
+        }, 
         swing_group);
     swing_group.reset();
 
@@ -69,12 +73,17 @@ static void blue_right(void) {
     robot::intake.move_voltage(-12000);
     robot::conveyor.move_voltage(-12000);
 
-    movement::simple::turn_towards(
-        rad(-120), 
+    int xto = -60;
+    int yto = -95;
+
+    if (robot::match::side == 1) xto = -xto;
+
+    movement::simple::face(
+        {xto, yto}, 
         {
             .exit_threshold=rad(5), 
             .timeout=750
-        }, 
+        },
         in_place_pid);
     in_place_pid.reset();
     robot::brake();
@@ -82,40 +91,31 @@ static void blue_right(void) {
     pros::delay(200);
     robot::intake.move_voltage(12000);
     robot::conveyor.move_voltage(12000);
-    
+
     movement::simple::swing_to(
-        {-55-5, -95-5}, 
+        {xto, yto}, 
         {
-            .max_linear_speed=0.8f, 
+            .max_linear_speed=1.0f, 
             .timeout=1500
         }, 
         swing_group);
     swing_group.reset();
-    
-    robot::brake();
-    pros::delay(100);
 
-    movement::simple::turn_towards(
-        -M_PI, 
-        {
-            .exit_threshold=rad(5), 
-            .timeout=1000
-        }, 
-        in_place_pid);
-    in_place_pid.reset();
-    
     pros::delay(100);
-
-    movement::simple::swing_to(
-        {-45, -135}, 
-        {
-            .exit_threshold=0.5f, 
-            .max_linear_speed=0.5f,
-            .timeout=1000
-        },
-        swing_group);
-    swing_group.reset();
     robot::brake();
+    
+    // pros::delay(100);
+
+    // movement::simple::swing_to(
+    //     {-45, -135}, 
+    //     {
+    //         .exit_threshold=0.5f, 
+    //         .max_linear_speed=0.5f,
+    //         .timeout=1000
+    //     },
+    //     swing_group);
+    // swing_group.reset();
+    // robot::brake();
 
     pros::delay(3000);
 }

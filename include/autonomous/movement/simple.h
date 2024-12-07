@@ -29,6 +29,29 @@ Future<SimpleResult> turn_towards_async(
     const SimpleMovementParams& params,
     controllers::PID& pid);
 
+////// Face point
+
+SimpleResult face_tick(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    controllers::PID& in_place_pid);
+
+SimpleResult face_cancellable(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    controllers::PID& pid,
+    volatile bool& cancel_ref);
+
+SimpleResult face(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    controllers::PID& pid);
+
+Future<SimpleResult> face_async(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    controllers::PID& pid);
+
 ////// Swing to position
 
 SimpleResult swing_to_tick(

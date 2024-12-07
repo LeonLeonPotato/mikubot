@@ -69,6 +69,45 @@ Future<SimpleResult> simple::turn_towards_async(
     return future;
 }
 
+////// Face point
+
+SimpleResult simple::face_tick(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    controllers::PID& in_place_pid)
+{
+    const float angle = atan2(point(0) - robot::pos.x(), point(1) - robot::pos.y());
+    return turn_towards_tick(angle, params, in_place_pid);
+}
+
+SimpleResult simple::face_cancellable(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    controllers::PID& pid,
+    volatile bool& cancel_ref)
+{
+    const float angle = atan2(point(0) - robot::pos.x(), point(1) - robot::pos.y());
+    return turn_towards_cancellable(angle, params, pid, cancel_ref);
+}
+
+SimpleResult simple::face(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    controllers::PID& in_place_pid)
+{
+    const float angle = atan2(point(0) - robot::pos.x(), point(1) - robot::pos.y());
+    return turn_towards(angle, params, in_place_pid);
+}
+
+Future<SimpleResult> simple::face_async(
+    const Eigen::Vector2f& point, 
+    const SimpleMovementParams& params,
+    controllers::PID& pid)
+{
+    const float angle = atan2(point(0) - robot::pos.x(), point(1) - robot::pos.y());
+    return turn_towards_async(angle, params, pid);
+}
+
 ////// Swing to position
 
 SimpleResult simple::swing_to_tick(
