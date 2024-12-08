@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
-from robot import Pose, DifferentialDriveRobot
+from robot import Pose, DifferentialDriveRobot, DifferentialDrivetrain
 import bisect
 import math
 import bisect
@@ -104,7 +104,7 @@ class TwoDSpline:
             p.center_v = min(p.center_v, center_v)
             p.left_v = max(min(p.center_v * (1 - scale), params.max_speed), -params.max_speed)
             p.right_v = max(min(p.center_v * (1 + scale), params.max_speed), -params.max_speed)
-            p.angular_v = (p.right_v - p.left_v) / params.track_width
+            p.angular_v = (p.left_v - p.right_v) / params.track_width
             center_v = min(
                 math.sqrt(center_v**2 + 2 * params.decel * params.ds),
                 params.max_speed / (1 + abs(scale))
@@ -116,29 +116,34 @@ def ramsete(robot:DifferentialDriveRobot, desired_pose, desired_velocity, desire
     theta_error = robot.pose.minimum_angular_diff(desired_pose.theta)
 
     k = 2 * zeta * np.sqrt(desired_angular ** 2 + beta * desired_velocity ** 2)
-    v = desired_velocity * np.cos(theta_error) + error.y
-    w = desired_angular + k*theta_error + beta*desired_velocity*np.sin(theta_error) + error.x
+    v = desired_velocity * np.cos(theta_error) + beta*error.y
+    w = desired_angular + k*theta_error + beta*desired_velocity*np.sin(theta_error) + beta*error.x
     return v, w
 
 if __name__ == "__main__":
-    poses = [Pose(0, 0), Pose(1, 1), Pose(2, -1), Pose(0, 0)]
-    spline = TwoDSpline([
-        Pose(0, 0, 0),
-        Pose(0, 100, 0),
-        Pose(100, 100, 0),
-        Pose(100, 200, 0)
+    r = DifferentialDriveRobot(
+        initial_pose=Pose(0, 0, 0),
+        right_drivetrain=DifferentialDrivetrain(40, -40, 200, -200, 4.25),
+        left_drivetrain=DifferentialDrivetrain(40, -40, 200, -200, 4.25),
+        track_width=40
+    )
+    path = TwoDSpline([
+        r.pose,
+        r.pose + Pose(0, 100, 0),
+        r.pose + Pose(100, 100, 0),
+        r.pose + Pose(100, 200, 0),
+        r.pose + Pose(-200, 200, 0)
     ])
-    spline.generate_spline(Pose(0, 100, 0), Pose(0, 10, 0))
-    
-    spline.construct_profile(ProfileParams(0, 0, 68, 1, 1, 40))
+    path.generate_spline(Pose(0, 100, 0), Pose(0, 0, 0))
+    path.construct_profile(ProfileParams(0, 0, 40, 200, 10, 40, 0.1))
 
-    y = [p.center_v for p in spline.profile]
+    y = [p.center_v for p in path.profile]
     plt.plot(y, label='center_v')
 
-    y = [p.left_v for p in spline.profile]
+    y = [p.left_v for p in path.profile]
     plt.plot(y, label='left_v')
 
-    y = [p.right_v for p in spline.profile]
+    y = [p.right_v for p in path.profile]
     plt.plot(y, label='right_v')
     plt.legend()
     plt.show()

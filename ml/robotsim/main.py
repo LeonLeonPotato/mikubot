@@ -8,8 +8,8 @@ import ramsete
 
 r = robot.DifferentialDriveRobot(
     initial_pose=robot.Pose(0, 0, 0),
-    right_drivetrain=robot.DifferentialDrivetrain(62.8, -62.8, 200, -200, 4.25),
-    left_drivetrain=robot.DifferentialDrivetrain(62.8, -62.8, 200, -200, 4.25),
+    right_drivetrain=robot.DifferentialDrivetrain(99, -99, 200, -200, 4.25),
+    left_drivetrain=robot.DifferentialDrivetrain(99, -99, 200, -200, 4.25),
     track_width=40
 )
 
@@ -21,16 +21,15 @@ buffer = pygame.Surface((800, 600))
 screen = pygame.display.set_mode((800, 600))
 
 import random
-path = ramsete.TwoDSpline([robot.Pose(0, 0, 0)] + [
-    robot.Pose(
-        random.randrange(-300, 300),
-        random.randrange(-200, 200),
-        0
-    )
-    for i in range(10)
+path = ramsete.TwoDSpline([
+    r.pose,
+    r.pose + robot.Pose(0, 100, 0),
+    r.pose + robot.Pose(100, 100, 0),
+    r.pose + robot.Pose(100, 200, 0),
+    r.pose + robot.Pose(-200, 200, 0)
 ])
-path.generate_spline(robot.Pose(0, 100, 0), robot.Pose(0, 10, 0))
-path.construct_profile(ramsete.ProfileParams(0, 0, 62.8, 200, 50, 40, 0.1))
+path.generate_spline(robot.Pose(0, 0, 0), robot.Pose(0, 0, 0))
+path.construct_profile(ramsete.ProfileParams(0, 0, 99, 200, 30, 40, 0.1))
 
 def draw_path():
     xs = path.xspline(np.linspace(0, path.maxt(), 100))
@@ -57,7 +56,7 @@ while True:
         else:
             break
 
-    v, w = ramsete.ramsete(r, profiled_pose, point.center_v, point.angular_v, 1, 0)
+    v, w = ramsete.ramsete(r, profiled_pose, point.center_v, point.angular_v, 0.2, 0.7)
     r.update(v + w, v - w)
 
     buffer.fill((0, 0, 0))
