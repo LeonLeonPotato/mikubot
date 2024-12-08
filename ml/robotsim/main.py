@@ -8,8 +8,8 @@ import ramsete
 
 r = robot.DifferentialDriveRobot(
     initial_pose=robot.Pose(0, 0, 0),
-    right_drivetrain=robot.DifferentialDrivetrain(99, -99, 200, -200, 4.25),
-    left_drivetrain=robot.DifferentialDrivetrain(99, -99, 200, -200, 4.25),
+    right_drivetrain=robot.DifferentialDrivetrain(40, -40, 700, -700, 4.25),
+    left_drivetrain=robot.DifferentialDrivetrain(40, -40, 700, -700, 4.25),
     track_width=40
 )
 
@@ -21,15 +21,22 @@ buffer = pygame.Surface((800, 600))
 screen = pygame.display.set_mode((800, 600))
 
 import random
-path = ramsete.TwoDSpline([
+
+poses1 = [
     r.pose,
-    r.pose + robot.Pose(0, 100, 0),
-    r.pose + robot.Pose(100, 100, 0),
-    r.pose + robot.Pose(100, 200, 0),
-    r.pose + robot.Pose(-200, 200, 0)
-])
+    r.pose + robot.Pose(0, -60, 0),
+    r.pose + robot.Pose(-60, -60, 0),
+    r.pose + robot.Pose(-120, -95, 0),
+]
+
+poses2 = [r.pose]
+for i in range(10):
+    rand = random.random() * 2 * math.pi
+    poses2.append(r.pose + robot.Pose(200 * math.cos(rand), 200 * math.sin(rand), 0))
+
+path = ramsete.TwoDSpline(poses2)
 path.generate_spline(robot.Pose(0, 0, 0), robot.Pose(0, 0, 0))
-path.construct_profile(ramsete.ProfileParams(0, 0, 99, 200, 30, 40, 0.1))
+path.construct_profile(ramsete.ProfileParams(0, 0, 40, 700, 700, 40, 0.1))
 
 def draw_path():
     xs = path.xspline(np.linspace(0, path.maxt(), 100))
@@ -56,12 +63,13 @@ while True:
         else:
             break
 
-    v, w = ramsete.ramsete(r, profiled_pose, point.center_v, point.angular_v, 0.2, 0.7)
+    print(profiled_pose.dist(r.pose))
+    v, w = ramsete.ramsete(r, profiled_pose, point.center_v, point.angular_v * r.track_width/2, 2, 0.7)
     r.update(v + w, v - w)
 
     buffer.fill((0, 0, 0))
-    draw_path()
     pygame.draw.circle(buffer, (0, 255, 0), (profiled_pose.x + 400, profiled_pose.y + 300), 2)
+    draw_path()
     buffer = d.draw_on_buffer(buffer, {
         'x': r.get_pose().x,
         'y': r.get_pose().y,
@@ -75,3 +83,4 @@ while True:
 
     screen.blit(buffer, (0, 0))
     pygame.display.flip()
+    pygame.time.wait(10)

@@ -27,6 +27,9 @@ class Pose:
     def minimum_angular_diff(self, angle) -> float:
         return (angle - self.theta + math.pi) % (2*math.pi) - math.pi
     
+    def dist(self, other) -> float:
+        return math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
+    
     def __add__(self, other):
         return Pose(self.x + other.x, self.y + other.y, self.theta + other.theta)
 
@@ -136,7 +139,7 @@ class DifferentialDriveRobot(Robot):
         left_travel = self.left_drivetrain.get_linear_velocity() * dt
         right_travel =  self.right_drivetrain.get_linear_velocity() * dt
 
-        dtheta = (left_travel - right_travel) / self.track_width
+        dtheta = (left_travel - right_travel) / (self.track_width)
 
         u = dtheta/2
         chord = (left_travel + right_travel) * 0.5 * DifferentialDriveRobot._safe_sinc(u)
