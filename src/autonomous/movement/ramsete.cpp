@@ -45,11 +45,12 @@ static RamseteResult tick(
              + params.beta * p.center_v * p.center_v);
 
     float v = p.center_v * cosf(angle_local)
-         + gain * crosstrack_local.x();
+         + params.beta * crosstrack_local.y();
 
     float w = angular 
         + gain * angle_local
-             + params.beta * p.center_v * safe_sinc(angle_local) * crosstrack_local.y();
+            + params.beta * p.center_v * sinf(angle_local)
+                + params.beta * crosstrack_local.x();
 
     float motor_v = v / robot::DRIVETRAIN_WHEEL_RADIUS;
     float motor_w = w / robot::DRIVETRAIN_WHEEL_RADIUS;

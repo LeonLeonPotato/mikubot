@@ -63,7 +63,7 @@ void BasePath::profile_path(const ProfileParams& params) {
     for (int i = profile.size() - 1; i > 0; i--) {
         ProfilePoint& p = profile[i];
 
-        float scale = fabs(p.curvature) * params.track_width / 2.0f;
+        float scale = p.curvature * params.track_width / 2.0f;
         p.center_v = fmin(p.center_v, center_v);
         p.left_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
         p.right_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);

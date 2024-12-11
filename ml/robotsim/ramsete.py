@@ -51,13 +51,13 @@ class TwoDSpline:
         self.yspline = CubicSpline(t, y, bc_type=bc)
 
     def pose(self, t:float) -> Pose:
-        return Pose(self.xspline(t), self.yspline(t), np.atan2(self.xspline(t, 1), self.yspline(t, 1)))
+        return Pose(self.xspline(t), self.yspline(t), np.arctan2(self.xspline(t, 1), self.yspline(t, 1)))
     
     def velocity(self, t:float) -> Pose:
-        return Pose(self.xspline(t, 1), self.yspline(t, 1), np.atan2(self.xspline(t, 1), self.yspline(t, 1)))
+        return Pose(self.xspline(t, 1), self.yspline(t, 1), np.arctan2(self.xspline(t, 1), self.yspline(t, 1)))
     
     def acceleration(self, t:float) -> Pose:
-        return Pose(self.xspline(t, 2), self.yspline(t, 2), np.atan2(self.xspline(t, 2), self.yspline(t, 2)))
+        return Pose(self.xspline(t, 2), self.yspline(t, 2), np.arctan2(self.xspline(t, 2), self.yspline(t, 2)))
     
     def curvature(self, t:float) -> float:
         d1 = self.velocity(t)
@@ -115,7 +115,7 @@ def ramsete(robot:DifferentialDriveRobot, desired_pose, desired_velocity, desire
     error = error.rotate(robot.pose.theta)
     theta_error = robot.pose.minimum_angular_diff(desired_pose.theta)
 
-    k = 2 * zeta * np.sqrt(desired_angular ** 2 + beta * desired_velocity ** 2)
+    k = 2 * zeta * np.sqrt(desired_angular ** 2 + desired_velocity ** 2)
     v = desired_velocity * np.cos(theta_error) + beta*error.y
     w = desired_angular + k*theta_error + beta*desired_velocity*np.sin(theta_error) + beta*error.x
     return v, w
@@ -135,7 +135,7 @@ if __name__ == "__main__":
         r.pose + Pose(-200, 200, 0)
     ])
     path.generate_spline(Pose(0, 100, 0), Pose(0, 0, 0))
-    path.construct_profile(ProfileParams(0, 0, 40, 200, 10, 40, 0.1))
+    path.construct_profile(ProfileParams(0, 0, 40, 10, 10, 40, 0.1))
 
     y = [p.center_v for p in path.profile]
     plt.plot(y, label='center_v')

@@ -19,6 +19,11 @@ void initialize(void) {
 	robot::init();
 	odometry::start_task();
 	opcontrolinfo::init();
+
+	if (!pros::competition::is_connected()) {
+		std::cout << "Not connected to competition switch" << std::endl;
+		competition_initialize();
+	}
 }
 
 void disabled(void) {

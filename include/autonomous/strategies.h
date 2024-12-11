@@ -2,7 +2,6 @@
 
 #include "autonomous/strategy/peak_strat.h"
 #include "autonomous/strategy/test.h"
-#include "autonomous/strategy/playback.h"
 
 #include <map>
 #include <string>

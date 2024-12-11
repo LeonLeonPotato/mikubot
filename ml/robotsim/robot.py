@@ -56,7 +56,7 @@ class DifferentialDrivetrain:
 
     def update(self, target_velo, dt) -> float:
         target_velo = min(max(target_velo, self.min_velo), self.max_velo)
-        dv = target_velo - self.cur_velocity
+        dv = 0.7 * (target_velo - self.cur_velocity)
         dv = min(max(dv, self.min_accel * dt), self.max_accel * dt)
         self.cur_velocity += dv
 
