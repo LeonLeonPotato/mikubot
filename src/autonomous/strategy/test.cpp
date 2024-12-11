@@ -110,25 +110,37 @@ static void t2() {
 }
 
 void test_strategy::run(void) {
-    controllers::PIDArgs bruh {
-        .kp = 2.0,
-        .ki = 0,
-        .kd = -0.1,
-        .integral_limit = 99999999.0f,
-        .disable_integral_limit = 99999999.0f,
-        .sign_switch_reset = false
-    };
-    controllers::PID turning(bruh);
+    pathing::QuinticSpline path; // Empty quintic spline
+    path.points.emplace_back(0, 0);
+    path.points.emplace_back(0, 100);
+    path.points.emplace_back(70, 100);
+    path.set_relative(robot::pos);
+    path.solve_coeffs({
+        .start_heading = robot::theta,
+        .start_magnitude = 10,
+        .end_heading = robot::theta,
+        .end_magnitude = 0
+    });
+    path.profile_path({
+        .start_v = 100,
+        .end_v = 0,
+        .max_speed = 550 * robot::DRIVETRAIN_WHEEL_RADIUS,
+        .accel = 1156 * robot::DRIVETRAIN_WHEEL_RADIUS,
+        .decel = 1141 * robot::DRIVETRAIN_WHEEL_RADIUS,
+        .track_width = 39,
+        .ds = 0.1,
+        .resolution = 10000
+    });
 
-    printf("Running test strategy\n");
+    movement::ramsete::RamseteParams params {{
+        .timeout=10000
+    }, {
+        .beta=1.0,
+        .zeta=0.7
+    }};
 
-    movement::simple::turn_towards(
-        M_PI_2,
-        {
-            .exit_threshold=-1,
-            .timeout=5000
-        },
-        turning
-    );
+    movement::ramsete::follow_path(path, params);
+
+    robot::brake();
 }
 

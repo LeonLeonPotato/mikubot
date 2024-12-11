@@ -16,7 +16,7 @@ struct RamseteParams
     : public SimpleMovementParams, public RamseteParamsPOD { };
 
 struct RamseteResult : public SimpleResult {
-    int i = 0;
+    int i = 1;
 };
 
 RamseteResult follow_path_cancellable(

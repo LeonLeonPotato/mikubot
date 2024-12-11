@@ -23,6 +23,8 @@ void initialize(void) {
 	if (!pros::competition::is_connected()) {
 		std::cout << "Not connected to competition switch" << std::endl;
 		competition_initialize();
+		telemetry::start_task();
+		autonomous();
 	}
 }
 

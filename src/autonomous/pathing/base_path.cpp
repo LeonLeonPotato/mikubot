@@ -51,11 +51,15 @@ void BasePath::profile_path(const ProfileParams& params) {
     int i = 0;
     for (float s = 0; s <= lengths.back(); s += params.ds) {
         i = std::lower_bound(lengths.begin() + i, lengths.end(), s) - lengths.begin();
-        float time_param = (float) i / (lengths.size() - 1) * (points.size() - 1);
+        float time_param = (float) i / (lengths.size() - 1) * maxt();
         float curve = curvature(time_param);
         float scale = fabs(curve) * params.track_width / 2.0f;
         profile.emplace_back(s, time_param, curve, 0, center_v, 0);
-        center_v = std::clamp(sqrtf(center_v*center_v + 2*params.accel*params.ds), 0.0f, params.max_speed / (1 + scale));
+        center_v = std::clamp(
+            sqrtf(center_v*center_v + 2*params.accel*params.ds), 
+            0.0f, 
+            params.max_speed / (1 + scale)
+        );
         // printf("s: %f, t: %f, curve: %f, center_v: %f d1: (%f, %f)\n", s, time_param, curve, center_v, compute(time_param, 2)(0), compute(time_param, 2)(1));
     }
 
@@ -65,10 +69,14 @@ void BasePath::profile_path(const ProfileParams& params) {
 
         float scale = p.curvature * params.track_width / 2.0f;
         p.center_v = fmin(p.center_v, center_v);
-        p.left_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
-        p.right_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
-        p.angular_v = (p.left_v - p.right_v) / params.track_width;
-        center_v = std::clamp(sqrtf(center_v*center_v + 2*params.decel*params.ds), 0.0f, params.max_speed / (1 + scale));
+        p.left_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
+        p.right_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
+        p.angular_v = (p.left_v - p.right_v) / 2.0f;
+        center_v = std::clamp(
+            sqrtf(center_v*center_v + 2*params.decel*params.ds), 
+            0.0f, 
+            params.max_speed / (1 + fabsf(scale))
+        );
     }
 }
 

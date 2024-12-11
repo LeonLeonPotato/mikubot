@@ -18,6 +18,7 @@ static RamseteResult tick(
     while (true) {
         const pathing::ProfilePoint& p = path.get_profile()[i];
         deriv = path(p.t, 1); goal = path(p.t);
+
         if (deriv.dot(goal - robot::pos) >= 0) {
             break;
         }
@@ -40,6 +41,7 @@ static RamseteResult tick(
     
     const pathing::ProfilePoint& p = path.get_profile()[i];
     const float angular = p.angular_v * (2 * std::signbit(params.reversed) - 1);
+
     const float gain = 2 * params.zeta
         * sqrtf(p.angular_v * p.angular_v
              + params.beta * p.center_v * p.center_v);
@@ -52,10 +54,10 @@ static RamseteResult tick(
             + params.beta * p.center_v * sinf(angle_local)
                 + params.beta * crosstrack_local.x();
 
-    float motor_v = v / robot::DRIVETRAIN_WHEEL_RADIUS;
-    float motor_w = w / robot::DRIVETRAIN_WHEEL_RADIUS;
+    float motor_v = (v / robot::DRIVETRAIN_WHEEL_RADIUS) / 500.0f;
+    float motor_w = (w / robot::DRIVETRAIN_WHEEL_RADIUS) / 500.0f;
     if (params.reversed) motor_v *= -1;
-    motor_v = std::clamp(motor_v, -params.max_linear_speed, params.max_linear_speed);
+    // motor_v = std::clamp(motor_v, -params.max_linear_speed, params.max_linear_speed);
 
     robot::velo(
         motor_v + motor_w,
@@ -88,6 +90,8 @@ RamseteResult ramsete::follow_path_cancellable(
             last_tick.time_taken_ms = pros::millis() - start_t;
             return last_tick;
         }
+
+        pros::delay(params.delay);
     }
 
     return {ExitCode::SUCCESS, last_tick.error, (int) (pros::millis() - start_t), last_tick.i};
