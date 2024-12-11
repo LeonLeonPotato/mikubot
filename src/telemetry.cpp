@@ -34,9 +34,7 @@ static void initialize_log_file(void) {
 template <typename T>
 static float average(const std::vector<T>& v) {
     if (v.empty()) return 0;
-
-    const float count = static_cast<float>(v.size());
-    return std::reduce(v.begin(), v.end()) / count;
+    return std::reduce(v.begin(), v.end()) / (float) v.size();
 }
 
 static void logging_task(void* args) {

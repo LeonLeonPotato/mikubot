@@ -122,11 +122,11 @@ void test_strategy::run(void) {
         .end_magnitude = 0
     });
     path.profile_path({
-        .start_v = 100,
+        .start_v = 10 * robot::DRIVETRAIN_LINEAR_MULT,
         .end_v = 0,
-        .max_speed = 550 * robot::DRIVETRAIN_WHEEL_RADIUS,
-        .accel = 1156 * robot::DRIVETRAIN_WHEEL_RADIUS,
-        .decel = 1141 * robot::DRIVETRAIN_WHEEL_RADIUS,
+        .max_speed = 55 * robot::DRIVETRAIN_LINEAR_MULT,
+        .accel = 120 * robot::DRIVETRAIN_LINEAR_MULT,
+        .decel = 95 * robot::DRIVETRAIN_LINEAR_MULT,
         .track_width = 39,
         .ds = 0.1,
         .resolution = 10000

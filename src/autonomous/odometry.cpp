@@ -20,9 +20,9 @@ void run(void* args) {
         float ltheta = 0;
     #endif
 
-    pros::delay(5);
+    pros::delay(10);
     while (true) {
-        const double dt = (pros::micros() - ltime) / 1000000.0f;
+        const double dt = (pros::micros() - ltime) / 1e6f;
         ltime = pros::micros();
 
         #ifndef MIKU_TESTENV

@@ -1,5 +1,6 @@
 #include "autonomous/movement/ramsete.h"
 #include "essential.h"
+#include <math.h>
 
 using namespace movement::ramsete;
 using namespace movement;
@@ -54,8 +55,9 @@ static RamseteResult tick(
             + params.beta * p.center_v * sinf(angle_local)
                 + params.beta * crosstrack_local.x();
 
-    float motor_v = (v / robot::DRIVETRAIN_WHEEL_RADIUS) / 500.0f;
-    float motor_w = (w / robot::DRIVETRAIN_WHEEL_RADIUS) / 500.0f;
+    const float max_rads_per_second = robot::max_speed() * M_TWOPI / 60.0f;
+    float motor_v = (v / robot::DRIVETRAIN_LINEAR_MULT) / max_rads_per_second;
+    float motor_w = (w / robot::DRIVETRAIN_LINEAR_MULT) / max_rads_per_second;
     if (params.reversed) motor_v *= -1;
     // motor_v = std::clamp(motor_v, -params.max_linear_speed, params.max_linear_speed);
 

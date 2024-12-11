@@ -104,7 +104,7 @@ class TwoDSpline:
             p.center_v = min(p.center_v, center_v)
             p.left_v = max(min(p.center_v * (1 - scale), params.max_speed), -params.max_speed)
             p.right_v = max(min(p.center_v * (1 + scale), params.max_speed), -params.max_speed)
-            p.angular_v = (p.left_v - p.right_v) / params.track_width
+            p.angular_v = (p.left_v - p.right_v)/2
             center_v = min(
                 math.sqrt(center_v**2 + 2 * params.decel * params.ds),
                 params.max_speed / (1 + abs(scale))

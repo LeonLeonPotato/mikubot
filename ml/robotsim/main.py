@@ -6,16 +6,17 @@ import time
 import numpy as np
 import ramsete
 
-maxspeed = 500
-maxaccel = 1000
-wheelsize = 1
+maxspeed = 55
+maxaccel = 120
+maxdecel = 120
+wheelsize = 4.125
+ratio = 0.6
 
 r = robot.DifferentialDriveRobot(
     initial_pose=robot.Pose(0, 0, 0),
-    right_drivetrain=robot.DifferentialDrivetrain(maxspeed, -maxspeed, maxaccel, -maxaccel, wheelsize),
-    left_drivetrain=robot.DifferentialDrivetrain(maxspeed, -maxspeed, maxaccel, -maxaccel, wheelsize),
-    track_width=40,
-    dt=0.0005
+    right_drivetrain=robot.DifferentialDrivetrain(maxspeed, -maxspeed, maxaccel, -maxdecel, wheelsize * ratio),
+    left_drivetrain=robot.DifferentialDrivetrain(maxspeed, -maxspeed, maxaccel, -maxdecel, wheelsize * ratio),
+    track_width=39
 )
 
 pygame.init()
@@ -41,7 +42,11 @@ for i in range(10):
 
 path = ramsete.TwoDSpline(poses2)
 path.generate_spline(robot.Pose(0, 0, 0), robot.Pose(0, 0, 0))
-path.construct_profile(ramsete.ProfileParams(0, 0, maxspeed*wheelsize, maxaccel*wheelsize, maxaccel*wheelsize, 40, 0.5))
+path.construct_profile(ramsete.ProfileParams(0, 0, 
+                                             maxspeed*wheelsize*ratio, 
+                                             maxaccel*wheelsize*ratio, 
+                                             maxdecel*wheelsize*ratio, 
+                                             39, 0.5))
 
 def draw_path():
     xs = path.xspline(np.linspace(0, path.maxt(), 100))
@@ -68,10 +73,9 @@ while True:
         else:
             break
 
-    print(point.center_v)
     v, w = ramsete.ramsete(r, profiled_pose, point.center_v, point.angular_v, 2.0, 0.7)
-    v /= wheelsize
-    w /= wheelsize
+    v /= wheelsize * ratio
+    w /= wheelsize * ratio
     r.update(v + w, v - w)
 
     buffer.fill((0, 0, 0))
