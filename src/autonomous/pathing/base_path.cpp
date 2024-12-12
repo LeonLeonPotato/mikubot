@@ -34,6 +34,7 @@ float BasePath::arc_parameter(const float t) const {
 
 void BasePath::solve_lengths(int resolution) {
     Eigen::VectorXf t = Eigen::VectorXf::LinSpaced(resolution+1, 0, points.size() - 1);
+    lengths.clear();
     lengths.resize(resolution + 1);
     lengths[0] = 0;
     Eigen::Matrix2Xf res = compute(t);
@@ -42,41 +43,66 @@ void BasePath::solve_lengths(int resolution) {
     }
 }
 
+#include "api.h"
 void BasePath::profile_path(const ProfileParams& params) {
-    solve_lengths(params.resolution);
+    Eigen::VectorXf t = Eigen::VectorXf::LinSpaced(params.resolution+1, 0, maxt());
+    lengths.clear();
+    lengths.resize(params.resolution + 1);
+    lengths[0] = 0;
+    // long long cmtime = pros::micros();
+    Eigen::Matrix2Xf res = compute(t);
+    // printf("Computed path in %lld us\n", pros::micros() - cmtime);
 
-    profile.reserve((int) ceil(lengths.back() / params.ds) + 1); // safe +1 bc idk how to math it out (thug it out rahhh)
+    profile.clear();
+    profile.emplace_back(0, 0, curvature(0), 0, params.start_v, 0);
 
-    float center_v = params.start_v;
-    int i = 0;
-    for (float s = 0; s <= lengths.back(); s += params.ds) {
-        i = std::lower_bound(lengths.begin() + i, lengths.end(), s) - lengths.begin();
-        float time_param = (float) i / (lengths.size() - 1) * maxt();
+    int i = 1, j = 0;
+    float s = params.ds;
+    while (i < params.resolution) {
+        for (; i <= params.resolution; i++) {
+            lengths[i] = lengths[i - 1] + (res.col(i) - res.col(i - 1)).norm();
+            if (lengths[i] >= s) break;
+        }
+        if (i > params.resolution) i = params.resolution;
+        float ds = lengths[i] - lengths[j];
+
+        float time_param = (float) i / params.resolution * maxt();
         float curve = curvature(time_param);
         float scale = fabs(curve) * params.track_width / 2.0f;
-        profile.emplace_back(s, time_param, curve, 0, center_v, 0);
-        center_v = std::clamp(
-            sqrtf(center_v*center_v + 2*params.accel*params.ds), 
-            0.0f, 
+        float cv = std::clamp(
+            sqrtf(profile.back().center_v*profile.back().center_v + 2*params.accel*ds), 
+            -params.max_speed / (1 + scale), 
             params.max_speed / (1 + scale)
         );
-        // printf("s: %f, t: %f, curve: %f, center_v: %f d1: (%f, %f)\n", s, time_param, curve, center_v, compute(time_param, 2)(0), compute(time_param, 2)(1));
+
+        profile.emplace_back(lengths[i], time_param, curve, 0, cv, 0, 0);
+        s += params.ds;
+        j = i;
     }
 
-    center_v = params.end_v;
-    for (int i = profile.size() - 1; i > 0; i--) {
+    float __scale = profile.back().curvature * params.track_width / 2.0f;
+    profile.back().center_v = params.end_v;
+    profile.back().left_v = std::clamp(params.end_v * (1 - __scale), -params.max_speed, params.max_speed);
+    profile.back().right_v = std::clamp(params.end_v * (1 + __scale), -params.max_speed, params.max_speed);
+    profile.back().angular_v = (profile.back().left_v - profile.back().right_v) / 2.0f;
+
+    float cv = params.end_v;
+    for (int i = profile.size() - 2; i > 0; i--) {
+        ProfilePoint& lp = profile[i + 1];
         ProfilePoint& p = profile[i];
 
         float scale = p.curvature * params.track_width / 2.0f;
-        p.center_v = fmin(p.center_v, center_v);
+        float ds = lp.s - p.s;
+        cv = std::clamp(
+            sqrtf(cv*cv + 2*params.decel*ds), 
+            -params.max_speed / (1 + fabsf(scale)), 
+            params.max_speed / (1 + fabsf(scale))
+        );
+
+        p.center_v = fmin(cv, p.center_v);
         p.left_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
         p.right_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
         p.angular_v = (p.left_v - p.right_v) / 2.0f;
-        center_v = std::clamp(
-            sqrtf(center_v*center_v + 2*params.decel*params.ds), 
-            0.0f, 
-            params.max_speed / (1 + fabsf(scale))
-        );
     }
 }
 

@@ -24,7 +24,7 @@ struct ProfilePoint {
 
 struct ProfileParams {
     float start_v, end_v;
-    float max_speed;
+    float  max_speed;
     float accel, decel;
     float track_width;
     float ds = 0.1;

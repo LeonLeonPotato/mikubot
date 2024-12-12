@@ -6,11 +6,12 @@ import time
 import numpy as np
 import ramsete
 
-maxspeed = 55
-maxaccel = 120
-maxdecel = 120
 wheelsize = 4.125
 ratio = 0.6
+
+maxspeed = 200 / (wheelsize * ratio)
+maxaccel = 300 / (wheelsize * ratio)
+maxdecel = 230 / (wheelsize * ratio)
 
 r = robot.DifferentialDriveRobot(
     initial_pose=robot.Pose(0, 0, 0),
@@ -30,9 +31,8 @@ import random
 
 poses1 = [
     r.pose,
-    r.pose + robot.Pose(0, -60, 0),
-    r.pose + robot.Pose(-60, -60, 0),
-    r.pose + robot.Pose(-120, -95, 0),
+    r.pose + robot.Pose(0, 100, 0),
+    r.pose + robot.Pose(70, 100, 0)
 ]
 
 poses2 = [r.pose]

@@ -20,12 +20,12 @@ void initialize(void) {
 	odometry::start_task();
 	opcontrolinfo::init();
 
-	if (!pros::competition::is_connected()) {
-		std::cout << "Not connected to competition switch" << std::endl;
-		competition_initialize();
-		telemetry::start_task();
-		autonomous();
-	}
+	// if (!pros::competition::is_connected()) {
+	// 	std::cout << "Not connected to competition switch" << std::endl;
+	// 	competition_initialize();
+	// 	telemetry::start_task();
+	// 	autonomous();
+	// }
 }
 
 void disabled(void) {
@@ -52,6 +52,39 @@ void autonomous(void) {
 }
 
 void opcontrol(void) {
+
+	pathing::QuinticSpline qs;
+	qs.points.emplace_back(0, 0);
+	qs.points.emplace_back(0, 100);
+	qs.points.emplace_back(70, 100);
+	qs.set_relative(robot::pos);
+	qs.solve_coeffs({
+		.start_heading = 0,
+		.start_magnitude = 10,
+		.end_heading = 0,
+		.end_magnitude = 0
+	});
+	long long start = pros::micros();
+	qs.profile_path({
+		.start_v = 10,
+		.end_v = 0,
+		.max_speed = 140,
+		.accel = 300,
+		.decel = 237,
+		.track_width = 39,
+		.ds = 2.0,
+		.resolution = 10000
+	});
+	// asd
+	printf("Profile path took %lld us\n", pros::micros() - start);
+
+	std::cout << "[";
+	for (auto& p : qs.get_profile()) {
+		std::cout << "(" + std::to_string(p.s) + ", " + std::to_string(p.left_v) + "), ";
+		pros::delay(10);
+	}
+	std::cout << std::endl;
+
 	std::cout << "Opcontrol started" << std::endl;
 
 	for (auto& task : controls::start_tasks) {
