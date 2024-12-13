@@ -72,18 +72,26 @@ void opcontrol(void) {
 		.accel = 300,
 		.decel = 237,
 		.track_width = 39,
-		.ds = 2.0,
-		.resolution = 10000
+		.ds = 0.1,
+		.resolution = 5000
 	});
 	// asd
 	printf("Profile path took %lld us\n", pros::micros() - start);
 
 	std::cout << "[";
+	int cnt = 0;
 	for (auto& p : qs.get_profile()) {
-		std::cout << "(" + std::to_string(p.s) + ", " + std::to_string(p.left_v) + "), ";
+		std::cout << "(" + std::to_string(p.s) + ", " + std::to_string(p.left_v) << ")";
 		pros::delay(10);
+		cnt++;
+		if (cnt % 10 == 0) {
+			std::cout << std::endl;
+		}
+		if (cnt != qs.get_profile().size()) {
+			std::cout << ", ";
+		}
 	}
-	std::cout << std::endl;
+	std::cout << "]" << std::endl;
 
 	std::cout << "Opcontrol started" << std::endl;
 

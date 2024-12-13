@@ -36,17 +36,18 @@ class Display:
         buffer = pygame.transform.flip(buffer, False, True)
 
         xydisplay = self.arial.render(f'x: {cur_info["x"]:.3f}, y: {cur_info["y"]:.3f}', True, (255, 255, 255))
-        velocities = self.arial.render(f'Left: {cur_info["left_actual_velocity"]:.3f}, Right: {cur_info["right_actual_velocity"]:.3f}', True, (255, 255, 255))
+        velocities = self.arial.render(f'VL: {cur_info["left_actual_velocity"]:.3f}, VR: {cur_info["right_actual_velocity"]:.3f}', True, (255, 255, 255))
+        accelerations = self.arial.render(f'AL: {cur_info["left_actual_accel"]:.3f}, AR: {cur_info["right_actual_accel"]:.3f}', True, (255, 255, 255))
         clampdisplay = self.arial.render(f'Clamp: {cur_info["clamp"]:.3f}', True, (255, 255, 255))
         intakedisplay = self.arial.render(f'Intake: {cur_info["intake"]:.3f}', True, (255, 255, 255))
         conveyordisplay = self.arial.render(f'Conveyor: {cur_info["conveyor"]:.3f}', True, (255, 255, 255))
         
 
-
         buffer.blit(xydisplay, (0, 0))
         buffer.blit(velocities, (0, 20))
-        buffer.blit(clampdisplay, (0, 40))
-        buffer.blit(intakedisplay, (0, 60))
-        buffer.blit(conveyordisplay, (0, 80))
+        buffer.blit(accelerations, (0, 40))
+        buffer.blit(clampdisplay, (0, 60))
+        buffer.blit(intakedisplay, (0, 80))
+        buffer.blit(conveyordisplay, (0, 100))
 
         return buffer

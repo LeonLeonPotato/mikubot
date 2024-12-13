@@ -53,12 +53,15 @@ class DifferentialDrivetrain:
         self.max_accel:float = max_accel
         self.min_accel:float = min_accel 
         self.wheel_size:float = wheel_size
+        self.angular_accel:float = 0
 
     def update(self, target_velo, dt) -> float:
         target_velo = min(max(target_velo, self.min_velo), self.max_velo)
-        dv = 0.7 * (target_velo - self.cur_velocity)
+        dv = (target_velo - self.cur_velocity)
         dv = min(max(dv, self.min_accel * dt), self.max_accel * dt)
         self.cur_velocity += dv
+        if dt != 0:
+            self.angular_accel = dv / dt
 
         return self.cur_velocity
     
@@ -139,7 +142,7 @@ class DifferentialDriveRobot(Robot):
         left_travel = self.left_drivetrain.get_linear_velocity() * dt
         right_travel =  self.right_drivetrain.get_linear_velocity() * dt
 
-        dtheta = (left_travel - right_travel) / (self.track_width)
+        dtheta = (left_travel - right_travel) / self.track_width
 
         u = dtheta/2
         chord = (left_travel + right_travel) * 0.5 * DifferentialDriveRobot._safe_sinc(u)

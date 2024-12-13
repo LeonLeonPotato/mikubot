@@ -32,7 +32,8 @@ import random
 poses1 = [
     r.pose,
     r.pose + robot.Pose(0, 100, 0),
-    r.pose + robot.Pose(70, 100, 0)
+    r.pose + robot.Pose(50, 100, 0),
+    r.pose + robot.Pose(50, 200, 0)
 ]
 
 poses2 = [r.pose]
@@ -40,13 +41,13 @@ for i in range(10):
     rand = random.random() * 2 * math.pi
     poses2.append(r.pose + robot.Pose(200 * math.cos(rand), 200 * math.sin(rand), 0))
 
-path = ramsete.TwoDSpline(poses2)
-path.generate_spline(robot.Pose(0, 0, 0), robot.Pose(0, 0, 0))
+path = ramsete.TwoDSpline(poses1)
+path.generate_spline(robot.Pose(0, 100, 0), robot.Pose(0, 0, 0))
 path.construct_profile(ramsete.ProfileParams(0, 0, 
                                              maxspeed*wheelsize*ratio, 
                                              maxaccel*wheelsize*ratio, 
                                              maxdecel*wheelsize*ratio, 
-                                             39, 0.5))
+                                             39, 0.05))
 
 def draw_path():
     xs = path.xspline(np.linspace(0, path.maxt(), 100))
@@ -57,23 +58,31 @@ def draw_path():
     ]
     pygame.draw.lines(buffer, (255, 255, 255), False, coords, 2)
 
-tracking_i = 1
+tracking_i = 0
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
 
-    while tracking_i < len(path.profile):
+    while tracking_i <= len(path.profile):
         point = path.profile[tracking_i]
         profiled_pose = path.pose(point.time_param)
         profiled_deriv = path.velocity(point.time_param)
-        if (profiled_pose - r.pose).dot(profiled_deriv) < 0:
+        if (profiled_pose - r.pose).dot(profiled_deriv) <= 0.01:
             tracking_i += 1
+            if tracking_i >= len(path.profile):
+                tracking_i = len(path.profile) - 1
+                break
         else:
             break
+    # tracking_i += 1
+    # point = path.profile[tracking_i]
+    # profiled_pose = path.pose(point.time_param)
 
     v, w = ramsete.ramsete(r, profiled_pose, point.center_v, point.angular_v, 2.0, 0.7)
+    # v = point.center_v
+    # w = point.angular_v
     v /= wheelsize * ratio
     w /= wheelsize * ratio
     r.update(v + w, v - w)
@@ -89,6 +98,8 @@ while True:
         'theta': r.get_pose().theta,
         'left_actual_velocity': r.left_drivetrain.get_angular_velocity(),
         'right_actual_velocity': r.right_drivetrain.get_angular_velocity(),
+        'left_actual_accel': r.left_drivetrain.angular_accel <= maxaccel,
+        'right_actual_accel': r.right_drivetrain.angular_accel <= maxaccel,
         'clamp': 0,
         'intake': 0,
         'conveyor': 0
