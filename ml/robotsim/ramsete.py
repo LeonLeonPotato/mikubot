@@ -98,7 +98,7 @@ class TwoDSpline:
             curve = self.curvature(time_param)
             scale = abs(curve) * params.track_width / 2.0
             center_v = np.clip(
-                math.sqrt(self.profile[-1].center_v**2 + 2*(params.accel)*params.ds),
+                math.sqrt(self.profile[-1].center_v**2 + 2*(params.accel / (1 + abs(scale)))*params.ds),
                 -params.max_speed / (1 + abs(scale)),
                 params.max_speed / (1 + abs(scale))
             )

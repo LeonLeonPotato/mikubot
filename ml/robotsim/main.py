@@ -9,7 +9,7 @@ import ramsete
 wheelsize = 4.125
 ratio = 0.6
 
-maxspeed = 200 / (wheelsize * ratio)
+maxspeed = 140 / (wheelsize * ratio)
 maxaccel = 300 / (wheelsize * ratio)
 maxdecel = 230 / (wheelsize * ratio)
 
@@ -79,8 +79,10 @@ while True:
     r.update(v + w, v - w)
 
     buffer.fill((0, 0, 0))
-    pygame.draw.circle(buffer, (0, 255, 0), (profiled_pose.x + 400, profiled_pose.y + 300), 2)
+    
     draw_path()
+    pygame.draw.circle(buffer, (0, 255, 0), (profiled_pose.x + 400, profiled_pose.y + 300), 2)
+
     buffer = d.draw_on_buffer(buffer, {
         'x': r.get_pose().x,
         'y': r.get_pose().y,
