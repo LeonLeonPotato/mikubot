@@ -50,7 +50,9 @@ void BasePath::profile_path(const ProfileParams& params) {
     lengths.resize(params.resolution + 1);
     lengths[0] = 0;
     // long long cmtime = pros::micros();
-    Eigen::Matrix2Xf res = compute(t);
+    Eigen::Matrix2Xf res;
+    res.resize(2, t.size());
+    compute(t, res);
     // printf("Computed path in %lld us\n", pros::micros() - cmtime);
 
     profile.clear();
@@ -68,12 +70,13 @@ void BasePath::profile_path(const ProfileParams& params) {
 
         float time_param = (float) i / params.resolution * maxt();
         float curve = curvature(time_param);
-        float scale = fabs(curve) * params.track_width / 2.0f;
+        float scale = 1 + fabs(curve) * params.track_width / 2.0f;
+        float ecv = profile.back().center_v * scale;
         float cv = std::clamp(
-            sqrtf(profile.back().center_v*profile.back().center_v + 2*params.accel*ds), 
-            -params.max_speed / (1 + scale), 
-            params.max_speed / (1 + scale)
-        );
+            sqrtf(ecv*ecv + 2*params.accel*ds), 
+            -params.max_speed, 
+            params.max_speed
+        ) / scale;
 
         profile.emplace_back(lengths[i], time_param, curve, 0, cv, 0, 0);
         s += params.ds;
@@ -86,18 +89,18 @@ void BasePath::profile_path(const ProfileParams& params) {
     profile.back().right_v = std::clamp(params.end_v * (1 + __scale), -params.max_speed, params.max_speed);
     profile.back().angular_v = (profile.back().left_v - profile.back().right_v) / 2.0f;
 
-    float cv = params.end_v;
     for (int i = profile.size() - 2; i > 0; i--) {
         ProfilePoint& lp = profile[i + 1];
         ProfilePoint& p = profile[i];
 
         float scale = p.curvature * params.track_width / 2.0f;
         float ds = lp.s - p.s;
-        cv = std::clamp(
-            sqrtf(cv*cv + 2*params.decel*ds), 
-            -params.max_speed / (1 + fabsf(scale)), 
-            params.max_speed / (1 + fabsf(scale))
-        );
+        float ecv = lp.center_v * (1 + fabs(scale));
+        float cv = std::clamp(
+            sqrtf(ecv*ecv + 2*params.decel*ds), 
+            -params.max_speed, 
+            params.max_speed
+        ) / (1 + fabs(scale));
 
         p.center_v = fmin(cv, p.center_v);
         p.left_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);

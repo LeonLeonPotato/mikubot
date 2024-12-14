@@ -85,6 +85,7 @@ class TwoDSpline:
         ]
 
         i = 1; j = 0; s = params.ds
+        last_scale = abs(self.curvature(0)) + 1
         while i < params.resolution:
             while i <= params.resolution:
                 self.distances[i] = self.distances[i-1] + computed[i].dist(computed[i-1])
@@ -96,12 +97,14 @@ class TwoDSpline:
             ds = self.distances[i] - self.distances[j]
             time_param = i / params.resolution * self.maxt()
             curve = self.curvature(time_param)
-            scale = abs(curve) * params.track_width / 2.0
+            scale = 1 + abs(curve) * params.track_width / 2.0
+            toaccel = self.profile[-1].center_v * scale
             center_v = np.clip(
-                math.sqrt(self.profile[-1].center_v**2 + 2*(params.accel)*params.ds),
-                -params.max_speed / (1 + abs(scale)),
-                params.max_speed / (1 + abs(scale))
-            )
+                math.sqrt(toaccel**2 + 2*params.accel*ds),
+                -params.max_speed,
+                params.max_speed
+            ) / scale
+            last_scale = scale
             print(f"i={i}, j={j}, s={s}, ds={ds}, t={time_param}")
             self.profile.append(ProfilePoint(self.distances[i], time_param, curve, 0, center_v, 0))
 
@@ -110,9 +113,9 @@ class TwoDSpline:
 
         __scale = self.profile[-1].curvature * params.track_width / 2.0
         self.profile[-1].center_v = params.end_v
-        self.profile[-1].left_v = np.clip(params.end_v * (1 - __scale), -params.max_speed, params.max_speed)
-        self.profile[-1].right_v = np.clip(params.end_v * (1 + __scale), -params.max_speed, params.max_speed)
-        self.profile[-1].angular_v = (self.profile[-1].left_v - self.profile[-1].right_v) / 2.0
+        self.profile[-1].left_v = params.end_v
+        self.profile[-1].right_v = params.end_v
+        self.profile[-1].angular_v = 0
 
         cv = params.end_v
         for i in range(len(self.profile)-2, 0, -1):
@@ -120,17 +123,18 @@ class TwoDSpline:
             p = self.profile[i]
 
             scale = p.curvature * params.track_width / 2.0
+            last_scale = lp.curvature * params.track_width / 2.0
             ds = lp.s - p.s
+            ecv = lp.center_v * (1 + abs(scale))
             cv = np.clip(
-                np.sqrt(cv**2 + 2*(params.decel)*ds),
-                -params.max_speed / (1 + abs(scale)),
-                params.max_speed / (1 + abs(scale))
-            )
+                np.sqrt(ecv**2 + 2*params.decel*ds),
+                -params.max_speed,
+                params.max_speed
+            ) / (1 + abs(scale))
             p.center_v = min(cv, p.center_v)
             p.left_v = np.clip(p.center_v * (1 - scale), -params.max_speed, params.max_speed)
             p.right_v = np.clip(p.center_v * (1 + scale), -params.max_speed, params.max_speed)
             p.angular_v = (p.left_v - p.right_v) / 2.0
-
 
 
 def ramsete(robot:DifferentialDriveRobot, desired_pose, desired_velocity, desired_angular, beta, zeta):
@@ -138,7 +142,7 @@ def ramsete(robot:DifferentialDriveRobot, desired_pose, desired_velocity, desire
     error = error.rotate(robot.pose.theta)
     theta_error = robot.pose.minimum_angular_diff(desired_pose.theta)
 
-    k = 2 * zeta * np.sqrt(desired_angular ** 2 + desired_velocity ** 2)
+    k = 2 * zeta * np.sqrt(desired_angular ** 2 + beta * desired_velocity ** 2)
     v = desired_velocity * np.cos(theta_error) + beta*error.y
     w = desired_angular + k*theta_error + beta*desired_velocity*np.sin(theta_error) + beta*error.x
     return v, w
@@ -161,23 +165,24 @@ if __name__ == "__main__":
     maxaccel = 300
     maxdecel = 237
     path.construct_profile(ProfileParams(
-        10, 0, maxspeed, maxaccel, maxdecel, 39, 2
+        0, 0, maxspeed, maxaccel, maxdecel, 39, 2
     ))
 
-    P = eval(open("ml/robotsim/output.txt").read())
+    # P = eval(open("ml/robotsim/output.txt").read())
+    # plt.plot(
+    #     [p[0] for p in P],
+    #     [p[1] for p in P]
+    # )
     x = [p.s for p in path.profile]
 
     y = [p.center_v for p in path.profile]
     plt.plot(x, y, label='center_v')
 
-    # y = [p.left_v for p in path.profile]
-    # plt.plot(x, y, label='left_v')
+    y = [p.left_v for p in path.profile]
+    plt.plot(x, y, label='left_v')
 
-    # y = [p.right_v for p in path.profile]
-    # plt.plot(x, y, label='right_v')
-    plt.plot(
-        [p[0] for p in P],
-        [p[1] for p in P]
-    )
+    y = [p.right_v for p in path.profile]
+    plt.plot(x, y, label='right_v')
+
     plt.legend()
     plt.show()
