@@ -43,7 +43,6 @@ void BasePath::solve_lengths(int resolution) {
     }
 }
 
-#include "api.h"
 void BasePath::profile_path(const ProfileParams& params) {
     Eigen::VectorXf t = Eigen::VectorXf::LinSpaced(params.resolution+1, 0, maxt());
     lengths.clear();
@@ -83,11 +82,15 @@ void BasePath::profile_path(const ProfileParams& params) {
         j = i;
     }
 
-    float __scale = profile.back().curvature * params.track_width / 2.0f;
+    // float __scale = profile.back().curvature * params.track_width / 2.0f;
+    // profile.back().center_v = params.end_v;
+    // profile.back().left_v = std::clamp(params.end_v * (1 - __scale), -params.max_speed, params.max_speed);
+    // profile.back().right_v = std::clamp(params.end_v * (1 + __scale), -params.max_speed, params.max_speed);
+    // profile.back().angular_v = (profile.back().left_v - profile.back().right_v) / 2.0f;
     profile.back().center_v = params.end_v;
-    profile.back().left_v = std::clamp(params.end_v * (1 - __scale), -params.max_speed, params.max_speed);
-    profile.back().right_v = std::clamp(params.end_v * (1 + __scale), -params.max_speed, params.max_speed);
-    profile.back().angular_v = (profile.back().left_v - profile.back().right_v) / 2.0f;
+    profile.back().left_v = params.end_v;
+    profile.back().right_v = params.end_v;
+    profile.back().angular_v = 0;
 
     for (int i = profile.size() - 2; i > 0; i--) {
         ProfilePoint& lp = profile[i + 1];

@@ -33,7 +33,7 @@ poses1 = [
     r.pose,
     r.pose + robot.Pose(0, 100, 0),
     r.pose + robot.Pose(50, 100, 0),
-    r.pose + robot.Pose(50, 200, 0)
+    r.pose + robot.Pose(50, 500, 0)
 ]
 
 poses2 = [r.pose]
@@ -41,7 +41,7 @@ for i in range(10):
     rand = random.random() * 2 * math.pi
     poses2.append(r.pose + robot.Pose(200 * math.cos(rand), 200 * math.sin(rand), 0))
 
-path = ramsete.TwoDSpline(poses1)
+path = ramsete.TwoDSpline(poses2)
 path.generate_spline(robot.Pose(0, 100, 0), robot.Pose(0, 0, 0))
 path.construct_profile(ramsete.ProfileParams(0, 0, 
                                              maxspeed*wheelsize*ratio, 
@@ -58,7 +58,7 @@ def draw_path():
     ]
     pygame.draw.lines(buffer, (255, 255, 255), False, coords, 2)
 
-tracking_i = 0
+tracking_i = 1
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -69,13 +69,13 @@ while True:
         point = path.profile[tracking_i]
         profiled_pose = path.pose(point.time_param)
         profiled_deriv = path.velocity(point.time_param)
-        if (profiled_pose - r.pose).dot(profiled_deriv) <= 0.01:
+        if (profiled_pose - r.pose).dot(profiled_deriv) <= 0:
             tracking_i += 1
-            if tracking_i >= len(path.profile):
-                tracking_i = len(path.profile) - 1
-                break
         else:
             break
+
+    if tracking_i >= len(path.profile):
+        tracking_i = len(path.profile) - 1
     # tracking_i += 1
     # point = path.profile[tracking_i]
     # profiled_pose = path.pose(point.time_param)

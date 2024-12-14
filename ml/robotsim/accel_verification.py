@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 with open("ml/robotsim/output.txt") as f:
-    data = eval(f.read())
+    data = eval(f.read().replace("\n", "").strip())
 
 data = pd.DataFrame(data, columns=['s', 'v'])
 data['u2'] = data['v'].shift(1) ** 2
@@ -17,4 +17,5 @@ plt.plot(data['s'], data['v'], label='Velocity')
 plt.plot(data['s'], data['a'], c='g', label='Accel')
 plt.plot([0, data['s'][len(data)-1]], [300, 300], c='r')
 plt.plot([0, data['s'][len(data)-1]], [-237, -237], c='r')
+plt.legend()
 plt.show()

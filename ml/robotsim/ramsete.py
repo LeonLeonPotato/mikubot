@@ -85,7 +85,7 @@ class TwoDSpline:
         ]
 
         i = 1; j = 0; s = params.ds
-        last_scale = abs(self.curvature(0)) + 1
+        last_scale = 1 + abs(self.curvature(0) * params.track_width / 2.0)
         while i < params.resolution:
             while i <= params.resolution:
                 self.distances[i] = self.distances[i-1] + computed[i].dist(computed[i-1])
@@ -94,18 +94,18 @@ class TwoDSpline:
                 i += 1
 
             if i > params.resolution: i = params.resolution
-            ds = self.distances[i] - self.distances[j]
             time_param = i / params.resolution * self.maxt()
             curve = self.curvature(time_param)
             scale = 1 + abs(curve) * params.track_width / 2.0
-            toaccel = self.profile[-1].center_v * scale
+            average_mult = (scale + last_scale) / 2.0
+            toaccel = self.profile[-1].center_v * average_mult
+            ds = self.distances[i] - self.distances[j]
             center_v = np.clip(
-                math.sqrt(toaccel**2 + 2*params.accel*ds),
+                np.sqrt(toaccel**2 + 2*params.accel*ds),
                 -params.max_speed,
                 params.max_speed
-            ) / scale
+            ) / average_mult
             last_scale = scale
-            print(f"i={i}, j={j}, s={s}, ds={ds}, t={time_param}")
             self.profile.append(ProfilePoint(self.distances[i], time_param, curve, 0, center_v, 0))
 
             s += params.ds
@@ -123,14 +123,15 @@ class TwoDSpline:
             p = self.profile[i]
 
             scale = p.curvature * params.track_width / 2.0
-            last_scale = lp.curvature * params.track_width / 2.0
+            last_scale = 1 + abs(lp.curvature) * params.track_width / 2.0
             ds = lp.s - p.s
-            ecv = lp.center_v * (1 + abs(scale))
+            average_mult = (abs(scale) + 1 + last_scale) / 2.0
+            ecv = lp.center_v * average_mult
             cv = np.clip(
                 np.sqrt(ecv**2 + 2*params.decel*ds),
                 -params.max_speed,
                 params.max_speed
-            ) / (1 + abs(scale))
+            ) / average_mult
             p.center_v = min(cv, p.center_v)
             p.left_v = np.clip(p.center_v * (1 - scale), -params.max_speed, params.max_speed)
             p.right_v = np.clip(p.center_v * (1 + scale), -params.max_speed, params.max_speed)
@@ -143,8 +144,8 @@ def ramsete(robot:DifferentialDriveRobot, desired_pose, desired_velocity, desire
     theta_error = robot.pose.minimum_angular_diff(desired_pose.theta)
 
     k = 2 * zeta * np.sqrt(desired_angular ** 2 + beta * desired_velocity ** 2)
-    v = desired_velocity * np.cos(theta_error) + beta*error.y
-    w = desired_angular + k*theta_error + beta*desired_velocity*np.sin(theta_error) + beta*error.x
+    v = desired_velocity * np.cos(theta_error)
+    w = desired_angular + k*theta_error + beta*desired_velocity*np.sin(theta_error)
     return v, w
 
 if __name__ == "__main__":
@@ -156,16 +157,16 @@ if __name__ == "__main__":
     )
     path = TwoDSpline([
         r.pose,
-        r.pose + Pose(0, 100, 0),
-        r.pose + Pose(70, 100, 0)
+        r.pose + Pose(-100, -50, 0),
+        r.pose + Pose(100, -50, 0)
     ])
     path.generate_spline(Pose(0, 10, 0), Pose(0, 0, 0))
 
-    maxspeed = 140
+    maxspeed = 1000
     maxaccel = 300
     maxdecel = 237
     path.construct_profile(ProfileParams(
-        0, 0, maxspeed, maxaccel, maxdecel, 39, 2
+        0, 0, maxspeed, maxaccel, maxdecel, 39, 0.1, resolution=10000
     ))
 
     # P = eval(open("ml/robotsim/output.txt").read())
@@ -186,3 +187,6 @@ if __name__ == "__main__":
 
     plt.legend()
     plt.show()
+
+    with open("ml/robotsim/output.txt", "w") as f:
+        f.write(str([(p.s, float(p.left_v)) for p in path.profile]))
