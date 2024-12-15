@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api.h"
+#include "api.h" // IWYU pragma: keep
 
 template <typename T>
 class Future {

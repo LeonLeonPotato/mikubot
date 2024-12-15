@@ -3,7 +3,6 @@
 #include "autonomous/movement/base_movement.h"
 #include "autonomous/solvers.h"
 #include "autonomous/pathing/base_path.h"
-#include "autonomous/controllers.h"
 #include "autonomous/future.h"
 
 namespace movement::purepursuit {

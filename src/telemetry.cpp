@@ -1,5 +1,6 @@
 #include "telemetry.h"
 #include "essential.h"
+#include "pros/misc.hpp"
 #include <numeric>
 #include <queue>
 
@@ -8,7 +9,7 @@ using namespace telemetry;
 volatile int telemetry::delay = 10;
 
 static pros::task_t task = nullptr;
-static volatile int mode = 0b10 | 0b01;
+static volatile int mode = TO_FILE | TO_STDOUT;
 static FILE* file = nullptr;
 static std::string filename;
 static std::queue<std::string> log_queue;
@@ -39,10 +40,10 @@ static float average(const std::vector<T>& v) {
 
 static void logging_task(void* args) {
     #ifndef MIKU_TESTENV
-    bool will_log_file = (mode & 0b10) >> 1;
+    bool will_log_file = (mode & TO_FILE) >> 1;
 
-    if (!file) {
-        printf("[Telemetry] Log file could not be opened\n");
+    if (!file || !pros::usd::is_installed()) {
+        printf("[Telemetry] Log file could not be opened, is SD card attached?\n");
         will_log_file = false;
     } else {
         printf("[Telemetry] Log file opened\n");
@@ -69,7 +70,7 @@ static void logging_task(void* args) {
             robot::conveyor.get_actual_velocity()
         );
 
-        if (mode & 0b01) {
+        if (mode & TO_STDOUT) {
             printf("%s", buffer);
         }
 

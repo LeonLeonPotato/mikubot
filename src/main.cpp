@@ -4,14 +4,9 @@
 #include "autonomous/pathing.h"
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
-#include "gui/utils.h"
-#include "autonomous/solvers.h"
 #include "autonomous/strategies.h"
 #include "gui/opcontrolinfo.h"
 #include "opcontrol/opcontrol.h"
-#include "telemetry.h"
-
-#include "api.h"
 
 void initialize(void) {
 	std::cout << "Initialize started" << std::endl;
@@ -41,17 +36,19 @@ void competition_initialize(void) {
 	}
 	autonselector::destroy();
 	std::cout << "Auton selector finished" << std::endl;
+
+	autonrunner::init();
 }
 
 void autonomous(void) {
 	std::cout << "Auton started" << std::endl;
-	autonrunner::init();
 
 	strategies::functions.at(strategies::chosen_strategy)();
-	autonrunner::destroy();
 }
 
 void opcontrol(void) {
+	autonrunner::destroy();
+	autonselector::destroy();
 
 	pathing::QuinticSpline qs;
 	qs.points.emplace_back(0, 0);

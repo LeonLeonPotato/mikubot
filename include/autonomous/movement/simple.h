@@ -1,5 +1,6 @@
 #pragma once
 
+#include "autonomous/future.h"
 #include "base_movement.h"
 
 #define deg(x) (x * M_PI / 180.0)

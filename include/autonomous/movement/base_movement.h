@@ -1,6 +1,5 @@
 #pragma once
 
-#include "autonomous/future.h"
 #include "autonomous/controllers.h"
 #include "autonomous/pathing/base_path.h"
 

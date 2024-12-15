@@ -1,4 +1,5 @@
 #include "autonomous/movement/pure_pursuit.h"
+#include "autonomous/controllers.h"
 #include "essential.h"
 
 using namespace movement::purepursuit;

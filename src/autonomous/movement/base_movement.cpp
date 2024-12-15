@@ -1,8 +1,6 @@
 #include "autonomous/movement.h"
 #include "essential.h"
 
-#include "api.h"
-
 using namespace movement;
 
 std::pair<float, float> utils::compute_initial_t(
@@ -74,7 +72,6 @@ void utils::recompute_path(
     path.points[0] = robot::pos;
 
     path_solver(path);
-    printf("Recomputed path\n");
 }
 
 void utils::solve_path_default(pathing::BasePath& path) {

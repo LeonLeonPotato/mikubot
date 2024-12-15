@@ -106,7 +106,7 @@ void auton_selection_callback(lv_event_t* e) {
 
     clicked_button->set_font(roboto_regular_bold_16);
     auton_buttons[current_selected_idx].second->set_font(roboto_regular_16);
-    printf("Setting strategy to %s\n", strategies::names.at(clicked_strategy).c_str());
+    printf("[AutonSelector] Setting strategy to %s\n", strategies::names.at(clicked_strategy).c_str());
     strategies::chosen_strategy = clicked_strategy;
 
     current_selected_idx = i;
@@ -176,7 +176,7 @@ void confirm_selection(void) {
 void init_gif(void) {
     FILE* miku_test = fopen("/usd/kaito-miku.gif", "r");
     if (!miku_test) {
-        printf("Failed to open miku gif\n");
+        printf("[AutonSelector] Failed to open miku gif. Is the SD Card installed?\n");
         return;
     }
     fclose(miku_test);
