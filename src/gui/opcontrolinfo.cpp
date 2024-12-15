@@ -1,5 +1,5 @@
 #include "gui/opcontrolinfo.h"
-#include "gui/utils.h"
+#include "gui/utils.h"  // IWYU pragma: keep
 #include "essential.h"
 #include "pros/misc.hpp"
 

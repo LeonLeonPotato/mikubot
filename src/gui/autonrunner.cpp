@@ -4,14 +4,13 @@
 #include "gui/fonts/roboto_regular_24.c"
 #include "essential.h"
 
-#include "api.h"
-#include "liblvgl/lvgl.h"
+#include "api.h"  // IWYU pragma: keep
+#include "liblvgl/lvgl.h" // IWYU pragma: keep
 
-namespace autonrunner {
 bool initialized = false;
 renderer::Text* text;
 
-void init(void) {
+void autonrunner::init(void) {
     if (initialized) return;
     initialized = true;
 
@@ -26,10 +25,9 @@ void init(void) {
     text->rename(st);
 }
 
-void destroy(void) {
+void autonrunner::destroy(void) {
     if (!initialized) return;
     initialized = false;
 
     delete text;
-}
 }

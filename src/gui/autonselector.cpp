@@ -4,35 +4,34 @@
 #include "version.h"
 #include "essential.h"
 
-#include "api.h"
-#include "liblvgl/lvgl.h"
+#include "api.h" // IWYU pragma: keep
+#include "liblvgl/lvgl.h" // IWYU pragma: keep
 #include "gui/fonts/roboto_regular_16.c"
 #include "gui/fonts/roboto_regular_bold_16.c"
 #include "gui/fonts/roboto_regular_30.c"
 
 #include <vector>
 
-namespace autonselector {
-bool initialized = false;
-bool finished_selection = false;
+bool autonselector::finished_selection = false;
+static bool initialized = false;
 
-lv_obj_t* logo;
+static lv_obj_t* logo;
 
-renderer::Text* team_selection_text;
-renderer::NamedButton* team_button;
-renderer::NamedButton* side_button;
+static renderer::Text* team_selection_text;
+static renderer::NamedButton* team_button;
+static renderer::NamedButton* side_button;
 
-renderer::Text* auton_selection_text;
-int current_selected_idx;
-std::vector<std::pair<strategies::Strategy, renderer::NamedButton*>> auton_buttons;
-lv_obj_t* selected_auton_box;
-lv_style_t* selected_auton_box_style;
+static renderer::Text* auton_selection_text;
+static int current_selected_idx;
+static std::vector<std::pair<strategies::Strategy, renderer::NamedButton*>> auton_buttons;
+static lv_obj_t* selected_auton_box;
+static lv_style_t* selected_auton_box_style;
 
-renderer::NamedButton* confirm_button;
+static renderer::NamedButton* confirm_button;
 
-lv_obj_t* miku_gif = nullptr;
+static lv_obj_t* miku_gif = nullptr;
 
-void create_logo(void) {
+static void create_logo(void) {
     logo = lv_spangroup_create(lv_scr_act());
     lv_obj_set_pos(logo, 10, 10);
 
@@ -54,7 +53,7 @@ void create_logo(void) {
     lv_spangroup_refr_mode(logo);
 }
 
-void team_switch_callback(lv_event_t* e) {
+static void team_switch_callback(lv_event_t* e) {
     if (robot::match::team == 'R') {
         robot::match::team = 'B';
         team_button->bg_color(0x0000FF);
@@ -65,12 +64,12 @@ void team_switch_callback(lv_event_t* e) {
     team_button->rename(robot::match::get_team_name());
 }
 
-void side_switch_callback(lv_event_t* e) {
+static void side_switch_callback(lv_event_t* e) {
     robot::match::side = -robot::match::side;
     side_button->rename(robot::match::get_side_name());
 }
 
-void team_selector(void) {
+static void team_selector(void) {
     team_selection_text = new renderer::Text(
         "Team",
         roboto_regular_30, 
@@ -93,7 +92,7 @@ void team_selector(void) {
     lv_obj_add_event_cb(side_button->button, side_switch_callback, LV_EVENT_CLICKED, NULL);
 }
 
-void auton_selection_callback(lv_event_t* e) {
+static void auton_selection_callback(lv_event_t* e) {
     int i = reinterpret_cast<int>(lv_event_get_user_data(e));
     const auto& clicked_button = auton_buttons[i].second;
     const auto& clicked_strategy = auton_buttons[i].first;
@@ -112,7 +111,7 @@ void auton_selection_callback(lv_event_t* e) {
     current_selected_idx = i;
 }
 
-void auton_strategy(void) {
+static void auton_strategy(void) {
     auton_selection_text = new renderer::Text(
         "Auton",
         roboto_regular_30, 
@@ -159,11 +158,11 @@ void auton_strategy(void) {
     }
 }
 
-void confirm_selection_callback(lv_event_t* e) {
-    finished_selection = true;
+static void confirm_selection_callback(lv_event_t* e) {
+    autonselector::finished_selection = true;
 }
 
-void confirm_selection(void) {
+static void confirm_selection(void) {
     confirm_button = new renderer::NamedButton(
         "Confirm", 
         roboto_regular_16, 
@@ -173,7 +172,7 @@ void confirm_selection(void) {
     lv_obj_add_event_cb(confirm_button->button, confirm_selection_callback, LV_EVENT_CLICKED, NULL);
 }
 
-void init_gif(void) {
+static void init_gif(void) {
     FILE* miku_test = fopen("/usd/kaito-miku.gif", "r");
     if (!miku_test) {
         printf("[AutonSelector] Failed to open miku gif. Is the SD Card installed?\n");
@@ -186,7 +185,7 @@ void init_gif(void) {
     lv_gif_set_src(miku_gif, "S/kaito-miku.gif");
 }
 
-void init(void) {
+void autonselector::init(void) {
     if (initialized) return;
     initialized = true;
 
@@ -197,7 +196,7 @@ void init(void) {
     init_gif();
 }
 
-void destroy(void) {
+void autonselector::destroy(void) {
     if (!initialized) return;
     initialized = false;
 
@@ -218,5 +217,4 @@ void destroy(void) {
     lv_style_reset(selected_auton_box_style);
 
     if (miku_gif != nullptr) lv_obj_del(miku_gif);
-}
 }
