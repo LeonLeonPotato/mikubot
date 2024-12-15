@@ -1,11 +1,17 @@
 #include "main.h"
 #include "essential.h"
+#include "telemetry.h"
+
 #include "autonomous/odometry.h"
 #include "autonomous/pathing.h"
+#include "autonomous/strategies.h"
+#include "autonomous/pathing/polynomial.h"
+
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
-#include "autonomous/strategies.h"
+#include "gui/goofymiku.h"
 #include "gui/opcontrolinfo.h"
+
 #include "opcontrol/opcontrol.h"
 
 void initialize(void) {
@@ -46,10 +52,7 @@ void autonomous(void) {
 	strategies::functions.at(strategies::chosen_strategy)();
 }
 
-void opcontrol(void) {
-	autonrunner::destroy();
-	autonselector::destroy();
-
+static void profiling_test(void) {
 	pathing::QuinticSpline qs;
 	qs.points.emplace_back(0, 0);
 	qs.points.emplace_back(0, 100);
@@ -73,7 +76,9 @@ void opcontrol(void) {
 		.resolution = 5000
 	});
 	// asd
-	printf("Profile path took %lld us\n", pros::micros() - start);
+	auto t = pros::micros() - start;
+	pros::delay(20);
+	printf("Profile path took %lld us\n", t);
 
 	std::cout << "[";
 	int cnt = 0;
@@ -89,6 +94,44 @@ void opcontrol(void) {
 		}
 	}
 	std::cout << "]" << std::endl;
+}
+
+static void is_it_actually_faster(void) {
+	asm volatile("cpsid i\n\tdsb\n\tisb");
+
+	pathing::Polynomial2D<4> p = pathing::Polynomial2D<4>();
+	p.x_poly.coeffs << 1, -49.2, 5.2, 2;
+	p.y_poly.coeffs << 9.2, 8.888, 2.2, -4;
+
+	Eigen::VectorXf times = Eigen::VectorXf::LinSpaced(1000, 0, 1);
+	Eigen::Matrix2Xf res; res.resize(2, times.size());
+	asm volatile("" :: "r,m" (res));
+
+	long long start = pros::micros();
+	p.compute(times, res, 0);
+	auto t1 = pros::micros() - start;
+	printf("Polynomial2D vectorized took %lld us\n", t1);
+
+	Eigen::VectorXf times2 = Eigen::VectorXf::LinSpaced(1000, 0, 1);
+	Eigen::Matrix2Xf res2; res2.resize(2, times2.size());
+	asm volatile("" :: "r,m" (res2));
+	
+	start = pros::micros();
+	for (int i = 0; i < 1000; i++) {
+		res.col(i) = p.compute(times2.coeffRef(i), 0);
+	}
+	auto t2 = pros::micros() - start;
+	printf("Polynomial2D single took %lld us\n", t2);
+
+	asm volatile("cpsie i\n\tdsb\n\tisb");
+}
+
+void opcontrol(void) {
+	autonrunner::destroy();
+	autonselector::destroy();
+	opcontrolfun::init();
+
+	is_it_actually_faster();
 
 	std::cout << "Opcontrol started" << std::endl;
 

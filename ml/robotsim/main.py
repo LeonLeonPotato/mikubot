@@ -65,7 +65,7 @@ while True:
             pygame.quit()
             exit()
 
-    while tracking_i <= len(path.profile):
+    while tracking_i < len(path.profile):
         point = path.profile[tracking_i]
         profiled_pose = path.pose(point.time_param)
         profiled_deriv = path.velocity(point.time_param)

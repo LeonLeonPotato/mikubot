@@ -43,16 +43,17 @@ void BasePath::solve_lengths(int resolution) {
     }
 }
 
+#include "api.h"
 void BasePath::profile_path(const ProfileParams& params) {
     Eigen::VectorXf t = Eigen::VectorXf::LinSpaced(params.resolution+1, 0, maxt());
     lengths.clear();
     lengths.resize(params.resolution + 1);
     lengths[0] = 0;
-    // long long cmtime = pros::micros();
+    long long cmtime = pros::micros();
     Eigen::Matrix2Xf res;
     res.resize(2, t.size());
     compute(t, res);
-    // printf("Computed path in %lld us\n", pros::micros() - cmtime);
+    printf("Computed path in %lld us\n", pros::micros() - cmtime);
 
     profile.clear();
     profile.emplace_back(0, 0, curvature(0), 0, params.start_v, 0);

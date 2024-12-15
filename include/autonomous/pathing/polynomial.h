@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Eigen/Dense"
+#include "Eigen/src/Core/Matrix.h"
 #include <map>
 
 namespace pathing {
@@ -9,10 +10,10 @@ class Polynomial {
     private:
         static std::map<int, Eigen::MatrixXi*> differentials;
         static Eigen::MatrixXi* build_differential_matrix(int n);
-        static Eigen::MatrixXi* get_differential(int n);
 
         static int falling_factorial(int i, int n);
     public:
+        static Eigen::MatrixXi* get_differential(int n);
         static void clear_cache();
 
         Eigen::Vector<float, N> coeffs;
@@ -101,8 +102,8 @@ inline void Polynomial<N>::compute(const Eigen::VectorXf& t, Eigen::VectorXf& re
     Eigen::VectorXf t_pow = Eigen::VectorXf::Ones(t.size());
     Eigen::MatrixXi* diff = get_differential(N);
     for (int i = deriv; i < N; i++) {
-        res += coeffs(i).cwiseProduct(t_pow) * diff->coeffRef(i, deriv);
-        t_pow = t_pow.cwiseProduct(t);
+        res += t_pow * coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+        t_pow.noalias() = t_pow.cwiseProduct(t);
     }
 }
 
@@ -136,8 +137,13 @@ inline std::string Polynomial<N>::debug_out() const {
 
 template <int N>
 inline void Polynomial2D<N>::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
-    x_poly.compute(t, res(0), deriv);
-    y_poly.compute(t, res(1), deriv);
+    Eigen::VectorXf t_pow = Eigen::VectorXf::Ones(t.size());
+    Eigen::MatrixXi* diff = x_poly.get_differential(N);
+    for (int i = deriv; i < N; i++) {
+        res.row(0) += t_pow * x_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+        res.row(1) += t_pow * y_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+        t_pow.noalias() = t_pow.cwiseProduct(t);
+    }
 }
 
 template <int N>
@@ -149,8 +155,13 @@ inline Eigen::Matrix2Xf Polynomial2D<N>::compute(const Eigen::VectorXf& t, int d
 
 template <int N>
 inline void Polynomial2D<N>::compute(float t, Eigen::Vector2f& res, int deriv) const {
-    res(0) = x_poly.compute(t, deriv);
-    res(1) = y_poly.compute(t, deriv);
+    float t_pow = 1;
+    Eigen::MatrixXi* diff = x_poly.get_differential(N);
+    for (int i = deriv; i < N; i++) {
+        res.coeffRef(0) += x_poly.coeffs.coeffRef(i) * t_pow * diff->coeffRef(i, deriv);
+        res.coeffRef(1) += y_poly.coeffs.coeffRef(i) * t_pow * diff->coeffRef(i, deriv);
+        t_pow *= t;
+    }
 }
 
 template <int N>
@@ -167,14 +178,14 @@ inline Eigen::Vector2f Polynomial2D<N>::normal(float t) const {
 template <int N>
 inline float Polynomial2D<N>::angle(float t) const {
     Eigen::Vector2f d = compute(t, 1);
-    return atan2(d(0), d(1));
+    return atan2f(d(0), d(1));
 }
 
 template <int N>
 inline float Polynomial2D<N>::angular_velocity(float t) const {
     Eigen::Vector2f d1 = compute(t, 1);
     Eigen::Vector2f d2 = compute(t, 2);
-    return (d1(0) * d2(1) - d1(1) * d2(0)) / d1.dot(d1);
+    return (d1(0) * d2(1) - d1(1) * d2(0)) / (d1.dot(d1) + 1e-6);
 }
 
 template <int N>
