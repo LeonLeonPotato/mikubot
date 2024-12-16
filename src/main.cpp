@@ -1,7 +1,9 @@
 #include "main.h"
 #include "essential.h"
+#include "ansicodes.h"
+#include "pros/misc.hpp"
 #include "pros/rtos.hpp"
-#include "telemetry.h"
+#include "telemetry.h" // IWYU pragma: keep
 
 #include "autonomous/odometry.h"
 #include "autonomous/pathing.h"
@@ -15,41 +17,43 @@
 
 #include "opcontrol/opcontrol.h"
 
+static const auto PREFIX = ANSI_BOLD + ANSI_CYAN + "[Miku" + ANSI_GREEN + "bot] " + ANSI_RESET;
+
 void initialize(void) {
-	std::cout << "Initialize started" << std::endl;
+	std::cout << PREFIX << "Initializing robot\n";
 
 	robot::init();
 	odometry::start_task();
 	opcontrolinfo::init();
-	// telemetry::start_task();
-	pros::delay(100);
 
 	if (!pros::competition::is_connected()) {
-		std::cout << "Not connected to competition switch" << std::endl;
-		//competition_initialize();
-		autonomous();
+		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
+		competition_initialize();
+		// telemetry::start_task();
+		// autonomous();
 	}
 }
 
 void disabled(void) {
-	std::cout << "Robot has been disabled" << std::endl;
+	std::cout << PREFIX << "Robot has been disabled\n";
 }
 
 void competition_initialize(void) {
-	std::cout << "Comp init started" << std::endl;
+	std::cout << PREFIX << "Competition initializing\n";
 
 	autonselector::init();
-	while (autonselector::finished_selection == false) {
-		pros::delay(20);
-	}
+	do {
+		pros::delay(50);
+	} while (autonselector::finished_selection == true);
 	autonselector::destroy();
-	std::cout << "Auton selector finished" << std::endl;
+	std::cout << PREFIX << "Auton selection has finished\n";
 
 	autonrunner::init();
 }
 
 void autonomous(void) {
-	std::cout << "Auton started" << std::endl;
+	std::cout << PREFIX << "Running autonomous\n";
+	autonrunner::init();
 
 	strategies::functions.at(strategies::chosen_strategy)();
 }
@@ -128,13 +132,32 @@ static void is_it_actually_faster(void) {
 	asm volatile("cpsie i\n\tdsb\n\tisb");
 }
 
+static void unit_test(void) {
+	pathing::Polynomial<4> p = pathing::Polynomial<4>();
+	p.coeffs << 1, -49.2, 5.2, 2;
+	int deriv = 2;
+
+	Eigen::VectorXf times = Eigen::VectorXf::LinSpaced(10, 0, 1);
+	Eigen::VectorXf res; res.resize(times.size());
+
+	p.compute(times, res, deriv);
+	std::cout << res.transpose() << std::endl;
+
+	for (int i = 0; i < 10; i++) {
+		res.coeffRef(i) = p.compute(times.coeffRef(i), deriv);
+	}
+
+	std::cout << res.transpose() << std::endl;
+}
+
 void opcontrol(void) {
-	std::cout << "Opcontrol started" << std::endl;
+	std::cout << PREFIX << "Operator control started\n";
 	autonrunner::destroy(); pros::delay(10);
-	autonselector::destroy(); pros::delay(200);
+	autonselector::destroy(); pros::delay(10);
 	opcontrolfun::init();
 
 	// is_it_actually_faster();
+	// unit_test();
 
 	while (true) {
 		for (auto& func : controls::ticks) {

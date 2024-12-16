@@ -2,19 +2,17 @@
 #include "liblvgl/lvgl.h" // IWYU pragma: keep
 #include <cstdio>
 #include "api.h" // IWYU pragma: keep
+#include "gui/utils.h" // IWYU pragma: keep
 
 static bool initialized = false;
 static lv_obj_t* miku = nullptr;
 
 static void run() {
     #ifndef MIKU_TESTENV
-    FILE* file = fopen("/usd/funny.gif", "r");
-    if (!file) {
-        printf("[Funny] Failed to open miku gif. Is the SD Card installed?\n");
+    if (!renderer::check_exists("/", "funny.gif")) {
+        printf("[Funny] Funny gif not found\n");
         return;
     }
-    fclose(file);
-    pros::delay(10);
 
     miku = lv_gif_create(lv_scr_act());
     lv_obj_set_pos(miku, 156, 0);

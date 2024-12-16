@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Eigen/Dense"
-#include "Eigen/src/Core/Matrix.h"
 #include <map>
 
 namespace pathing {
@@ -99,11 +98,10 @@ inline int Polynomial<N>::falling_factorial(int i, int n) {
 
 template <int N>
 inline void Polynomial<N>::compute(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv) const {
-    Eigen::VectorXf t_pow = Eigen::VectorXf::Ones(t.size());
     Eigen::MatrixXi* diff = get_differential(N);
-    for (int i = deriv; i < N; i++) {
-        res += t_pow * coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
-        t_pow.noalias() = t_pow.cwiseProduct(t);
+    res.setConstant(coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv));
+    for (int i = N-2; i >= deriv; i--) {
+        res = res.cwiseProduct(t).array() + coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
     }
 }
 
@@ -116,12 +114,10 @@ inline Eigen::VectorXf Polynomial<N>::compute(const Eigen::VectorXf& t, int deri
 
 template <int N>
 inline float Polynomial<N>::compute(float t, int deriv) const {
-    float result = 0;
-    float t_pow = 1;
     Eigen::MatrixXi* diff = get_differential(N);
-    for (int i = deriv; i < N; i++) {
-        result += coeffs(i) * t_pow * diff->coeffRef(i, deriv);
-        t_pow *= t;
+    float result = coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv);
+    for (int i = N-2; i >= deriv; i--) {
+        result = result * t + coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
     }
     return result;
 }
@@ -137,13 +133,17 @@ inline std::string Polynomial<N>::debug_out() const {
 
 template <int N>
 inline void Polynomial2D<N>::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
-    Eigen::VectorXf t_pow = Eigen::VectorXf::Ones(t.size());
-    Eigen::MatrixXi* diff = x_poly.get_differential(N);
-    for (int i = deriv; i < N; i++) {
-        res.row(0) += t_pow * x_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
-        res.row(1) += t_pow * y_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
-        t_pow.noalias() = t_pow.cwiseProduct(t);
-    }
+    // Eigen::MatrixXi* diff = x_poly.get_differential(N);
+    // res.row(0).setConstant(x_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv));
+    // res.row(1).setConstant(y_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv));
+    // auto t2 = t.transpose();
+    // for (int i = N-2; i >= deriv; --i) {
+    //     res.row(0) = res.row(0).cwiseProduct(t2).array() + x_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+    //     res.row(1) = res.row(1).cwiseProduct(t2).array() + y_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+    // }
+    res.row(0) = x_poly.compute(t, deriv);
+    res.row(1) = y_poly.compute(t, deriv);
+    // How is this somehow faster?
 }
 
 template <int N>
@@ -155,12 +155,12 @@ inline Eigen::Matrix2Xf Polynomial2D<N>::compute(const Eigen::VectorXf& t, int d
 
 template <int N>
 inline void Polynomial2D<N>::compute(float t, Eigen::Vector2f& res, int deriv) const {
-    float t_pow = 1;
     Eigen::MatrixXi* diff = x_poly.get_differential(N);
+    res.coeffRef(0) = x_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv);
+    res.coeffRef(1) = y_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv);
     for (int i = deriv; i < N; i++) {
-        res.coeffRef(0) += x_poly.coeffs.coeffRef(i) * t_pow * diff->coeffRef(i, deriv);
-        res.coeffRef(1) += y_poly.coeffs.coeffRef(i) * t_pow * diff->coeffRef(i, deriv);
-        t_pow *= t;
+        res.coeffRef(0) = res.coeffRef(0) * t + x_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+        res.coeffRef(1) = res.coeffRef(1) * t + y_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
     }
 }
 

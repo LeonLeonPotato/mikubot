@@ -1,6 +1,6 @@
 #include "autonomous/pathing/quintic_spline.h"
 
-#include "Eigen/Sparse"
+#include "Eigen/Sparse" // IWYU pragma: keep
 
 #include <iostream>
 

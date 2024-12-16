@@ -144,8 +144,8 @@ def ramsete(robot:DifferentialDriveRobot, desired_pose, desired_velocity, desire
     theta_error = robot.pose.minimum_angular_diff(desired_pose.theta)
 
     k = 2 * zeta * np.sqrt(desired_angular ** 2 + beta * desired_velocity ** 2)
-    v = desired_velocity * np.cos(theta_error)
-    w = desired_angular + k*theta_error + beta*desired_velocity*np.sin(theta_error)
+    v = desired_velocity * np.cos(theta_error) + beta*error.y
+    w = desired_angular + k*theta_error + beta*desired_velocity*np.sin(theta_error) + beta*error.x
     return v, w
 
 if __name__ == "__main__":

@@ -84,6 +84,7 @@ class NamedButton : LVGLObject {
         void resize(int w, int h) const override;
 };
 
+bool check_exists(const char* path, const char* name);
 void init(void);
 void destroy(void);
 } // namespace renderer

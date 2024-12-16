@@ -1,4 +1,6 @@
 #include "gui/utils.h"
+#include "api.h"
+#include "pros/misc.hpp"
 
 using namespace renderer;
 
@@ -44,8 +46,16 @@ void NamedButton::resize(int w, int h) const {
     lv_obj_set_size(this->button, w, h);
 }
 
-void init(void) {
+bool renderer::check_exists(const char* path, const char* name) {
+    if (!pros::usd::is_installed()) return false;
+    char buffer[4096]; 
+    memset(buffer, 0, sizeof(buffer));
+    pros::usd::list_files(path, buffer, sizeof(buffer));
+    return strstr(buffer, name) != nullptr;
 }
 
-void destroy(void) {
+void renderer::init(void) {
+}
+
+void renderer::destroy(void) {
 }

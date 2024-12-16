@@ -80,7 +80,7 @@ typedef int16_t lv_coord_t;
  * The graphical objects and other related data are stored here. */
 
 /* 1: use custom malloc/free, 0: use the built-in `lv_mem_alloc` and `lv_mem_free` */
-#define LV_MEM_CUSTOM      0
+#define LV_MEM_CUSTOM      1
 #if LV_MEM_CUSTOM == 0
 /* Size of the memory used by `lv_mem_alloc` in bytes (>= 2kB)*/
 #  define LV_MEM_SIZE    (10U * 1024U * 1024U)
@@ -102,7 +102,7 @@ typedef int16_t lv_coord_t;
 
 /* Use the standard memcpy and memset instead of LVGL's own functions.
  * The standard functions might or might not be faster depending on their implementation. */
-#define LV_MEMCPY_MEMSET_STD    0
+#define LV_MEMCPY_MEMSET_STD    1
 
 /* Garbage Collector settings
  * Used if lvgl is binded to higher level language and the memory is managed by that language */

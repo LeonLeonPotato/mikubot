@@ -173,12 +173,10 @@ static void confirm_selection(void) {
 }
 
 static void init_gif(void) {
-    FILE* miku_test = fopen("/usd/kaito-miku.gif", "r");
-    if (!miku_test) {
-        printf("[AutonSelector] Failed to open miku gif. Is the SD Card installed?\n");
+    if (!renderer::check_exists("/", "kaito-miku.gif")) {
+        printf("[AutonSelector] Miku gif not found\n");
         return;
     }
-    fclose(miku_test);
 
     miku_gif = lv_gif_create(lv_scr_act());
     lv_obj_set_pos(miku_gif, 380, 10);
