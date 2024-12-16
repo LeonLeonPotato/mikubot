@@ -15,6 +15,11 @@ static std::string filename;
 static std::queue<std::string> log_queue;
 
 static void initialize_log_file(void) {
+    if (!pros::usd::is_installed()) {
+        printf("[Telemetry] SD card not installed\n");
+        return;
+    }
+
     FILE* numfile = fopen("/usd/lognum.txt", "r");
     int num = 0;
     if (numfile) {
@@ -43,7 +48,7 @@ static void logging_task(void* args) {
     bool will_log_file = (mode & TO_FILE) >> 1;
 
     if (!file || !pros::usd::is_installed()) {
-        printf("[Telemetry] Log file could not be opened, is SD card attached?\n");
+        printf("[Telemetry] Log file could not be opened\n");
         will_log_file = false;
     } else {
         printf("[Telemetry] Log file opened\n");
