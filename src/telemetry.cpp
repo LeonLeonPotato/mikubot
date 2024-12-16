@@ -9,7 +9,7 @@ using namespace telemetry;
 volatile int telemetry::delay = 10;
 
 static pros::task_t task = nullptr;
-static volatile int mode = TO_FILE | TO_STDOUT;
+static volatile int mode = TO_FILE;
 static FILE* file = nullptr;
 static std::string filename;
 static std::queue<std::string> log_queue;

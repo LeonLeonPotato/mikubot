@@ -107,8 +107,8 @@ void BasePath::profile_path(const ProfileParams& params) {
         ) / (1 + fabs(scale));
 
         p.center_v = fmin(cv, p.center_v);
-        p.left_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
-        p.right_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
+        p.left_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
+        p.right_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
         p.angular_v = (p.left_v - p.right_v) / 2.0f;
     }
 }

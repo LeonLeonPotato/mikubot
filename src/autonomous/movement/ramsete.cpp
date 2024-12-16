@@ -20,13 +20,14 @@ static RamseteResult tick(
         const pathing::ProfilePoint& p = path.get_profile()[i];
         deriv = path(p.t, 1); goal = path(p.t);
 
-        if (deriv.dot(goal - robot::pos) >= 0) {
+        if (deriv.dot(goal - robot::pos) > 0) {
             break;
         }
 
         if (i < path.get_profile().size() - 1) {
             i++;
         } else {
+            i = path.get_profile().size() - 1;
             break;
         }
     }
@@ -37,8 +38,10 @@ static RamseteResult tick(
     rotator << cosf(rotation_angle), -sinf(rotation_angle),
         sinf(rotation_angle), cosf(rotation_angle);
     Eigen::Vector2f crosstrack_local = rotator * crosstrack;
-    float angle = atan2(deriv.x(), deriv.y());
+    float angle = atan2f(deriv.x(), deriv.y());
     float angle_local = robot::angular_diff(angle, params.reversed);
+    // printf("Deriv Theta: %f | Robot theta: %f | Angle local: %f\n", angle, robot::theta, angle_local);
+    // printf("Crosstrack: [%f, %f]\n", crosstrack_local.x(), crosstrack_local.y());
     
     const pathing::ProfilePoint& p = path.get_profile()[i];
     const float angular = p.angular_v * (2 * std::signbit(params.reversed) - 1);
@@ -47,13 +50,14 @@ static RamseteResult tick(
         * sqrtf(p.angular_v * p.angular_v
              + params.beta * p.center_v * p.center_v);
 
-    float v = p.center_v * cosf(angle_local)
-         + params.beta * crosstrack_local.y();
+    float v = p.center_v * cosf(angle_local) + params.beta * crosstrack_local.y();
 
-    float w = angular 
+    float w = angular
         + gain * angle_local
             + params.beta * p.center_v * sinf(angle_local)
                 + params.beta * crosstrack_local.x();
+
+    // printf("Terms: %f, %f, %f, %f\n", angular, gain*angle_local, params.beta * p.center_v * sinf(angle_local), params.beta * crosstrack_local.x());
 
     const float max_rads_per_second = robot::max_speed() * M_TWOPI / 60.0f;
     float motor_v = (v / robot::DRIVETRAIN_LINEAR_MULT) / max_rads_per_second;
@@ -71,13 +75,14 @@ static RamseteResult tick(
 
 RamseteResult ramsete::follow_path_cancellable(    
     volatile bool& cancel_ref, 
-    pathing::BasePath& path,
+    pathing::BasePath& path, 
     const RamseteParams& params)
 {
     const int start_t = pros::millis();
 
-    RamseteResult last_tick;
-    while (robot::distance(path.points.back()) > params.exit_threshold) {
+    RamseteResult last_tick {.i = 0};
+    while (robot::distance(path.points.back()) > params.exit_threshold || last_tick.i != path.get_profile().size()-1) {
+        // De morgans law
         if (cancel_ref) {
             return {ExitCode::CANCELLED, last_tick.error, (int) (pros::millis() - start_t), last_tick.i};
         }

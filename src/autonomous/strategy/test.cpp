@@ -1,145 +1,100 @@
 #include "autonomous/strategy/test.h"
 #include "autonomous/movement.h"
+#include "autonomous/movement/base_movement.h"
+#include "autonomous/movement/simple.h"
 #include "autonomous/pathing.h"
+#include "autonomous/pathing/base_path.h"
 #include "essential.h"
-#include "config.h"
+#include "config.h" // IWYU pragma: keep
 
-#include "api.h"
+#include "api.h" // IWYU pragma: keep
+
+#define TILE 59.5f
+#define THETA_SOLVE pathing::BaseParams { .start_heading = robot::theta, .start_magnitude = 20, .end_heading = 0, .end_magnitude = 0 }
+#define rad(x) (x * M_PI / 180.0f)
 
 using namespace strategies;
 
 static const controllers::PIDArgs linear_args {
-    .kp = 0.8,
+    .kp = 1.0f / 45.0f,
     .ki = 0,
-    .kd = -0.01,
-    .integral_limit = 99999999.0f,
-    .disable_integral_limit = 99999999.0f,
-    .sign_switch_reset = false
+    .kd = -0.001f
 };
 
 static const controllers::PIDArgs angular_args {
-    .kp = 0.5,
+    .kp = 1.0,
     .ki = 0,
-    .kd = 0,
-    .integral_limit = 99999999.0f,
-    .disable_integral_limit = 99999999.0f,
-    .sign_switch_reset = false
+    .kd = -0.0
 };
 
 static const controllers::PIDArgs in_place_args {
-    .kp = 1,
+    .kp = 1.0,
     .ki = 0,
-    .kd = -0.025,
-    .integral_limit = 99999999.0f,
-    .disable_integral_limit = 99999999.0f,
-    .sign_switch_reset = false
+    .kd = -0.0
 };
 
-static void t1() {
-    // robot::set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+static controllers::PID linear_pid(linear_args);
+static controllers::PID angular_pid(angular_args);
+static controllers::PID in_place_pid(in_place_args);
 
-    // movement::PurePursuit pure_pursuit(30); // Pure pursuit controller with radius 100 cm
-    // pure_pursuit.solver_override = solvers::Solver::Secant;
-    // controllers::PID linear(linear_args);
-    // controllers::PID angular(angular_args);
+static const movement::PIDGroup path_group {
+    .angular = angular_pid,
+    .linear = linear_pid
+};
 
-    // pathing::QuinticSpline path; // Empty quintic spline
-    // path.points.emplace_back(0, 0);
-    // path.points.emplace_back(0, 100);
-    // path.points.emplace_back(70, 100);
-    // path.set_relative(robot::pos); // Add all points with robot::pos
+static const movement::PIDGroup swing_group {
+    .angular = angular_pid,
+    .linear = linear_pid
+};
 
-    // // We do not need to solve the coefficients because pathing will for us (:
-    // Future<movement::MovementResult> fut = pure_pursuit.follow_path_async(
-    //     path, 
-    //     movement::PurePursuitParams {{ 
-    //         .final_threshold = 10.0,
-    //         .max_base_speed = 0.7,
-    //         .force_recomputation = movement::RecomputationLevel::NONE,
-    //         .timeout = 6000,
-    //         .delay = 20,
-    //     }}, 
-    //     movement::PIDGroup {
-    //         .angular = angular,
-    //         .linear = linear
-    //     }
-    // );
-
-    // // Demonstration of async ability
-    // while (!fut.available()) {
-    //     printf("Pos: (%f, %f) Theta diff: %f, dist: %f\n", robot::pos.x(), robot::pos.y(), 
-    //         robot::angular_diff(path.points.back()), robot::distance(path.points.back()));
-    //     pros::delay(20);
-    // }
-
-    // auto result = std::move(fut.get());
-    // printf("Result: %d\n", result.code);
-    // printf("Time: %d\n", result.time_taken_ms);
-    // printf("Path recomputations: %d\n", result.num_path_recomputations);
-    // printf("Time recomputations: %d\n", result.num_time_recomputations);
-    // printf("Numerical error: %f\n", result.error);
-    // printf("Spline parameter: %f\n", result.t);
-
-    // robot::set_brake_mode(config::default_brake_mode);
-}
-
-static void t2() {
-    
-    // controllers::PID linear(linear_args);
-    // controllers::PID angular(in_place_args);
-    // movement::PIDGroup group {
-    //     .angular = angular,
-    //     .linear = linear
-    // };
-
-    // robot::intake.move_velocity(200);
-    // robot::conveyor.move_velocity(200);
-
-    // movement::simple::swing_to({0, 50}, group, false, 10000, 1.0, 10);
-    // linear.reset(); angular.reset();
-
-    // movement::simple::swing_to({-60, 150}, group, false, 10000, 1.0, 10);
-
-    // linear.reset(); angular.reset();
-    // robot::brake();
-    // pros::delay(2000);
-    // robot::intake.move_velocity(0);
-    // robot::conveyor.move_velocity(0);
-
-    // robot::brake();
-}
+static const pathing::ProfileParams profile_params {
+    .start_v = 10,
+    .end_v = 0,
+    .max_speed = 120,
+    .accel = 250,
+    .decel = 200,
+    .track_width = 39,
+    .ds = 0.1,
+    .resolution = 5000
+};
 
 void test_strategy::run(void) {
     pathing::QuinticSpline path; // Empty quintic spline
     path.points.emplace_back(0, 0);
-    path.points.emplace_back(0, 100);
-    path.points.emplace_back(70, 100);
-    path.set_relative(robot::pos);
-    path.solve_coeffs({
-        .start_heading = robot::theta,
-        .start_magnitude = 10,
-        .end_heading = robot::theta,
-        .end_magnitude = 0
-    });
-    path.profile_path({
-        .start_v = 10 * robot::DRIVETRAIN_LINEAR_MULT,
-        .end_v = 0,
-        .max_speed = 55 * robot::DRIVETRAIN_LINEAR_MULT,
-        .accel = 120 * robot::DRIVETRAIN_LINEAR_MULT,
-        .decel = 95 * robot::DRIVETRAIN_LINEAR_MULT,
-        .track_width = 39,
-        .ds = 0.1,
-        .resolution = 10000
-    });
+    path.points.emplace_back(0, TILE);
+    path.points.emplace_back(-TILE, TILE);
+    path.points.emplace_back(-TILE+7, 0);
+    path.points.emplace_back(-TILE-5, -TILE+10);
+    path.set_relative({0, -2*TILE+17});
+    movement::simple::swing_to({0, -2*TILE+17}, {.reversed=true}, swing_group);
+    swing_group.reset(); robot::brake();
+
+    path.solve_coeffs({.start_heading=robot::theta, .start_magnitude=0, .end_heading=M_PI, .end_magnitude=10});
+    path.profile_path(profile_params);
 
     movement::ramsete::RamseteParams params {{
+        .exit_threshold=10.0,
         .timeout=10000
     }, {
-        .beta=1.0,
+        .beta=0.5,
         .zeta=0.7
     }};
 
-    movement::ramsete::follow_path(path, params);
+    auto res = movement::ramsete::follow_path(path, params);
+    robot::brake();
+
+    movement::simple::swing_to(robot::pos + Eigen::Vector2f {0, TILE}, {.reversed=true, .exit_threshold=10.0f, .max_linear_speed=0.8f}, swing_group);
+    swing_group.reset(); robot::brake();
+
+    movement::simple::turn_towards(robot::theta + rad(20), 
+    {
+        .exit_threshold=rad(5),
+        .timeout=5000
+    }, in_place_pid);
+    in_place_pid.reset(); robot::brake();
+
+    // movement::simple::swing_to(robot::pos + Eigen::Vector2f {-10, -TILE}, {.reversed=false, .max_linear_speed=0.8f}, swing_group);
+    // swing_group.reset(); robot::brake();
 
     robot::brake();
 }

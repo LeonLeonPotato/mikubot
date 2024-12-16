@@ -18,10 +18,10 @@ class Display:
         pygame.draw.line(self.robot_base, (255, 255, 255), (20, 25), (20, 50), 1)
 
     def draw_axes(self):
-        for x in range(100, 800, 100):
-            for y in range(100, 600, 100):
-                pygame.draw.line(self.buffer, (100, 100, 100), (x, 0), (x, 600)) 
-                pygame.draw.line(self.buffer, (100, 100, 100), (0, y), (800, y))
+        for x in np.linspace(26.5, 800-26.5, 13):
+            pygame.draw.line(self.buffer, (100, 100, 100), (x, 0), (x, 600), 1)
+        for y in np.linspace(300-59.5*5, 300+59.5*5, 11):
+            pygame.draw.line(self.buffer, (100, 100, 100), (0, y), (800, y), 1)
 
         pygame.draw.line(self.buffer, (255, 255, 255), (400, 0), (400, 600), 2)
         pygame.draw.line(self.buffer, (255, 255, 255), (0, 300), (800, 300), 2)

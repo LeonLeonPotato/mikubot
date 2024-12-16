@@ -1,5 +1,6 @@
 #include "main.h"
 #include "essential.h"
+#include "pros/rtos.hpp"
 #include "telemetry.h"
 
 #include "autonomous/odometry.h"
@@ -20,13 +21,14 @@ void initialize(void) {
 	robot::init();
 	odometry::start_task();
 	opcontrolinfo::init();
+	// telemetry::start_task();
+	pros::delay(100);
 
-	// if (!pros::competition::is_connected()) {
-	// 	std::cout << "Not connected to competition switch" << std::endl;
-	// 	competition_initialize();
-	// 	telemetry::start_task();
-	// 	autonomous();
-	// }
+	if (!pros::competition::is_connected()) {
+		std::cout << "Not connected to competition switch" << std::endl;
+		//competition_initialize();
+		autonomous();
+	}
 }
 
 void disabled(void) {
@@ -127,15 +129,17 @@ static void is_it_actually_faster(void) {
 }
 
 void opcontrol(void) {
-	autonrunner::destroy();
-	autonselector::destroy();
+	std::cout << "Opcontrol started" << std::endl;
+	autonrunner::destroy(); pros::delay(10);
+	autonselector::destroy(); pros::delay(200);
 	opcontrolfun::init();
 
-	is_it_actually_faster();
+	// is_it_actually_faster();
 
-	std::cout << "Opcontrol started" << std::endl;
-
-	for (auto& task : controls::start_tasks) {
-		task();
+	while (true) {
+		for (auto& func : controls::ticks) {
+			func();
+		}
+		pros::delay(10);
 	}
 }

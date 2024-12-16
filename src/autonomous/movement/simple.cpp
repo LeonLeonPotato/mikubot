@@ -95,7 +95,7 @@ SimpleResult simple::face(
     const SimpleMovementParams& params,
     controllers::PID& in_place_pid)
 {
-    const float angle = atan2(point(0) - robot::pos.x(), point(1) - robot::pos.y());
+    const float angle = atan2f(point(0) - robot::pos.x(), point(1) - robot::pos.y());
     return turn_towards(angle, params, in_place_pid);
 }
 

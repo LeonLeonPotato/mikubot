@@ -21,7 +21,6 @@ def run():
         while True:
             line = proc.stdout.readline().decode("utf-8").strip()
             line = line.split(",")
-            print(line)
             if len(line) == 15:
                 cur_info['time'] = float(line[0]) / 1e6
                 cur_info["x"] = float(line[1])

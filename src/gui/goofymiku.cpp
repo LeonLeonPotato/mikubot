@@ -1,6 +1,7 @@
 #include "gui/goofymiku.h"
 #include "liblvgl/lvgl.h" // IWYU pragma: keep
 #include <cstdio>
+#include "api.h" // IWYU pragma: keep
 
 static bool initialized = false;
 static lv_obj_t* miku = nullptr;
@@ -13,9 +14,10 @@ static void run() {
         return;
     }
     fclose(file);
+    pros::delay(10);
 
     miku = lv_gif_create(lv_scr_act());
-    lv_obj_set_pos(miku, 380, 10);
+    lv_obj_set_pos(miku, 156, 0);
     lv_gif_set_src(miku, "S/funny.gif");
     #endif
 }
