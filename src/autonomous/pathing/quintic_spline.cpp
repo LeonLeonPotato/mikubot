@@ -138,13 +138,13 @@ Eigen::Matrix2Xf QuinticSpline::compute(const Eigen::VectorXf& t, int deriv) con
 void QuinticSpline::compute(float t, Eigen::Vector2f& res, int deriv) const {
     t = std::clamp(t, 0.0f, (float) segments.size());
     const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    segments[i](t, res, deriv);
+    segments[i].compute(t, res, deriv);
 }
 
 Eigen::Vector2f QuinticSpline::compute(float t, int deriv) const {
     t = std::clamp(t, 0.0f, (float) segments.size());
     const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i](t, deriv);
+    return segments[i].compute(t, deriv);
 }
 
 Eigen::Vector2f QuinticSpline::normal(float t) const {

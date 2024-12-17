@@ -49,20 +49,22 @@ void BasePath::profile_path(const ProfileParams& params) {
     lengths.clear();
     lengths.resize(params.resolution + 1);
     lengths[0] = 0;
-    long long cmtime = pros::micros();
-    Eigen::Matrix2Xf res;
-    res.resize(2, t.size());
+
+    auto start_t = pros::micros();
+    Eigen::Matrix2Xf res(2, t.size());
     compute(t, res);
-    printf("Computed path in %lld us\n", pros::micros() - cmtime);
+    printf("[2D MP] Computed path in %lld us\n", pros::micros() - start_t);
 
     profile.clear();
     profile.emplace_back(0, 0, curvature(0), 0, params.start_v, 0);
+    Eigen::Matrix2Xf diff = res.block(0, 1, 2, t.size() - 1) - res.block(0, 0, 2, t.size() - 1);
+    Eigen::VectorXf differences = diff.colwise().norm();
 
     int i = 1, j = 0;
     float s = params.ds;
     while (i < params.resolution) {
         for (; i <= params.resolution; i++) {
-            lengths[i] = lengths[i - 1] + (res.col(i) - res.col(i - 1)).norm();
+            lengths[i] = lengths[i - 1] + differences[i - 1];
             if (lengths[i] >= s) break;
         }
         if (i > params.resolution) i = params.resolution;

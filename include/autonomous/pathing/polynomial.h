@@ -134,12 +134,12 @@ inline std::string Polynomial<N>::debug_out() const {
 template <int N>
 inline void Polynomial2D<N>::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
     // Eigen::MatrixXi* diff = x_poly.get_differential(N);
-    // res.row(0).setConstant(x_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv));
-    // res.row(1).setConstant(y_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv));
+    // res.row(0).setConstant(x_poly.coeffs(N-1) * diff->coeffRef(N-1, deriv));
+    // res.row(1).setConstant(y_poly.coeffs(N-1) * diff->coeffRef(N-1, deriv));
     // auto t2 = t.transpose();
     // for (int i = N-2; i >= deriv; --i) {
-    //     res.row(0) = res.row(0).cwiseProduct(t2).array() + x_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
-    //     res.row(1) = res.row(1).cwiseProduct(t2).array() + y_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+    //     res.row(0) = res.row(0).cwiseProduct(t2).array() + x_poly.coeffs(i) * diff->coeffRef(i, deriv);
+    //     res.row(1) = res.row(1).cwiseProduct(t2).array() + y_poly.coeffs(i) * diff->coeffRef(i, deriv);
     // }
     res.row(0) = x_poly.compute(t, deriv);
     res.row(1) = y_poly.compute(t, deriv);
@@ -158,7 +158,7 @@ inline void Polynomial2D<N>::compute(float t, Eigen::Vector2f& res, int deriv) c
     Eigen::MatrixXi* diff = x_poly.get_differential(N);
     res.coeffRef(0) = x_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv);
     res.coeffRef(1) = y_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv);
-    for (int i = deriv; i < N; i++) {
+    for (int i = N-2; i >= deriv; i--) {
         res.coeffRef(0) = res.coeffRef(0) * t + x_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
         res.coeffRef(1) = res.coeffRef(1) * t + y_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
     }
@@ -166,7 +166,9 @@ inline void Polynomial2D<N>::compute(float t, Eigen::Vector2f& res, int deriv) c
 
 template <int N>
 inline Eigen::Vector2f Polynomial2D<N>::compute(float t, int deriv) const {
-    return Eigen::Vector2f(x_poly(t, deriv), y_poly(t, deriv));
+    Eigen::Vector2f x;
+    compute(t, x, deriv);
+    return x;
 }
 
 template <int N>
