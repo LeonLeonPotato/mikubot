@@ -1,6 +1,8 @@
 #include "autonomous/pathing/quintic_spline.h"
 
 #include "Eigen/Sparse" // IWYU pragma: keep
+#include "Eigen/src/Core/Matrix.h"
+#include "base_path.h"
 
 #include <iostream>
 
@@ -122,29 +124,23 @@ void QuinticSpline::solve_coeffs(const BaseParams& params) {
     solve_spline(1, icy0, 0, bcy0, 0);
 }
 
-void QuinticSpline::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
-    for (int i = 0; i < t.size(); i++) {
-        res.col(i) = compute(t(i), deriv);
+void QuinticSpline::full_sample(int resolution, Eigen::MatrixX2f& res, int deriv) const {
+    int inc = resolution / (int) segments.size();
+    const auto times = Eigen::ArrayXf::LinSpaced(inc, 0, 1);
+    for (int i = 0; i < segments.size(); i++) {
+        auto ref = Eigen::Ref<Eigen::MatrixX2f>(res.block(i*inc, 0, inc, 2));
+        segments[i].compute(
+            times,
+            ref,
+            deriv
+        );
     }
-}
-
-Eigen::Matrix2Xf QuinticSpline::compute(const Eigen::VectorXf& t, int deriv) const {
-    Eigen::Matrix2Xf x;
-    x.resize(2, t.size());
-    compute(t, x, deriv);
-    return x;
 }
 
 void QuinticSpline::compute(float t, Eigen::Vector2f& res, int deriv) const {
     t = std::clamp(t, 0.0f, (float) segments.size());
     const int i = (int) t - (int) (t == segments.size()); t = t - i;
     segments[i].compute(t, res, deriv);
-}
-
-Eigen::Vector2f QuinticSpline::compute(float t, int deriv) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i].compute(t, deriv);
 }
 
 Eigen::Vector2f QuinticSpline::normal(float t) const {
@@ -175,7 +171,7 @@ std::string QuinticSpline::debug_out(void) const {
     std::stringstream result;
     for (int i = 0; i < segments.size(); i++) {
         char buf[4096];
-        int n = sprintf(buf, "P_%d(t) = (%s, %s)\n", i, segments[i].x_poly.debug_out().c_str(), segments[i].y_poly.debug_out().c_str());
+        sprintf(buf, "P_%d(t) = (%s, %s)\n", i, segments[i].x_poly.debug_out().c_str(), segments[i].y_poly.debug_out().c_str());
         result << buf;
     }
     return result.str();

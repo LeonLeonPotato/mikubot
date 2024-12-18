@@ -16,12 +16,12 @@ std::pair<float, float> secant_single(
 
 std::pair<float, float> secant_vec(
     func_vec_t func,
-    Eigen::VectorXf t0, Eigen::VectorXf t1, float start_bound, float end_bound, int iterations = 5, float threshold = 1e-1
+    Eigen::ArrayXf t0, Eigen::ArrayXf t1, float start_bound, float end_bound, int iterations = 5, float threshold = 1e-1
 );
 
 std::pair<float, float> secant_vec(
     const FunctionGroup& funcs,
-    const Eigen::VectorXf& t0, const Eigen::VectorXf& t1, 
+    const Eigen::ArrayXf& t0, const Eigen::ArrayXf& t1, 
     float start_bound, float end_bound, int iterations = 5, float threshold = 1e-1
 );
 } // namespace solvers

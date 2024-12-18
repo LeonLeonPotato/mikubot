@@ -14,12 +14,12 @@ static float deriv(pathing::BasePath& path, float t) {
     return diff.dot(path.compute(t, 1)) / diff.norm();
 }
 
-static Eigen::VectorXf vec_func(pathing::BasePath& path, float radius, Eigen::VectorXf& t) {
+static Eigen::ArrayXf vec_func(pathing::BasePath& path, float radius, const Eigen::ArrayXf& t) {
     return (path.compute(t).colwise() - robot::pos).colwise().norm().array() - radius;
 }
 
-static Eigen::VectorXf vec_deriv(pathing::BasePath& path, Eigen::VectorXf& t) {
-    const Eigen::Matrix2Xf rel = path.compute(t).colwise() - robot::pos;
+static Eigen::ArrayXf vec_deriv(pathing::BasePath& path, const Eigen::ArrayXf& t) {
+    const Eigen::MatrixX2f rel = path.compute(t).colwise() - robot::pos;
     return rel.cwiseProduct(path.compute(t, 1)).colwise().sum().cwiseQuotient(rel.colwise().norm());
 }
 

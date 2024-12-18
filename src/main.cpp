@@ -1,6 +1,7 @@
 #include "main.h"
 #include "essential.h"
 #include "ansicodes.h"
+#include "opcontrol/test/odom_center.h"
 #include "pros/misc.hpp"
 #include "pros/rtos.hpp"
 #include "telemetry.h" // IWYU pragma: keep
@@ -61,12 +62,12 @@ void autonomous(void) {
 static void profiling_test(void) {
 	pathing::QuinticSpline qs;
 	qs.points.emplace_back(0, 0);
-	qs.points.emplace_back(0, 100);
-	qs.points.emplace_back(70, 100);
-	qs.set_relative(robot::pos);
+	qs.points.emplace_back(500, 500);
+
+	// qs.set_relative(robot::pos);
 	qs.solve_coeffs({
 		.start_heading = 0,
-		.start_magnitude = 10,
+		.start_magnitude = 1000,
 		.end_heading = 0,
 		.end_magnitude = 0
 	});
@@ -79,58 +80,56 @@ static void profiling_test(void) {
 		.accel = 300,
 		.decel = 237,
 		.track_width = 39,
-		.ds = 0.1,
-		.resolution = 5000
+		.ds = 2.0,
+		.resolution = 10000
 	});
 	// asd
 	auto t = pros::micros() - start;
+
 	pros::delay(20);
 	printf("Profile path took %lld us\n", t);
 
-	// std::cout << "[";
-	// int cnt = 0;
-	// for (auto& p : qs.get_profile()) {
-	// 	std::cout << "(" + std::to_string(p.s) + ", " + std::to_string(p.left_v) << ")";
-	// 	pros::delay(20);
-	// 	cnt++;
-	// 	if (cnt != qs.get_profile().size()) {
-	// 		std::cout << ", ";
-	// 	}
-	// 	if (cnt % 10 == 0) {
-	// 		std::cout << std::endl;
-	// 	}
-	// }
-	// std::cout << "]" << std::endl;
+	std::cout << "[";
+	int cnt = 0;
+	for (auto& p : qs.get_profile()) {
+		std::cout << "(" + std::to_string(p.s) + ", " + std::to_string(p.right_v) << ")";
+		pros::delay(20);
+		cnt++;
+		if (cnt != qs.get_profile().size()) {
+			std::cout << ", ";
+		}
+		if (cnt % 10 == 0) {
+			std::cout << std::endl;
+		}
+	}
+	std::cout << "]" << std::endl;
 }
 
-static void is_it_actually_faster(void) {
-	// asm volatile("cpsid i\n\tdsb\n\tisb");
+#define PRINT_VEC(x) printf("[%.3f, %.3f]\n", x(0), x(1))
 
+static void is_it_actually_faster(void) {
 	pathing::Polynomial2D<6> p = pathing::Polynomial2D<6>();
 	p.x_poly.coeffs << 1, -49.2, 5.2, 2, 3, 4;
 	p.y_poly.coeffs << 9.2, 8.888, 2.2, -4, 3, 4;
 
-	Eigen::VectorXf times = Eigen::VectorXf::LinSpaced(10000, 0, 1);
-	Eigen::Matrix2Xf res; res.resize(2, times.size());
-	// asm volatile("" :: "r,m" (res));
+	auto times = Eigen::ArrayXf::LinSpaced(10000, 0, 1);
+	Eigen::MatrixX2f res (times.size(), 2);
+	auto ref = Eigen::Ref<Eigen::MatrixX2f>(res);
 
 	long long start = pros::micros();
-	p.compute(times, res, 0);
+	p.compute(times, ref, 0);
 	auto t1 = pros::micros() - start;
 	printf("Polynomial2D vectorized took %lld us\n", t1);
 
-	Eigen::VectorXf times2 = Eigen::VectorXf::LinSpaced(10000, 0, 1);
-	Eigen::Matrix2Xf res2; res2.resize(2, times2.size());
-	// asm volatile("" :: "r,m" (res2));
-	
-	start = pros::micros();
-	for (int i = 0; i < 10000; i++) {
-		res.col(i) = p.compute(times2.coeffRef(i), 0);
-	}
-	auto t2 = pros::micros() - start;
-	printf("Polynomial2D single took %lld us\n", t2);
+	// start = pros::micros();
+	// for (int i = 0; i < times.size(); i++) {
+	// 	res.row(i) = p.compute(times(i), 0);
+	// }
+	// auto t2 = pros::micros() - start;
+	// printf("Polynomial2D single took %lld us\n", t2);
 
-	// asm volatile("cpsie i\n\tdsb\n\tisb");
+	PRINT_VEC(res.row(0));
+	PRINT_VEC(res.row(100));
 }
 
 void opcontrol(void) {
@@ -140,12 +139,17 @@ void opcontrol(void) {
 	opcontrolfun::init();
 
 	profiling_test();
+	// pros::delay(100);
 	// is_it_actually_faster();
 
+	// controls::odom_centering::run();
+
+	int cnt = 0;
 	while (true) {
 		for (auto& func : controls::ticks) {
 			func();
 		}
 		pros::delay(10);
+		cnt++;
 	}
 }

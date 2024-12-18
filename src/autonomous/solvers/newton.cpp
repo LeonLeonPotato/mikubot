@@ -32,11 +32,11 @@ std::pair<float, float> solvers::newton_single(
 #include <iostream>
 std::pair<float, float> solvers::newton_vec(
     func_vec_t func, func_vec_t deriv,
-    Eigen::VectorXf guess, float start_bound, float end_bound, int iterations, float threshold
+    Eigen::ArrayXf guess, float start_bound, float end_bound, int iterations, float threshold
 ) {
     while (iterations--) {
-        Eigen::VectorXf num = func(guess);
-        Eigen::VectorXf den = deriv(guess);
+        Eigen::ArrayXf num = func(guess);
+        Eigen::ArrayXf den = deriv(guess);
         den.array() += (den.array() == 0).cast<float>() * 1e-6;
 
         guess = (guess - num.cwiseQuotient(den)).cwiseMax(start_bound).cwiseMin(end_bound);
@@ -58,7 +58,7 @@ std::pair<float, float> solvers::newton_vec(
 
 std::pair<float, float> solvers::newton_vec(
     const FunctionGroup& funcs,
-    const Eigen::VectorXf& guess, float start_bound, float end_bound, int iterations, float threshold
+    const Eigen::ArrayXf& guess, float start_bound, float end_bound, int iterations, float threshold
 ) {
     return newton_vec(funcs.vec_funcs[0], funcs.vec_funcs[1], guess, start_bound, end_bound, iterations, threshold);
 }

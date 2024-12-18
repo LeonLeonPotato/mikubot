@@ -22,9 +22,7 @@ class BoomerangPath : public BasePath {
         void solve_coeffs(float heading, float lead);
         solvers::Solver get_solver() const override { return solvers::Solver::Secant; }
 
-        void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const override;
-        Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const override;
+        void compute(const Eigen::ArrayXf& t, Eigen::MatrixX2f& res, int deriv = 0) const override;
         void compute(float t, Eigen::Vector2f& res, int deriv = 0) const override;
-        Eigen::Vector2f compute(float t, int deriv = 0) const override;
 };
 } // namespace pathing

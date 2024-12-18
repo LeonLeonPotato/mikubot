@@ -8,7 +8,7 @@ const std::vector<std::function<void(void)>> controls::ticks = {
     clamp::tick,
     ejector::tick,
     wallmech::tick,
-    doinker::tick
+    doinker::tick,
 };
 
 const std::vector<std::function<void(void)>> controls::runs = {
@@ -18,7 +18,8 @@ const std::vector<std::function<void(void)>> controls::runs = {
     clamp::run,
     ejector::run,
     wallmech::run,
-    doinker::run
+    doinker::run,
+    odom_centering::run
 };
 
 const std::vector<std::function<void(void)>> controls::start_tasks = {
@@ -28,7 +29,7 @@ const std::vector<std::function<void(void)>> controls::start_tasks = {
     clamp::start_task,
     ejector::start_task,
     wallmech::start_task,
-    doinker::start_task
+    doinker::start_task,
 };
 
 const std::vector<std::function<void(void)>> controls::stop_tasks = {

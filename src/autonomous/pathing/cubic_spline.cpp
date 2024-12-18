@@ -30,31 +30,9 @@ void CubicSpline::solve_coeffs(const BaseParams& params) {
     // This function is not implemented
 }
 
-void CubicSpline::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
-    // Compute the spline at the given t values
-    // res is the output matrix
-    // deriv is the derivative to compute
-    // This function is not implemented
-}
-
-Eigen::Matrix2Xf CubicSpline::compute(const Eigen::VectorXf& t, int deriv) const {
-    // Compute the spline at the given t values
-    // deriv is the derivative to compute
-    // This function is not implemented
-    return Eigen::Matrix2Xf();
-}
-
 void CubicSpline::compute(float t, Eigen::Vector2f& res, int deriv) const {
     // Compute the spline at the given t value
     // res is the output vector
     // deriv is the derivative to compute
     // This function is not implemented
 }
-
-Eigen::Vector2f CubicSpline::compute(float t, int deriv) const {
-    // Compute the spline at the given t value
-    // deriv is the derivative to compute
-    // This function is not implemented
-    return Eigen::Vector2f();
-}
-

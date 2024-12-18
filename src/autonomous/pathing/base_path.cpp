@@ -1,4 +1,6 @@
 #include "autonomous/pathing/base_path.h"
+#include "Eigen/src/Core/Matrix.h"
+#include "pros/rtos.hpp"
 
 using namespace pathing;
 
@@ -33,32 +35,53 @@ float BasePath::arc_parameter(const float t) const {
 }
 
 void BasePath::solve_lengths(int resolution) {
-    Eigen::VectorXf t = Eigen::VectorXf::LinSpaced(resolution+1, 0, points.size() - 1);
     lengths.clear();
     lengths.resize(resolution + 1);
     lengths[0] = 0;
-    Eigen::Matrix2Xf res = compute(t);
+
+    Eigen::MatrixX2f res(2, resolution+1);
+    compute(
+        Eigen::VectorXf::LinSpaced(resolution+1, 0, points.size() - 1),
+        res,
+        0
+    );
+
+    Eigen::ArrayXf differences = (res.block(0, 1, 2, resolution)
+        - res.block(0, 0, 2, resolution))
+            .colwise().norm();
+
     for (int i = 1; i < resolution + 1; i++) {
         lengths[i] = lengths[i - 1] + (res.col(i) - res.col(i - 1)).norm();
     }
 }
 
-#include "api.h"
 void BasePath::profile_path(const ProfileParams& params) {
-    Eigen::VectorXf t = Eigen::VectorXf::LinSpaced(params.resolution+1, 0, maxt());
     lengths.clear();
     lengths.resize(params.resolution + 1);
     lengths[0] = 0;
 
-    auto start_t = pros::micros();
-    Eigen::Matrix2Xf res(2, t.size());
-    compute(t, res);
-    printf("[2D MP] Computed path in %lld us\n", pros::micros() - start_t);
+    // auto start_t = pros::micros();
+    // Eigen::Matrix2Xf res(2, params.resolution+1);
+    // compute(Eigen::VectorXf::LinSpaced(params.resolution+1, 0, maxt()), res);
+    // printf("[2D MP] Computed path in %lld us\n", pros::micros() - start_t);
 
+    Eigen::MatrixX2f res(params.resolution+1, 2);
+    full_sample(
+        params.resolution+1, 
+        res, 
+    0);
+
+    printf("Computed path\n");
+
+    Eigen::ArrayXf differences = 
+        (res.block(1, 0, params.resolution, 2)
+            - res.block(0, 0, params.resolution, 2))
+                .rowwise().norm();
+
+    printf("Computed differences\n");
     profile.clear();
+    profile.reserve(2500);
     profile.emplace_back(0, 0, curvature(0), 0, params.start_v, 0);
-    Eigen::Matrix2Xf diff = res.block(0, 1, 2, t.size() - 1) - res.block(0, 0, 2, t.size() - 1);
-    Eigen::VectorXf differences = diff.colwise().norm();
 
     int i = 1, j = 0;
     float s = params.ds;
@@ -68,13 +91,13 @@ void BasePath::profile_path(const ProfileParams& params) {
             if (lengths[i] >= s) break;
         }
         if (i > params.resolution) i = params.resolution;
-        float ds = lengths[i] - lengths[j];
+        const float ds = lengths[i] - lengths[j];
 
-        float time_param = (float) i / params.resolution * maxt();
-        float curve = curvature(time_param);
-        float scale = 1 + fabs(curve) * params.track_width / 2.0f;
-        float ecv = profile.back().center_v * scale;
-        float cv = std::clamp(
+        const float time_param = (float) i / params.resolution * maxt();
+        const float curve = curvature(time_param);
+        const float scale = 1 + fabsf(curve) * params.track_width / 2.0f;
+        const float ecv = profile.back().center_v * scale;
+        const float cv = std::clamp(
             sqrtf(ecv*ecv + 2*params.accel*ds), 
             -params.max_speed, 
             params.max_speed
@@ -96,21 +119,21 @@ void BasePath::profile_path(const ProfileParams& params) {
     profile.back().angular_v = 0;
 
     for (int i = profile.size() - 2; i > 0; i--) {
-        ProfilePoint& lp = profile[i + 1];
+        const ProfilePoint& lp = profile[i + 1];
         ProfilePoint& p = profile[i];
 
-        float scale = p.curvature * params.track_width / 2.0f;
-        float ds = lp.s - p.s;
-        float ecv = lp.center_v * (1 + fabs(scale));
-        float cv = std::clamp(
+        const float scale = p.curvature * params.track_width / 2.0f;
+        const float ds = lp.s - p.s;
+        const float ecv = lp.center_v * (1 + fabsf(scale));
+        const float cv = std::clamp(
             sqrtf(ecv*ecv + 2*params.decel*ds), 
             -params.max_speed, 
             params.max_speed
-        ) / (1 + fabs(scale));
+        ) / (1 + fabsf(scale));
 
-        p.center_v = fmin(cv, p.center_v);
-        p.left_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
-        p.right_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
+        p.center_v = fminf(cv, p.center_v);
+        p.left_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
+        p.right_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
         p.angular_v = (p.left_v - p.right_v) / 2.0f;
     }
 }
@@ -126,6 +149,31 @@ const std::vector<ProfilePoint>& BasePath::get_profile(void) const {
     return profile;
 }
 
+void BasePath::full_sample(int resolution, Eigen::MatrixX2f& res, int deriv) const {
+    compute(Eigen::ArrayXf::LinSpaced(resolution, 0, maxt()), res, deriv);
+}
+
+void BasePath::compute(const Eigen::ArrayXf& t, Eigen::MatrixX2f& res, int deriv) const {
+    Eigen::Vector2f r;
+    for (int i = 0; i < t.size(); i++) {
+        compute(t(i), r, deriv);
+        res.row(i) = r;
+    }
+}
+
+
+Eigen::MatrixX2f BasePath::compute(const Eigen::ArrayXf& t, int deriv) const {
+    Eigen::MatrixX2f x(t.size(), 2);
+    compute(t, x, deriv);
+    return x;
+}
+
+Eigen::Vector2f BasePath::compute(const float t, int deriv) const {
+    Eigen::Vector2f x;
+    compute(t, x, deriv);
+    return x;
+}
+
 Eigen::Vector2f BasePath::normal(float t) const {
     Eigen::Vector2f d = compute(t, 1);
     return Eigen::Vector2f(-d(1), d(0));
@@ -133,7 +181,7 @@ Eigen::Vector2f BasePath::normal(float t) const {
 
 float BasePath::angle(float t) const {
     Eigen::Vector2f d = compute(t, 1);
-    return atan2(d(0), d(1));
+    return atan2f(d(0), d(1));
 }
 
 float BasePath::angular_velocity(float t) const {
@@ -145,5 +193,5 @@ float BasePath::angular_velocity(float t) const {
 float BasePath::curvature(float t) const {
     const Eigen::Vector2f d1 = compute(t, 1);
     const Eigen::Vector2f d2 = compute(t, 2);
-    return (d1.coeffRef(0) * d2.coeffRef(1) - d1.coeffRef(1) * d2.coeffRef(0)) / (d1.dot(d1) * d1.norm() + 1e-6);
+    return (d1.coeffRef(0) * d2.coeffRef(1) - d1.coeffRef(1) * d2.coeffRef(0)) / (powf(d1.dot(d1), 1.5) + 1e-6);
 }

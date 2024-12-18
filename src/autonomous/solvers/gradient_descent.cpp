@@ -24,11 +24,11 @@ std::pair<float, float> solvers::gradient_descent_single(
 }
 
 std::pair<float, float> solvers::gradient_descent_vec(
-    func_vec_t func, func_vec_t deriv, Eigen::VectorXf guess, 
+    func_vec_t func, func_vec_t deriv, Eigen::ArrayXf guess, 
     float start_bound, float end_bound, float step_size, int iterations
 ) {
     while (iterations--) {
-        Eigen::VectorXf den = deriv(guess).array() * step_size;
+        Eigen::ArrayXf den = deriv(guess).array() * step_size;
 
         guess = (guess - den).cwiseMax(start_bound).cwiseMin(end_bound);
     }
@@ -48,7 +48,7 @@ std::pair<float, float> solvers::gradient_descent_vec(
 }
 
 std::pair<float, float> solvers::gradient_descent_vec(
-    const FunctionGroup& funcs, const Eigen::VectorXf& guess, 
+    const FunctionGroup& funcs, const Eigen::ArrayXf& guess, 
     float start_bound, float end_bound, float step_size, int iterations
 ) {
     return solvers::gradient_descent_vec(funcs.vec_funcs[0], funcs.vec_funcs[1], guess, start_bound, end_bound, step_size, iterations);

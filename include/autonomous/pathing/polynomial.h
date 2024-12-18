@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Eigen/Dense"
+#include "Eigen/src/Core/Matrix.h"
+#include "pros/rtos.hpp"
 #include <map>
+#include <type_traits>
 
 namespace pathing {
 template <int N>
@@ -20,13 +23,16 @@ class Polynomial {
         Polynomial(void) { }
         Polynomial(Eigen::Vector<float, N>& coeffs) : coeffs(coeffs) { }
 
-        void compute(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv = 0) const;
-        Eigen::VectorXf compute(const Eigen::VectorXf& t, int deriv = 0) const;
+        template <typename T, typename R>
+        void compute(const T& t, R res, int deriv = 0) const;
+
+        template <typename T>
+        Eigen::ArrayXf compute(const T& t, int deriv = 0) const;
+
         float compute(float t, int deriv = 0) const;
 
-        void operator()(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv = 0) const { compute(t, res, deriv); }
-        Eigen::VectorXf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
-        float operator()(float t, int deriv = 0) const { return compute(t, deriv); }
+        template <typename... Args>
+        auto operator()(Args... args) -> decltype(compute(args...)) const { return compute(args...); }
 
         std::string debug_out() const;
 };
@@ -40,9 +46,15 @@ class Polynomial2D {
         Polynomial2D(void) {}
         Polynomial2D(const Polynomial<N>& x_poly, const Polynomial<N>& y_poly) : x_poly(x_poly), y_poly(y_poly) {}
 
-        void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const;
-        Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const;
-        void compute(float t, Eigen::Vector2f& res, int deriv = 0) const;
+        template <typename T, typename R>
+        void compute(const T& t, R res, int deriv = 0) const;
+
+        template <typename T>
+        Eigen::MatrixX2f compute(const T& t, int deriv = 0) const;
+
+        template <typename V>
+        void compute(float t, V& res, int deriv = 0) const;
+
         Eigen::Vector2f compute(float t, int deriv = 0) const;
 
         Eigen::Vector2f normal(float t) const;
@@ -50,10 +62,8 @@ class Polynomial2D {
         float angular_velocity(float t) const;
         float curvature(float t) const;
 
-        void operator()(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const { compute(t, res, deriv); }
-        Eigen::Matrix2Xf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
-        void operator()(float t, Eigen::Vector2f& res, int deriv = 0) const { compute(t, res, deriv); }
-        Eigen::Vector2f operator()(float t, int deriv = 0) const { return compute(t, deriv); }
+        template <typename... Args>
+        auto operator()(Args... args) -> decltype(compute(args...)) const { return compute(args...); }
 };
 
 template <int N>
@@ -97,27 +107,31 @@ inline int Polynomial<N>::falling_factorial(int i, int n) {
 }
 
 template <int N>
-inline void Polynomial<N>::compute(const Eigen::VectorXf& t, Eigen::VectorXf& res, int deriv) const {
-    Eigen::MatrixXi* diff = get_differential(N);
-    res.setConstant(coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv));
+template <typename T, typename R>
+inline void Polynomial<N>::compute(const T& t, R res, int deriv) const {
+    float fact_tracker = get_differential(N)->coeff(N-1, deriv);
+    res.setConstant(coeffs.coeff(N-1) * fact_tracker);
     for (int i = N-2; i >= deriv; i--) {
-        res = res.cwiseProduct(t).array() + coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+        fact_tracker = (fact_tracker / (i + 1)) * (i - deriv + 1);
+        res = (t.array() * res.array()) + coeffs.coeff(i) * fact_tracker;
     }
 }
 
 template <int N>
-inline Eigen::VectorXf Polynomial<N>::compute(const Eigen::VectorXf& t, int deriv) const {
-    Eigen::VectorXf x(t.size());
-    compute(t, x, deriv);
-    return x;
+template <typename T>
+inline Eigen::ArrayXf Polynomial<N>::compute(const T& t, int deriv) const {
+    Eigen::ArrayXf y (t.size());
+    compute(t, Eigen::Ref<Eigen::ArrayXf>(y), deriv);
+    return y;
 }
 
 template <int N>
 inline float Polynomial<N>::compute(float t, int deriv) const {
-    Eigen::MatrixXi* diff = get_differential(N);
-    float result = coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv);
+    float fact_tracker = get_differential(N)->coeff(N-1, deriv);
+    float result = coeffs.coeff(N-1) * fact_tracker;
     for (int i = N-2; i >= deriv; i--) {
-        result = result * t + coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+        fact_tracker = (fact_tracker / (i + 1)) * (i - deriv + 1);
+        result = result * t + coeffs.coeff(i) * fact_tracker;
     }
     return result;
 }
@@ -132,35 +146,37 @@ inline std::string Polynomial<N>::debug_out() const {
 }
 
 template <int N>
-inline void Polynomial2D<N>::compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv) const {
+template <typename T, typename R>
+inline void Polynomial2D<N>::compute(const T& t, R res, int deriv) const {
     // Eigen::MatrixXi* diff = x_poly.get_differential(N);
-    // res.row(0).setConstant(x_poly.coeffs(N-1) * diff->coeffRef(N-1, deriv));
-    // res.row(1).setConstant(y_poly.coeffs(N-1) * diff->coeffRef(N-1, deriv));
-    // auto t2 = t.transpose();
+    // res.col(0).setConstant(x_poly.coeffs(N-1) * diff->coeffRef(N-1, deriv));
+    // res.col(1).setConstant(y_poly.coeffs(N-1) * diff->coeffRef(N-1, deriv));
     // for (int i = N-2; i >= deriv; --i) {
-    //     res.row(0) = res.row(0).cwiseProduct(t2).array() + x_poly.coeffs(i) * diff->coeffRef(i, deriv);
-    //     res.row(1) = res.row(1).cwiseProduct(t2).array() + y_poly.coeffs(i) * diff->coeffRef(i, deriv);
+    //     res.col(0) = res.col(0).array() * t.array() + x_poly.coeffs(i) * diff->coeffRef(i, deriv);
+    //     res.col(1) = res.col(1).array() * t.array() + y_poly.coeffs(i) * diff->coeffRef(i, deriv);
     // }
-    res.row(0) = x_poly.compute(t, deriv);
-    res.row(1) = y_poly.compute(t, deriv);
-    // How is this somehow faster?
+    x_poly.compute(t, res.col(0), deriv);
+    y_poly.compute(t, res.col(1), deriv);
 }
 
 template <int N>
-inline Eigen::Matrix2Xf Polynomial2D<N>::compute(const Eigen::VectorXf& t, int deriv) const {
-    Eigen::Matrix2Xf x;
+template <typename T>
+inline Eigen::MatrixX2f Polynomial2D<N>::compute(const T& t, int deriv) const {
+    Eigen::MatrixX2f x(t.size(), 2);
     compute(t, x, deriv);
     return x;
 }
 
 template <int N>
-inline void Polynomial2D<N>::compute(float t, Eigen::Vector2f& res, int deriv) const {
-    Eigen::MatrixXi* diff = x_poly.get_differential(N);
-    res.coeffRef(0) = x_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv);
-    res.coeffRef(1) = y_poly.coeffs.coeffRef(N-1) * diff->coeffRef(N-1, deriv);
+template <typename V>
+inline void Polynomial2D<N>::compute(float t, V& res, int deriv) const {
+    float fact_tracker = x_poly.get_differential(N)->coeff(N-1, deriv);
+    res.coeffRef(0) = x_poly.coeffs.coeff(N-1) * fact_tracker;
+    res.coeffRef(1) = y_poly.coeffs.coeff(N-1) * fact_tracker;
     for (int i = N-2; i >= deriv; i--) {
-        res.coeffRef(0) = res.coeffRef(0) * t + x_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
-        res.coeffRef(1) = res.coeffRef(1) * t + y_poly.coeffs.coeffRef(i) * diff->coeffRef(i, deriv);
+        fact_tracker = (fact_tracker / (i + 1)) * (i - deriv + 1);
+        res.coeffRef(0) = res.coeff(0) * t + x_poly.coeffs.coeff(i) * fact_tracker;
+        res.coeffRef(1) = res.coeff(1) * t + y_poly.coeffs.coeff(i) * fact_tracker;
     }
 }
 
@@ -194,7 +210,8 @@ template <int N>
 inline float Polynomial2D<N>::curvature(float t) const {
     const Eigen::Vector2f d1 = compute(t, 1);
     const Eigen::Vector2f d2 = compute(t, 2);
-    return (d1.coeffRef(0) * d2.coeffRef(1) - d1.coeffRef(1) * d2.coeffRef(0)) / (d1.dot(d1) * d1.norm() + 1e-6);
+    return (d1(0) * d2(1) - d1(1) * d2(0)) / ((d1(0) * d1(0) + d1(1) * d1(1)) * 
+        sqrtf(d1(0) * d1(0) + d1(1) * d1(1)) + 1e-6);
 }
 
 } // namespace pathing

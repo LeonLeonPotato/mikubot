@@ -13,9 +13,6 @@ class PolygonPath : public BasePath {
         bool need_solve() const override { return false; }
         solvers::Solver get_solver() const override { return solvers::Solver::Secant; }
 
-        void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const override;
-        Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const override;
         void compute(float t, Eigen::Vector2f& res, int deriv = 0) const override;
-        Eigen::Vector2f compute(float t, int deriv = 0) const override;
 };
 } // namespace pathing

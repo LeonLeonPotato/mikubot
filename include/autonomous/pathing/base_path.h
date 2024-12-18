@@ -55,20 +55,20 @@ class BasePath {
         virtual ProfilePoint profile_point(const float s) const;
         virtual const std::vector<ProfilePoint>& get_profile(void) const;
 
-        virtual void compute(const Eigen::VectorXf& t, Eigen::Matrix2Xf& res, int deriv = 0) const = 0;
-        virtual Eigen::Matrix2Xf compute(const Eigen::VectorXf& t, int deriv = 0) const = 0;
+        virtual void full_sample(int resolution, Eigen::MatrixX2f& res, int deriv = 0) const;
+
+        virtual void compute(const Eigen::ArrayXf& t, Eigen::MatrixX2f& res, int deriv = 0) const;
+        virtual Eigen::MatrixX2f compute(const Eigen::ArrayXf& t, int deriv = 0) const;
         virtual void compute(float t, Eigen::Vector2f& res, int deriv = 0) const = 0;
-        virtual Eigen::Vector2f compute(float t, int deriv = 0) const = 0;
+        virtual Eigen::Vector2f compute(float t, int deriv = 0) const;
 
         virtual Eigen::Vector2f normal(float t) const;
         virtual float angle(float t) const;
         virtual float angular_velocity(float t) const;
         virtual float curvature(float t) const;
 
-        void operator()(const Eigen::VectorXf& t,Eigen::Matrix2Xf& res, int deriv = 0) const { compute(t, res, deriv); }
-        Eigen::Matrix2Xf operator()(const Eigen::VectorXf& t, int deriv = 0) const { return compute(t, deriv); }
-        void operator()(float t, Eigen::Vector2f& res, int deriv = 0) const { compute(t, res, deriv); }
-        Eigen::Vector2f operator()(float t, int deriv = 0) const { return compute(t, deriv); }
+        template <typename... Args>
+        auto operator()(Args... args) -> decltype(compute(args...)) const { return compute(args...); }
 
         virtual std::string debug_out() const { return ""; }
 };

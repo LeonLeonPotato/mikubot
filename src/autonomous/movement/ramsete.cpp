@@ -32,18 +32,18 @@ static RamseteResult tick(
         }
     }
 
+    const pathing::ProfilePoint& p = path.get_profile()[i];
+
     Eigen::Vector2f crosstrack = goal - robot::pos;
     Eigen::Matrix2f rotator;
     const float rotation_angle = robot::theta + params.reversed * M_PI;
     rotator << cosf(rotation_angle), -sinf(rotation_angle),
         sinf(rotation_angle), cosf(rotation_angle);
     Eigen::Vector2f crosstrack_local = rotator * crosstrack;
-    float angle = atan2f(deriv.x(), deriv.y());
-    float angle_local = robot::angular_diff(angle, params.reversed);
+    float angle_local = robot::angular_diff(path.angle(p.t), params.reversed);
     // printf("Deriv Theta: %f | Robot theta: %f | Angle local: %f\n", angle, robot::theta, angle_local);
     // printf("Crosstrack: [%f, %f]\n", crosstrack_local.x(), crosstrack_local.y());
     
-    const pathing::ProfilePoint& p = path.get_profile()[i];
     const float angular = p.angular_v * (2 * std::signbit(params.reversed) - 1);
 
     const float gain = 2 * params.zeta

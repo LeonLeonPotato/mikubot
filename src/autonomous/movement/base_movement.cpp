@@ -10,14 +10,14 @@ std::pair<float, float> utils::compute_initial_t(
 {
     switch (params.solver) {
         case solvers::Solver::Newton: {
-            Eigen::VectorXf guess = Eigen::VectorXf::LinSpaced(guesses, 0.01, path.maxt() - 0.01);
+            Eigen::ArrayXf guess = Eigen::ArrayXf::LinSpaced(guesses, 0.01, path.maxt() - 0.01);
 
             return solvers::newton_vec(params.funcs, guess, 0, path.maxt(), params.iterations, params.threshold);
             break;
         }
         case solvers::Solver::Secant: {
-            Eigen::VectorXf t0 = Eigen::VectorXf::LinSpaced(guesses, 0.05, path.maxt() - 0.10);
-            Eigen::VectorXf t1 = Eigen::VectorXf::LinSpaced(guesses, 0.10, path.maxt() - 0.05);
+            Eigen::ArrayXf t0 = Eigen::ArrayXf::LinSpaced(guesses, 0.05, path.maxt() - 0.10);
+            Eigen::ArrayXf t1 = Eigen::ArrayXf::LinSpaced(guesses, 0.10, path.maxt() - 0.05);
 
             return solvers::secant_vec(params.funcs, t0, t1, 0, path.maxt(), params.iterations, params.threshold);
             break;

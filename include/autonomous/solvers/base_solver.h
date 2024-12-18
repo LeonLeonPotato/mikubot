@@ -5,7 +5,7 @@
 
 namespace solvers {
 using func_t = std::function<float(float)>;
-using func_vec_t = std::function<Eigen::VectorXf(Eigen::VectorXf&)>;
+using func_vec_t = std::function<Eigen::ArrayXf(const Eigen::ArrayXf&)>;
 
 struct FunctionGroup {
     std::vector<func_t> funcs;

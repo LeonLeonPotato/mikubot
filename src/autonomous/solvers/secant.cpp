@@ -35,20 +35,20 @@ std::pair<float, float> solvers::secant_single(
 
 std::pair<float, float> solvers::secant_vec(
     func_vec_t func,
-    Eigen::VectorXf t0, Eigen::VectorXf t1, float start_bound, float end_bound, int iterations, float threshold
+    Eigen::ArrayXf t0, Eigen::ArrayXf t1, float start_bound, float end_bound, int iterations, float threshold
 ) {
     while (iterations--) {
-        Eigen::VectorXf ft0 = func(t0);
-        Eigen::VectorXf ft1 = func(t1);
-        Eigen::VectorXf diff = ft1 - ft0;
+        Eigen::ArrayXf ft0 = func(t0);
+        Eigen::ArrayXf ft1 = func(t1);
+        Eigen::ArrayXf diff = ft1 - ft0;
         diff.array() += (diff.array() == 0).cast<float>() * 1e-6;
 
-        Eigen::VectorXf t2 = (t1 - ft1.cwiseProduct(t1 - t0).cwiseQuotient(diff))
+        Eigen::ArrayXf t2 = (t1 - ft1.cwiseProduct(t1 - t0).cwiseQuotient(diff))
             .cwiseMax(start_bound).cwiseMin(end_bound);
         t0 = t1; t1 = t2;
     }
 
-    Eigen::VectorXf ft1 = func(t1);
+    Eigen::ArrayXf ft1 = func(t1);
 
     float max_guess = -1;
     float max_key = -1;
@@ -64,7 +64,7 @@ std::pair<float, float> solvers::secant_vec(
 
 std::pair<float, float> solvers::secant_vec(
     const FunctionGroup& funcs,
-    const Eigen::VectorXf& t0, const Eigen::VectorXf& t1, 
+    const Eigen::ArrayXf& t0, const Eigen::ArrayXf& t1, 
     float start_bound, float end_bound, int iterations, float threshold
 ) {
     return secant_vec(funcs.vec_funcs[0], t0, t1, start_bound, end_bound, iterations, threshold);
