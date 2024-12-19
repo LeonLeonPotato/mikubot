@@ -31,7 +31,8 @@ class Pose:
         return math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
     
     def __add__(self, other):
-        return Pose(self.x + other.x, self.y + other.y, self.theta + other.theta)
+        new_theta = (self.theta + other.theta) if self.has_theta() and other.has_theta() else None
+        return Pose(self.x + other.x, self.y + other.y, new_theta)
 
     def __sub__(self, other):
         return Pose(self.x - other.x, self.y - other.y, self.theta - other.theta)

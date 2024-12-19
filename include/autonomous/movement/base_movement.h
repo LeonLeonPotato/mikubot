@@ -35,6 +35,10 @@ struct SimpleResult {
     ExitCode code = ExitCode::TBD;
     float error = 0;
     int time_taken_ms = 0;
+
+    std::string debug_out(void) {
+        return "SimpleResult { code: " + std::to_string((int) code) + ", error: " + std::to_string(error) + ", time: " + std::to_string(time_taken_ms) + " }";
+    }
 };
 
 struct SimpleMovementParams {

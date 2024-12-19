@@ -32,7 +32,7 @@ import random
 
 poses1 = [
     r.pose,
-    r.pose + robot.Pose(),
+    r.pose + robot.Pose(10, 10),
     r.pose + robot.Pose(50, 100, 0),
     r.pose + robot.Pose(50, 500, 0)
 ]
@@ -81,7 +81,7 @@ while True:
     # point = path.profile[tracking_i]
     # profiled_pose = path.pose(point.time_param)
 
-    v, w = ramsete.ramsete(r, profiled_pose, point.center_v, point.angular_v, 0.5, 0.7)
+    v, w = ramsete.ramsete(r, profiled_pose, point.center_v, point.angular_v, 2.0, 0.7)
     # v = point.center_v
     # w = point.angular_v
     v /= wheelsize * ratio

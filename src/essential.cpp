@@ -28,16 +28,18 @@ int robot::match::side = 1;
     pros::adi::Pneumatics robot::clamp('e', false, false);
 
     pros::Motor robot::conveyor(10, pros::MotorGearset::green);
-    pros::Motor robot::intake(-9);
+    pros::Motor robot::intake(10);
     pros::Motor robot::wallmech(0); 
 
-    pros::Imu robot::inertial(19);
+    pros::Imu robot::inertial(20);
     pros::Optical robot::classifier(0);
-    pros::Rotation robot::side_encoder(-20);
-    pros::Rotation robot::back_encoder(-14);
+    pros::Rotation robot::side_encoder(12);
+    pros::Rotation robot::back_encoder(7);
 
-    pros::MotorGroup robot::left_motors({-11, 12, -13}, pros::MotorGearset::blue);
-    pros::MotorGroup robot::right_motors({1, -2, 3}, pros::MotorGearset::blue);
+    // pros::MotorGroup robot::left_motors({-11, -12, -13}, pros::MotorGearset::blue);
+    // pros::MotorGroup robot::right_motors({1, 2, 3}, pros::MotorGearset::blue);
+    pros::MotorGroup robot::left_motors({-1, -2, -3}, pros::MotorGearset::blue);
+    pros::MotorGroup robot::right_motors({8, 9, 5}, pros::MotorGearset::blue);
 #endif
 
 int robot::max_speed(void) {

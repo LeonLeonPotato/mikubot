@@ -3,7 +3,7 @@
 #include <vector>
 
 static int rotations = 10;
-static int max_time = 1e3;
+static int max_time = 5e3;
 
 void controls::odom_centering::tick() {
     printf("Odom centering tick not implemented\n");
@@ -11,15 +11,21 @@ void controls::odom_centering::tick() {
 
 void controls::odom_centering::run() {
     float start_angle = robot::theta;
-    robot::volt(1.0f, -1.0f);
+    robot::velo(0.2f, -0.2f);
 
     std::vector<Eigen::Vector2f> points;
     points.reserve(10000);
+
+    Eigen::Vector2f tare = robot::pos;
+    float theta = robot::theta;
+
     int start_t = pros::millis();
 
     while (fabsf(start_angle - robot::theta) < rotations*M_TWOPI && pros::millis() - start_t < max_time) {
-        pros::delay(10);
-        points.push_back(robot::pos);
+        pros::delay(20);
+        Eigen::Vector2f p = robot::pos - tare;
+        p = Eigen::Rotation2Df(-theta) * p;
+        points.push_back(p);
     }
 
     robot::brake();

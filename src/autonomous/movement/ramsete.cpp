@@ -34,15 +34,14 @@ static RamseteResult tick(
 
     const pathing::ProfilePoint& p = path.get_profile()[i];
 
-    Eigen::Vector2f crosstrack = goal - robot::pos;
-    Eigen::Matrix2f rotator;
     const float rotation_angle = robot::theta + params.reversed * M_PI;
+    Eigen::Vector2f crosstrack = (goal - robot::pos) / 100.0f;
+    Eigen::Matrix2f rotator;
     rotator << cosf(rotation_angle), -sinf(rotation_angle),
         sinf(rotation_angle), cosf(rotation_angle);
     Eigen::Vector2f crosstrack_local = rotator * crosstrack;
     float angle_local = robot::angular_diff(path.angle(p.t), params.reversed);
     // printf("Deriv Theta: %f | Robot theta: %f | Angle local: %f\n", angle, robot::theta, angle_local);
-    // printf("Crosstrack: [%f, %f]\n", crosstrack_local.x(), crosstrack_local.y());
     
     const float angular = p.angular_v * (2 * std::signbit(params.reversed) - 1);
 
@@ -50,12 +49,11 @@ static RamseteResult tick(
         * sqrtf(p.angular_v * p.angular_v
              + params.beta * p.center_v * p.center_v);
 
-    float v = p.center_v * cosf(angle_local) + params.beta * crosstrack_local.y();
+    float v = p.center_v * cosf(angle_local) + gain * crosstrack_local.y();
 
     float w = angular
         + gain * angle_local
-            + params.beta * p.center_v * sinf(angle_local)
-                + params.beta * crosstrack_local.x();
+            + params.beta * p.center_v * safe_sinc(angle_local) * crosstrack_local.x();
 
     // printf("Terms: %f, %f, %f, %f\n", angular, gain*angle_local, params.beta * p.center_v * sinf(angle_local), params.beta * crosstrack_local.x());
 
@@ -80,7 +78,7 @@ RamseteResult ramsete::follow_path_cancellable(
 {
     const int start_t = pros::millis();
 
-    RamseteResult last_tick {.i = 0};
+    RamseteResult last_tick {.i = 1};
     while (robot::distance(path.points.back()) > params.exit_threshold || last_tick.i != path.get_profile().size()-1) {
         // De morgans law
         if (cancel_ref) {

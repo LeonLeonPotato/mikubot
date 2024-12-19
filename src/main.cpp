@@ -29,9 +29,9 @@ void initialize(void) {
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
-		competition_initialize();
-		// telemetry::start_task();
-		// autonomous();
+		// competition_initialize();
+		telemetry::start_task();
+		autonomous();
 	}
 }
 
@@ -45,7 +45,7 @@ void competition_initialize(void) {
 	autonselector::init();
 	do {
 		pros::delay(50);
-	} while (autonselector::finished_selection == true);
+	} while (autonselector::finished_selection == false);
 	autonselector::destroy();
 	std::cout << PREFIX << "Auton selection has finished\n";
 
@@ -138,7 +138,7 @@ void opcontrol(void) {
 	autonselector::destroy(); pros::delay(10);
 	opcontrolfun::init();
 
-	profiling_test();
+	// profiling_test();
 	// pros::delay(100);
 	// is_it_actually_faster();
 
