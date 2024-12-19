@@ -17,7 +17,7 @@ EXTRA_CFLAGS=
 EXTRA_CXXFLAGS=-DMIKU_VERBOSE
 
 # For parallelism
-MAKEFLAGS += -j
+MAKEFLAGS += -j24
 
 # Set to 1 to enable hot/cold linking
 USE_PACKAGE:=1

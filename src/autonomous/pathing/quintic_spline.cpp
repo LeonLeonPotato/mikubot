@@ -169,10 +169,32 @@ float QuinticSpline::curvature(float t) const {
 
 std::string QuinticSpline::debug_out(void) const {
     std::stringstream result;
+
+    result << "============== Quintic Spline debug output ==============\n";
     for (int i = 0; i < segments.size(); i++) {
         char buf[4096];
-        sprintf(buf, "P_%d(t) = (%s, %s)\n", i, segments[i].x_poly.debug_out().c_str(), segments[i].y_poly.debug_out().c_str());
+        sprintf(buf, "P_{%d}\\left(t\\right) = \\left(%s,\\ %s\\right)\n", i, segments[i].x_poly.debug_out().c_str(), segments[i].y_poly.debug_out().c_str());
         result << buf;
     }
+
+    result << "P\\left(t\\right) = \\left\\{";
+    for (int i = 0; i < segments.size(); i++) {
+        result << i << "\\le t";
+        if (i != segments.size()-1) result << " < ";
+        else result << "\\le ";
+        result << (i + 1) << ": P_{" << i << "}\\left(t - " << i << "\\right)";
+        if (i != segments.size()-1) result << ",\\ ";
+    }
+    result << "\\right\\}\n";
+
+    result << "N = \\left[";
+    for (int i = 0; i < points.size(); i++) {
+        const auto& p = points[i];
+        result << "\\left(" << p.x() << ",\\ " << p.y() << "\\right)";
+        if (i != points.size()-1) result << ",\\ ";
+    }
+    result << "\\right]\n";
+    result << "=========================================================";
+
     return result.str();
 }

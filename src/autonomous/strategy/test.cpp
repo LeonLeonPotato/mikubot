@@ -20,7 +20,7 @@ static void long_path_part(void) {
 
     path.solve_coeffs({.start_heading=0, .start_magnitude=100, .end_heading=M_PI, .end_magnitude=10});
     path.profile_path(profile_params);
-    std::cout << path.debug_out();
+    std::cout << path.debug_out() << std::endl;
 
     movement::ramsete::RamseteParams params { 
         {

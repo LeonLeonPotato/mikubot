@@ -97,7 +97,7 @@ class TwoDSpline:
             time_param = i / params.resolution * self.maxt()
             curve = self.curvature(time_param)
             scale = 1 + abs(curve) * params.track_width / 2.0
-            average_mult = (scale + last_scale) / 2.0
+            average_mult = scale
             toaccel = self.profile[-1].center_v * average_mult
             ds = self.distances[i] - self.distances[j]
             center_v = np.clip(
@@ -125,7 +125,7 @@ class TwoDSpline:
             scale = p.curvature * params.track_width / 2.0
             last_scale = 1 + abs(lp.curvature) * params.track_width / 2.0
             ds = lp.s - p.s
-            average_mult = (abs(scale) + 1 + last_scale) / 2.0
+            average_mult = 1 + abs(scale)
             ecv = lp.center_v * average_mult
             cv = np.clip(
                 np.sqrt(ecv**2 + 2*params.decel*ds),
@@ -133,8 +133,8 @@ class TwoDSpline:
                 params.max_speed
             ) / average_mult
             p.center_v = min(cv, p.center_v)
-            p.left_v = np.clip(p.center_v * (1 - scale), -params.max_speed, params.max_speed)
-            p.right_v = np.clip(p.center_v * (1 + scale), -params.max_speed, params.max_speed)
+            p.left_v = np.clip(p.center_v * (1 + scale), -params.max_speed, params.max_speed)
+            p.right_v = np.clip(p.center_v * (1 - scale), -params.max_speed, params.max_speed)
             p.angular_v = (p.left_v - p.right_v) / 2.0
 
 
@@ -143,10 +143,11 @@ def ramsete(robot:DifferentialDriveRobot, desired_pose, desired_velocity, desire
     error = error.rotate(robot.pose.theta)
     theta_error = robot.pose.minimum_angular_diff(desired_pose.theta)
     error = Pose(error.x/100, error.y/100, theta_error)
+    safe_sinc = DifferentialDriveRobot._safe_sinc
 
-    k = 2 * zeta * np.sqrt(desired_angular ** 2 + beta * desired_velocity ** 2)
+    k = 2 * zeta * np.sqrt(desired_angular**2 + beta*desired_velocity**2)
     v = desired_velocity * np.cos(theta_error) + k*error.y
-    w = desired_angular + k*theta_error + beta*desired_velocity*DifferentialDriveRobot._safe_sinc(theta_error)*error.x
+    w = desired_angular + k*theta_error + beta*desired_velocity*safe_sinc(theta_error)*error.x
     return v, w
 
 if __name__ == "__main__":

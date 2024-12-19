@@ -140,9 +140,20 @@ template <int N>
 inline std::string Polynomial<N>::debug_out() const {
     std::string result = "";
     for (int i = 0; i < N; i++) {
-        result += std::to_string(coeffs(i)) + "t^" + std::to_string(i) + " + ";
+        std::string coeff = std::to_string(fabs(coeffs(i)));
+        if (i == 0) coeff = std::to_string(coeffs(i));
+
+        std::string term = "t^{" + std::to_string(i) + "}";
+        if (i == 1) term = "t";
+        if (i == 0) term = "";
+
+        std::string nxt = " + ";
+        if (i == N-1) nxt = "";
+        else if (coeffs(i+1) < 0) nxt = " - ";
+
+        result += coeff + term + nxt;
     }
-    return result.substr(0, result.size() - 3);
+    return result;
 }
 
 template <int N>

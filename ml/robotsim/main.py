@@ -10,9 +10,9 @@ wheelsize = 4.125
 ratio = 0.6
 
 tile = 59.5
-maxspeed = 140 / (wheelsize * ratio)
-maxaccel = 200 / (wheelsize * ratio)
-maxdecel = 100 / (wheelsize * ratio)
+maxspeed = 200 / (wheelsize * ratio)
+maxaccel = 300 / (wheelsize * ratio)
+maxdecel = 300 / (wheelsize * ratio)
 
 r = robot.DifferentialDriveRobot(
     initial_pose=robot.Pose(0, 0, 0),
@@ -32,9 +32,9 @@ import random
 
 poses1 = [
     r.pose,
-    r.pose + robot.Pose(10, 10),
-    r.pose + robot.Pose(50, 100, 0),
-    r.pose + robot.Pose(50, 500, 0)
+    r.pose + robot.Pose(tile * 2/3, tile),
+    r.pose + robot.Pose(tile, 0),
+    r.pose + robot.Pose(tile+50, -tile)
 ]
 
 poses2 = [r.pose]
@@ -75,13 +75,16 @@ while True:
         else:
             break
 
-    if tracking_i >= len(path.profile):
-        tracking_i = len(path.profile) - 1
+    lookahead = tracking_i + int(point.center_v < 20)*1
+    if lookahead >= len(path.profile):
+        lookahead = len(path.profile) - 1
+    
+    point = path.profile[lookahead]
     # tracking_i += 1
     # point = path.profile[tracking_i]
     # profiled_pose = path.pose(point.time_param)
 
-    v, w = ramsete.ramsete(r, profiled_pose, point.center_v, point.angular_v, 2.0, 0.7)
+    v, w = ramsete.ramsete(r, profiled_pose, point.center_v, -point.angular_v*0.5, 3.0, 0.7)
     # v = point.center_v
     # w = point.angular_v
     v /= wheelsize * ratio

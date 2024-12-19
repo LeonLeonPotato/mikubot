@@ -24,13 +24,13 @@ void initialize(void) {
 	std::cout << PREFIX << "Initializing robot\n";
 
 	robot::init();
-	odometry::start_task();
+	// odometry::start_task();
 	opcontrolinfo::init();
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
 		// competition_initialize();
-		telemetry::start_task();
+		// telemetry::start_task();
 		autonomous();
 	}
 }
@@ -130,6 +130,12 @@ static void is_it_actually_faster(void) {
 
 	PRINT_VEC(res.row(0));
 	PRINT_VEC(res.row(100));
+}
+
+static void eigen_learning(void) {
+	Eigen::Rotation2Df r(M_PI);
+	Eigen::Vector2f target {2, 1};
+	std::cout << r * target << std::endl;
 }
 
 void opcontrol(void) {

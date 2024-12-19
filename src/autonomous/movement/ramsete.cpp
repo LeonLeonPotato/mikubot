@@ -36,14 +36,11 @@ static RamseteResult tick(
 
     const float rotation_angle = robot::theta + params.reversed * M_PI;
     Eigen::Vector2f crosstrack = (goal - robot::pos) / 100.0f;
-    Eigen::Matrix2f rotator;
-    rotator << cosf(rotation_angle), -sinf(rotation_angle),
-        sinf(rotation_angle), cosf(rotation_angle);
-    Eigen::Vector2f crosstrack_local = rotator * crosstrack;
+    Eigen::Vector2f crosstrack_local = Eigen::Rotation2Df(rotation_angle) * crosstrack;
     float angle_local = robot::angular_diff(path.angle(p.t), params.reversed);
     // printf("Deriv Theta: %f | Robot theta: %f | Angle local: %f\n", angle, robot::theta, angle_local);
     
-    const float angular = p.angular_v * (2 * std::signbit(params.reversed) - 1);
+    const float angular = p.angular_v * (2*params.reversed - 1);
 
     const float gain = 2 * params.zeta
         * sqrtf(p.angular_v * p.angular_v

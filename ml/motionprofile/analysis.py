@@ -8,31 +8,24 @@ p = pd.read_csv('./ml/motionprofile/logs/log1.txt')
 p['time'] /= 1e6
 p['time'] -= p['time'][0]
 
-p['left_actual_velocity'] = p['left_actual_velocity'] * 2 * np.pi / 60.0
-p['right_actual_velocity'] = p['right_actual_velocity'] * 2 * np.pi / 60.0
+# s = 0.05224810442586921
+# m = 2 * np.pi / 60.0
+# p['left_actual_velocity'] = p['left_actual_velocity'] * p['time'].diff() * m * s
+# p['right_actual_velocity'] = p['right_actual_velocity'] * p['time'].diff() * m * s
+# p['dtheta'] = p['theta'].diff()
 
-p = p[::2].reset_index(drop=True)
-p['vx'] = p['x'].diff() / p['time'].diff()
-p['vy'] = p['y'].diff() / p['time'].diff()
-p['v'] = np.sqrt(p['vx']**2 + p['vy']**2)
+# p = p.dropna()
+# p = p.reset_index(drop=True)
+# p['calculated_dtheta'] = p['left_actual_velocity'] - p['right_actual_velocity']
+# print("Correlation:", np.polyfit(p['calculated_dtheta'], p['dtheta'], 1)[0])
 
-angular = np.abs((p['left_actual_velocity'] + p['right_actual_velocity']) / 2)
-linear = angular * 4.125 * 0.578
-vw = p['v'] / linear
-vw = vw[(0 < vw) & (vw < 2)]
-plt.hist(vw, 200)
+# plt.scatter(
+#     p['calculated_dtheta'],
+#     p['dtheta']
+# )
+# plt.show()
+
+p['div'] = p['right_actual_velocity'] / p['right_actual_voltage']
+p = p[(p['div'] < 0.1) & (p['div'] > -0.1)]
+plt.scatter(p['time'], p['div'])
 plt.show()
-
-print(vw.median())
-
-file = open("ml/motionprofile/out.txt", "w")
-
-buffer = "P = ["
-for i in range(len(p)):
-    t = p['time'][i]
-    lv = p['left_actual_velocity'][i] * 4.125 * 0.6
-    buffer += f"({t}, {lv}), "
-buffer = buffer[:-2] + "]"
-
-file.write(buffer)
-file.close()

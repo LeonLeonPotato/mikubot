@@ -10,7 +10,7 @@ static lv_obj_t* miku = nullptr;
 static void run() {
     #ifndef MIKU_TESTENV
     if (!renderer::check_exists("/", "funny.gif")) {
-        printf("[Funny] Funny gif not found\n");
+        printf("[Funny] Funny gif not found, check SD card\n");
         return;
     }
 
