@@ -31,7 +31,7 @@ void initialize(void) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
 		// competition_initialize();
 		// telemetry::start_task();
-		autonomous();
+		// autonomous();
 	}
 }
 
@@ -133,9 +133,12 @@ static void is_it_actually_faster(void) {
 }
 
 static void eigen_learning(void) {
-	Eigen::Rotation2Df r(M_PI);
-	Eigen::Vector2f target {2, 1};
-	std::cout << r * target << std::endl;
+	Eigen::MatrixX2f points {
+		{0, 0},
+		{0, 1},
+		{1, 0},
+		{1, 1}
+	};
 }
 
 void opcontrol(void) {
@@ -149,6 +152,7 @@ void opcontrol(void) {
 	// is_it_actually_faster();
 
 	// controls::odom_centering::run();
+	eigen_learning();
 
 	int cnt = 0;
 	while (true) {

@@ -18,16 +18,16 @@ extern int left_set_velocity, right_set_velocity;
 extern int left_set_voltage, right_set_voltage;
 
 inline const float angular_diff(const float desired, bool reversed = false) {
-    const float res = fmod(desired - theta + (M_PI * (int) !reversed), M_TWOPI) - M_PI;
+    const float res = fmodf(desired - theta + (M_PI * (int) !reversed), M_TWOPI) - M_PI;
     return res + (res < -M_PI) * M_TWOPI;
 }
 
 inline const float angular_diff(const float desired_x, const float desired_y, const bool reversed = false) {
-    return angular_diff(atan2(desired_x - pos.x(), desired_y - pos.y()), reversed);
+    return angular_diff(atan2f(desired_x - pos.x(), desired_y - pos.y()), reversed);
 }
 
 inline const float angular_diff(const Eigen::Vector2f& point, const bool reversed = false) {
-    return angular_diff(atan2(point(0) - pos.x(), point(1) - pos.y()), reversed);
+    return angular_diff(atan2f(point(0) - pos.x(), point(1) - pos.y()), reversed);
 }
 
 inline const float distance(const float desired_x, const float desired_y) {
