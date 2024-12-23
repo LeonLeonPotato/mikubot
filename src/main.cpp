@@ -2,6 +2,7 @@
 #include "essential.h"
 #include "ansicodes.h"
 #include "opcontrol/test/odom_center.h"
+#include "Eigen/Dense"
 #include "pros/misc.hpp"
 #include "pros/rtos.hpp"
 #include "telemetry.h" // IWYU pragma: keep
@@ -17,6 +18,8 @@
 #include "gui/opcontrolinfo.h"
 
 #include "opcontrol/opcontrol.h"
+#include <arm_neon.h>
+#include <cmath>
 
 static const auto PREFIX = ANSI_BOLD + ANSI_CYAN + "[Miku" + ANSI_GREEN + "bot] " + ANSI_RESET;
 
@@ -132,24 +135,33 @@ static void is_it_actually_faster(void) {
 	PRINT_VEC(res.row(100));
 }
 
+using f = Eigen::half;
+
+static void float32_example() {
+	Eigen::Matrix<f, 128, 128> a = Eigen::Matrix<f, 128, 128>::Random();
+	asm volatile("" : : "r,m"(a) : "memory");
+	Eigen::Matrix<f, 128, 1> b = Eigen::Matrix<f, 128, 1>::Random();
+	asm volatile("" : : "r,m"(b) : "memory");
+	Eigen::Matrix<f, 128, 1> x = a * b;
+	asm volatile("" : : "r,m"(x) : "memory");
+}
+
 static void eigen_learning(void) {
-	Eigen::MatrixX2f points {
-		{0, 0},
-		{0, 1},
-		{1, 0},
-		{1, 1}
-	};
+	auto start = pros::micros();
+	float32_example();
+	auto t1 = pros::micros() - start;
+	printf("Took %lld us\n", t1);
 }
 
 void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
 	autonrunner::destroy(); pros::delay(10);
 	autonselector::destroy(); pros::delay(10);
-	opcontrolfun::init();
+	// opcontrolfun::init();
 
-	// profiling_test();
+	profiling_test();
 	// pros::delay(100);
-	// is_it_actually_faster();
+	is_it_actually_faster();
 
 	// controls::odom_centering::run();
 	eigen_learning();

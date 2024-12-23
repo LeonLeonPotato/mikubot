@@ -11,8 +11,8 @@ ratio = 0.6
 
 tile = 59.5
 maxspeed = 200 / (wheelsize * ratio)
-maxaccel = 300 / (wheelsize * ratio)
-maxdecel = 300 / (wheelsize * ratio)
+maxaccel = 200 / (wheelsize * ratio)
+maxdecel = 200 / (wheelsize * ratio)
 
 r = robot.DifferentialDriveRobot(
     initial_pose=robot.Pose(0, 0, 0),
@@ -44,11 +44,11 @@ for i in range(10):
 
 path = ramsete.TwoDSpline(poses2)
 path.generate_spline(robot.Pose(0, 100, 0), robot.Pose(0, 0, 0))
-path.construct_profile(ramsete.ProfileParams(0, 0, 
-                                             maxspeed*wheelsize*ratio, 
-                                             maxaccel*wheelsize*ratio, 
-                                             maxdecel*wheelsize*ratio, 
-                                             39, 0.05))
+path.construct_profile_2(ramsete.ProfileParams(0, 0, 
+                                             maxspeed * wheelsize * ratio, 
+                                             maxaccel * wheelsize * ratio, 
+                                             maxdecel * wheelsize * ratio, 
+                                             39, 0.1))
 
 def draw_path():
     xs = path.xspline(np.linspace(0, path.maxt(), 100))
@@ -79,12 +79,17 @@ while True:
     if lookahead >= len(path.profile):
         lookahead = len(path.profile) - 1
     
-    point = path.profile[lookahead]
+    lp = path.profile[lookahead-1]
+    p = path.profile[lookahead]
     # tracking_i += 1
     # point = path.profile[tracking_i]
-    # profiled_pose = path.pose(point.time_param)
+    profiled_pose = path.pose(p.time_param)
+    print(profiled_pose.dist(r.pose))
 
-    v, w = ramsete.ramsete(r, profiled_pose, point.center_v, -point.angular_v*0.5, 3.0, 0.7)
+    # max_angular = maxspeed * wheelsize * ratio * -np.sign(point.curvature) / 5
+    max_angular = 1000000
+    v, w = ramsete.ramsete(r, profiled_pose, p.center_v, min(max_angular, p.angular_v/2, key=abs), 2.0, 0.7)
+    # print(-p.angular_v)
     # v = point.center_v
     # w = point.angular_v
     v /= wheelsize * ratio
