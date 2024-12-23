@@ -30,6 +30,9 @@ class Pose:
     def dist(self, other) -> float:
         return math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
     
+    def norm(self) -> float:
+        return math.sqrt(self.x**2 + self.y**2)
+    
     def __add__(self, other):
         new_theta = (self.theta + other.theta) if self.has_theta() and other.has_theta() else None
         return Pose(self.x + other.x, self.y + other.y, new_theta)
@@ -155,3 +158,17 @@ class DifferentialDriveRobot(Robot):
 
         self._post_update(dt)
         return self.pose
+
+    def get_info(self):
+        return {
+            'x': self.pose.x,
+            'y': self.pose.y,
+            'theta': self.pose.theta,
+            'left_actual_velocity': self.left_drivetrain.get_linear_velocity(),
+            'right_actual_velocity': self.right_drivetrain.get_linear_velocity(),
+            'left_actual_accel': self.left_drivetrain.angular_accel,
+            'right_actual_accel': self.right_drivetrain.angular_accel,
+            'clamp': 0,
+            'intake': 0,
+            'conveyor': 0
+        }
