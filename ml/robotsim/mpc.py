@@ -42,7 +42,7 @@ def transition(x, u, track_width, linear_mult, dt):
     x[1] = x[1] + chord * torch.cos(x[2] + half)
     x[2] = x[2] + dtheta
 
-def nmpc(n, x0, Q, R, U, last_u, poses, track_width, linear_mult, dt=0.02, lr=5, steps=3):
+def nmpc(n, x0, Q, R, U, last_u, poses, track_width, linear_mult, dt=0.02, lr=5, steps=5):
     poses = [(float(pose.x), float(pose.y), float(pose.theta)) for pose in poses]
     poses = torch.tensor(poses)
     poses = poses.repeat(n, 1)
@@ -104,10 +104,10 @@ def main():
         ds=5.0
     ))
 
-    n = 8
-    Q = torch.diag(torch.tensor([1, 0, 0.2], dtype=torch.float32))
+    n = 16
+    Q = torch.diag(torch.tensor([1, 1, 0.0], dtype=torch.float32))
     R = torch.eye(2) * 0.0
-    U = torch.eye(2) * 0.001
+    U = torch.eye(2) * 0.1
 
     pygame.init()
     pygame.font.init()

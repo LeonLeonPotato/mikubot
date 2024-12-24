@@ -648,7 +648,7 @@
       "after": "run",
       "description": "Im thinking miku miku oo ee oo",
       "icon": "pros",
-      "slot": 2
+      "slot": 1
     },
     "use_early_access": false
   }
