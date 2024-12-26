@@ -5,6 +5,9 @@
 
 #include "Eigen/Dense"
 
+#define deg(x) (x * M_PI / 180.0)
+#define __timediff(x) ((int) (pros::millis() - x))
+
 namespace movement {
 using path_solver_t = std::function<void(pathing::BasePath& path)>;
 
@@ -29,6 +32,13 @@ struct NumericalRecomputationParams {
 
     const solvers::FunctionGroup& funcs;
     const solvers::Solver solver;
+
+    std::string debug_out(void) {
+        return "NumericalRecomputationParams { iterations: " 
+            + std::to_string(iterations) + ", threshold: " 
+            + std::to_string(threshold) + ", step_size: " 
+            + std::to_string(step_size) + " }";
+    }
 };
 
 struct SimpleResult {
@@ -37,7 +47,10 @@ struct SimpleResult {
     int time_taken_ms = 0;
 
     std::string debug_out(void) {
-        return "SimpleResult { code: " + std::to_string((int) code) + ", error: " + std::to_string(error) + ", time: " + std::to_string(time_taken_ms) + " }";
+        return "SimpleResult { code: " 
+            + std::to_string((int) code) + ", error: " 
+            + std::to_string(error) + ", time: " 
+            + std::to_string(time_taken_ms) + " }";
     }
 };
 
@@ -58,6 +71,16 @@ struct SimpleMovementParams {
         use_cosine_scaling = other.use_cosine_scaling;
         timeout = other.timeout;
         delay = other.delay;
+    }
+
+    std::string debug_out(void) {
+        return "SimpleMovementParams { reversed: "
+            + std::to_string(reversed) + ", exit_threshold: "
+            + std::to_string(exit_threshold) + ", max_linear_speed: "
+            + std::to_string(max_linear_speed) + ", use_cosine_scaling: " 
+            + std::to_string(use_cosine_scaling) + ", timeout: " 
+            + std::to_string(timeout) + ", delay: " 
+            + std::to_string(delay) + " }";
     }
 };
 

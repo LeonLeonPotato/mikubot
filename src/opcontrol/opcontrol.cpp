@@ -19,7 +19,7 @@ const std::vector<std::function<void(void)>> controls::runs = {
     ejector::run,
     wallmech::run,
     doinker::run,
-    odom_centering::run
+    // odom_centering::run
 };
 
 const std::vector<std::function<void(void)>> controls::start_tasks = {

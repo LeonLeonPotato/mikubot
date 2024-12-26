@@ -11,7 +11,7 @@ static void get_goal(void) {
 }
 
 static void long_path_part(void) {
-    pathing::QuinticSpline path; // Empty quintic spline
+    pathing::QuinticSpline path;
     path.points.emplace_back(-TILE * 2/3.0, TILE);
     path.points.emplace_back(-TILE, 0);
     path.points.emplace_back(-TILE-5, -TILE+10);
@@ -50,7 +50,7 @@ static void go_back(void) {
 
 static void get_second_shit(void) {
     Eigen::Vector2f second = {-TILE + 5, -3*TILE + START_OFFSET + 10};
-    movement::simple::face(
+    movement::simple::turn_towards(
         second, 
         {
             .exit_threshold=rad(5),
@@ -102,9 +102,6 @@ void test_strategy::run(void) {
     go_back();
     get_second_shit();
     go_back();
-
-    // movement::simple::swing_to(robot::pos + Eigen::Vector2f {-10, -TILE}, {.reversed=false, .max_linear_speed=0.8f}, swing_group);
-    // swing_group.reset(); robot::brake();
 
     robot::brake();
 }

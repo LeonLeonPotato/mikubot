@@ -26,11 +26,12 @@
 static const auto PREFIX = ANSI_BOLD + ANSI_CYAN + "[Miku" + ANSI_GREEN + "bot] " + ANSI_RESET;
 
 void initialize(void) {
-	pros::c::serctl(SERCTL_DISABLE_COBS, nullptr);
+	// ONLY uncomment for simulator usage!!!
+	// pros::c::serctl(SERCTL_DISABLE_COBS, nullptr);
 	std::cout << PREFIX << "Initializing robot\n";
 
 	robot::init();
-	// odometry::start_task();
+	odometry::start_task();
 	opcontrolinfo::init();
 
 	if (!pros::competition::is_connected()) {
@@ -214,14 +215,12 @@ void opcontrol(void) {
 	// is_it_actually_faster();
 
 	// controls::odom_centering::run();
-	eigen_learning();
+	// eigen_learning();
 
-	int cnt = 0;
 	while (true) {
 		for (auto& func : controls::ticks) {
 			func();
 		}
 		pros::delay(10);
-		cnt++;
 	}
 }

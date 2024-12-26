@@ -1,46 +1,7 @@
 #include "autonomous/strategy/peak_strat.h"
-#include "autonomous/movement.h"
-#include "autonomous/pathing.h"
-#include "essential.h"
-#include "config.h"
-
-#include "api.h"
-
-#define rad(x) (x * M_PI / 180.0)
+#include "autonomous/strategy/utils.h"
 
 using namespace strategies;
-
-static const controllers::PIDArgs linear_args {
-    .kp = 1.0f / 30.0f,
-    .ki = 0,
-    .kd = 0
-};
-
-static const controllers::PIDArgs angular_args {
-    .kp = 1.0,
-    .ki = 0,
-    .kd = -0.0
-};
-
-static const controllers::PIDArgs in_place_args {
-    .kp = 0.8,
-    .ki = 0,
-    .kd = -0.1
-};
-
-static controllers::PID linear_pid(linear_args);
-static controllers::PID angular_pid(angular_args);
-static controllers::PID in_place_pid(in_place_args);
-
-static const movement::PIDGroup path_group {
-    .angular = angular_pid,
-    .linear = linear_pid
-};
-
-static const movement::PIDGroup swing_group {
-    .angular = angular_pid,
-    .linear = linear_pid
-};
 
 static void blue_right(void) {
     robot::clamp.retract();
@@ -78,7 +39,7 @@ static void blue_right(void) {
 
     if (robot::match::side == 1) xto = -xto;
 
-    movement::simple::face(
+    movement::simple::turn_towards(
         {xto, yto}, 
         {
             .exit_threshold=rad(5), 

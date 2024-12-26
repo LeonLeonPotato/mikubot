@@ -6,6 +6,8 @@
 
 using namespace controls;
 
+static pros::task_t task = nullptr;
+
 struct Scaling {
 	float dead_zone = 5.0f;
 	float turn_scale = 1.0f;
@@ -23,15 +25,13 @@ struct Scaling {
 	}
 };
 
-static pros::task_t task = nullptr;
-
 void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	// https://www.desmos.com/calculator/v88re8mjh5
-	static Scaling left_scale;
-	static Scaling right_scale = {.speed_scale = 3.0f, .smoothing = 0.75f};
+	static Scaling forward_scale;
+	static Scaling turnging_scale = {.speed_scale = 2.0f, .smoothing = 0.8f};
 
-	const float forward = left_scale.compute(left_y);
-	const float turn = right_scale.compute(right_x);
+	const float forward = forward_scale.compute(left_y);
+	const float turn = turnging_scale.compute(right_x);
 	
 	robot::velo(forward + turn, forward - turn);
 }

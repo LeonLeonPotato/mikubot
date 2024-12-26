@@ -1,5 +1,9 @@
 #include "autonomous/pathing/cubic_spline.h"
 
+#include "Eigen/Sparse" // IWYU pragma: keep
+
+#include <iostream>
+
 using namespace pathing;
 
 const Eigen::Matrix<float, 4, 4> differential_matrix_1 {
@@ -21,7 +25,19 @@ void CubicSpline::solve_spline(int axis, float ic, float bc) {
     // ic is the initial condition
     // bc is the boundary condition
     // axis is the axis to solve for
-    // This function is not implemented
+
+    int n = 4 * segments.size();
+
+    std::vector<Eigen::Triplet<float>> triplets; triplets.reserve(n);
+    Eigen::VectorXf B(n);
+
+    triplets.emplace_back(0, 0, 1); B(0) = points[0](axis);
+    triplets.emplace_back(1, 1, 1); B(1) = ic;
+    triplets.emplace_back(2, n-4, 1); B(2) = bc;
+
+    for (int i = 1; i < segments.size(); i++) {
+        int r = 4 * i;
+    }
 }
 
 

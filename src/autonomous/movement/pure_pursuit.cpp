@@ -137,7 +137,7 @@ PurePursuitResult purepursuit::follow_path_cancellable(
             break;
         }
 
-        if (pros::millis() - start_t >= params.timeout) { // timeout handling
+        if (__timediff(start_t) >= params.timeout) { // timeout handling
             result.code = ExitCode::TIMEOUT;
             break;
         }
@@ -161,7 +161,7 @@ PurePursuitResult purepursuit::follow_path_cancellable(
     }
 
     if (result.code == ExitCode::TBD) result.code = ExitCode::SUCCESS; // if we reached here and code has not been set, we are successful
-    result.time_taken_ms = pros::millis() - start_t;
+    result.time_taken_ms = __timediff(start_t);
 
     return result;
 }

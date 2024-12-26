@@ -1,8 +1,6 @@
 #include "autonomous/pathing/quintic_spline.h"
 
 #include "Eigen/Sparse" // IWYU pragma: keep
-#include "Eigen/src/Core/Matrix.h"
-#include "base_path.h"
 
 #include <iostream>
 

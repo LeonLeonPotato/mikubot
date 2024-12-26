@@ -79,24 +79,24 @@ RamseteResult ramsete::follow_path_cancellable(
     while (robot::distance(path.points.back()) > params.exit_threshold || last_tick.i != path.get_profile().size()-1) {
         // De morgans law
         if (cancel_ref) {
-            return {ExitCode::CANCELLED, last_tick.error, (int) (pros::millis() - start_t), last_tick.i};
+            return {ExitCode::CANCELLED, last_tick.error, __timediff(start_t), last_tick.i};
         }
 
-        if (pros::millis() - start_t > params.timeout) {
-            return {ExitCode::TIMEOUT, last_tick.error, (int) (pros::millis() - start_t), last_tick.i};
+        if (__timediff(start_t) > params.timeout) {
+            return {ExitCode::TIMEOUT, last_tick.error, __timediff(start_t), last_tick.i};
         }
 
         last_tick = tick(path, params, last_tick.i);
 
         if (last_tick.code != ExitCode::SUCCESS) {
-            last_tick.time_taken_ms = pros::millis() - start_t;
+            last_tick.time_taken_ms = __timediff(start_t);
             return last_tick;
         }
 
         pros::delay(params.delay);
     }
 
-    return {ExitCode::SUCCESS, last_tick.error, (int) (pros::millis() - start_t), last_tick.i};
+    return {ExitCode::SUCCESS, last_tick.error, __timediff(start_t), last_tick.i};
 }
 
 RamseteResult ramsete::follow_path_cancellable(
