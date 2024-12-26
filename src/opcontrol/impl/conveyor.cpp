@@ -8,14 +8,12 @@ using namespace controls;
 static pros::task_t task = nullptr;
 
 void conveyor::tick() {
-    #ifndef MIKU_TESTENV
-        const int speed = 
-            (robot::master.get_digital(config::keybinds::conveyor_up)
-            - robot::master.get_digital(config::keybinds::conveyor_down))
-            * 200;
+    const int speed = 
+        (robot::master.get_digital(config::keybinds::conveyor_up)
+        - robot::master.get_digital(config::keybinds::conveyor_down))
+        * 200;
 
-        robot::conveyor.move_velocity(speed);
-    #endif
+    robot::conveyor.move_velocity(speed);
 }
 
 void conveyor::run() {

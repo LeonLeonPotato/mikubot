@@ -8,7 +8,6 @@ static bool initialized = false;
 static lv_obj_t* miku = nullptr;
 
 static void run() {
-    #ifndef MIKU_TESTENV
     if (!renderer::check_exists("/", "funny.gif")) {
         printf("[Funny] Funny gif not found, check SD card\n");
         return;
@@ -17,7 +16,6 @@ static void run() {
     miku = lv_gif_create(lv_scr_act());
     lv_obj_set_pos(miku, 156, 0);
     lv_gif_set_src(miku, "S/funny.gif");
-    #endif
 }
 
 void opcontrolfun::init(void) {

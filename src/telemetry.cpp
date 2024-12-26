@@ -44,7 +44,6 @@ static float average(const std::vector<T>& v) {
 }
 
 static void logging_task(void* args) {
-    #ifndef MIKU_TESTENV
     bool will_log_file = (mode & TO_FILE) >> 1;
 
     if (!file || !pros::usd::is_installed()) {
@@ -95,7 +94,6 @@ static void logging_task(void* args) {
 
         pros::delay(delay);
     }
-    #endif
 }
 
 void telemetry::set_mode(int m) {
@@ -105,34 +103,26 @@ void telemetry::set_mode(int m) {
 void telemetry::start_task(void) {
     if (file == nullptr) initialize_log_file();
 
-    #ifndef MIKU_TESTENV
     if (task == nullptr) {
         task = pros::c::task_create(logging_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Telemetry");
     }
-    #endif
 }
 
 void telemetry::stop_task(void) {
-    #ifndef MIKU_TESTENV
     if (task != nullptr) {
         pros::c::task_delete(task);
         task = nullptr;
     }
-    #endif
 }
 
 void telemetry::pause(void) {
-    #ifndef MIKU_TESTENV
     if (task != nullptr) {
         pros::c::task_suspend(task);
     }
-    #endif
 }
 
 void telemetry::resume(void) {
-    #ifndef MIKU_TESTENV
     if (task != nullptr) {
         pros::c::task_resume(task);
     }
-    #endif
 }

@@ -19,48 +19,42 @@ int state::right_set_voltage = 0;
 char robot::match::team = 'R';
 int robot::match::side = 1;
 
-#ifndef MIKU_TESTENV
-    pros::Controller robot::master(pros::E_CONTROLLER_MASTER);
-    pros::Controller robot::partner(pros::E_CONTROLLER_PARTNER);
+pros::Controller robot::master(pros::E_CONTROLLER_MASTER);
+pros::Controller robot::partner(pros::E_CONTROLLER_PARTNER);
 
-    pros::adi::Pneumatics robot::doinker('b', false, true);
-    pros::adi::Pneumatics robot::ejector('c', false, false);
-    pros::adi::Pneumatics robot::clamp('e', false, false);
+pros::adi::Pneumatics robot::doinker('b', false, true);
+pros::adi::Pneumatics robot::ejector('c', false, false);
+pros::adi::Pneumatics robot::clamp('e', false, false);
 
-    pros::Motor robot::conveyor(10, pros::MotorGearset::green);
-    pros::Motor robot::intake(10);
-    pros::Motor robot::wallmech(0); 
+pros::Motor robot::conveyor(10, pros::MotorGearset::green);
+pros::Motor robot::intake(10);
+pros::Motor robot::wallmech(0); 
 
-    pros::Imu robot::inertial(20);
-    pros::Optical robot::classifier(0);
-    pros::Rotation robot::side_encoder(12);
-    pros::Rotation robot::back_encoder(7);
+pros::Imu robot::inertial(20);
+pros::Optical robot::classifier(0);
+pros::Rotation robot::side_encoder(12);
+pros::Rotation robot::back_encoder(7);
 
-    // pros::MotorGroup robot::left_motors({-11, -12, -13}, pros::MotorGearset::blue);
-    // pros::MotorGroup robot::right_motors({1, 2, 3}, pros::MotorGearset::blue);
-    pros::MotorGroup robot::left_motors({-1, -2, -3}, pros::MotorGearset::blue);
-    pros::MotorGroup robot::right_motors({8, 9, 5}, pros::MotorGearset::blue);
-#endif
+// pros::MotorGroup robot::left_motors({-11, -12, -13}, pros::MotorGearset::blue);
+// pros::MotorGroup robot::right_motors({1, 2, 3}, pros::MotorGearset::blue);
+pros::MotorGroup robot::left_motors({-1, -2, -3}, pros::MotorGearset::blue);
+pros::MotorGroup robot::right_motors({8, 9, 5}, pros::MotorGearset::blue);
 
 int robot::max_speed(void) {
-    #ifndef MIKU_TESTENV
-        switch (left_motors.get_gearing()) {
-            case pros::MotorGears::blue:
-                return 600;
-                break;
-            case pros::MotorGears::green:
-                return 200;
-                break;
-            case pros::MotorGears::red:
-                return 100;
-                break;
-            default:
-                return 200;
-                break;
-        }
-    #else
-        return 1;
-    #endif
+    switch (left_motors.get_gearing()) {
+        case pros::MotorGears::blue:
+            return 600;
+            break;
+        case pros::MotorGears::green:
+            return 200;
+            break;
+        case pros::MotorGears::red:
+            return 100;
+            break;
+        default:
+            return 200;
+            break;
+    }
 }
 
 void robot::volt(float left, float right) {
@@ -68,10 +62,8 @@ void robot::volt(float left, float right) {
     right_set_voltage = (int) (std::clamp(right, -1.0f, 1.0f) * 12000.0f);
     braking = false;
 
-    #ifndef MIKU_TESTENV
-        left_motors.move_voltage(left_set_voltage);
-        right_motors.move_voltage(right_set_voltage);
-    #endif
+    left_motors.move_voltage(left_set_voltage);
+    right_motors.move_voltage(right_set_voltage);
 }
 
 void robot::volt(int left, int right) {
@@ -84,10 +76,8 @@ void robot::velo(float left, float right) {
     right_set_velocity = (int) (std::clamp(right, -1.0f, 1.0f) * max);
     braking = false;
 
-    #ifndef MIKU_TESTENV
-        left_motors.move_velocity(left_set_velocity);
-        right_motors.move_velocity(right_set_velocity);
-    #endif
+    left_motors.move_velocity(left_set_velocity);
+    right_motors.move_velocity(right_set_velocity);
 }
 
 void robot::velo(int left, int right) {
@@ -97,32 +87,26 @@ void robot::velo(int left, int right) {
 void robot::brake(void) {
     braking = true;
 
-    #ifndef MIKU_TESTENV
-        left_motors.brake();
-        right_motors.brake();
-    #endif
+    left_motors.brake();
+    right_motors.brake();
 }
 
 void robot::set_brake_mode(pros::motor_brake_mode_e_t mode) {
-    #ifndef MIKU_TESTENV
-        left_motors.set_brake_mode_all(mode);
-        right_motors.set_brake_mode_all(mode);
-    #endif
+    left_motors.set_brake_mode_all(mode);
+    right_motors.set_brake_mode_all(mode);
 }
 
 void robot::init(void) {
-    #ifndef MIKU_TESTENV
-        inertial.reset(true);
-        left_motors.set_brake_mode_all(config::default_brake_mode);
-        right_motors.set_brake_mode_all(config::default_brake_mode);
+    inertial.reset(true);
+    left_motors.set_brake_mode_all(config::default_brake_mode);
+    right_motors.set_brake_mode_all(config::default_brake_mode);
 
-        master.clear();
-        pros::delay(150);
-        partner.clear();
-        pros::delay(150);
+    master.clear();
+    pros::delay(150);
+    partner.clear();
+    pros::delay(150);
 
-        master.set_text(0, 0, "Master");
-        pros::delay(150);
-        partner.set_text(0, 0, "Partner");
-    #endif
+    master.set_text(0, 0, "Master");
+    pros::delay(150);
+    partner.set_text(0, 0, "Partner");
 }

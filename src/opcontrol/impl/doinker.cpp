@@ -10,19 +10,17 @@ static bool last = false;
 static bool toggle = false;
 
 void doinker::tick() {
-    #ifndef MIKU_TESTENV
-        const bool cur = robot::partner.get_digital(config::keybinds::doinker);
+    const bool cur = robot::partner.get_digital(config::keybinds::doinker);
 
-        if (cur && !last) toggle = !toggle;
+    if (cur && !last) toggle = !toggle;
 
-        if (toggle && !robot::doinker.is_extended()) {
-            robot::doinker.extend();
-        } else if (!toggle && robot::doinker.is_extended()) {
-            robot::doinker.retract();
-        }
+    if (toggle && !robot::doinker.is_extended()) {
+        robot::doinker.extend();
+    } else if (!toggle && robot::doinker.is_extended()) {
+        robot::doinker.retract();
+    }
 
-        last = cur;
-    #endif
+    last = cur;
 }
 
 void doinker::run() {

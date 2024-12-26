@@ -37,17 +37,10 @@ void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 }
 
 void driving::tick() {
-	#ifndef MIKU_TESTENV
-		const int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
-		const int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-		const int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
-		const int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-	#else
-		const int left_x = 0;
-		const int left_y = 0;
-		const int right_x = 0;
-		const int right_y = 0;
-	#endif
+	const int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
+	const int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+	const int right_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+	const int right_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
 	leon_mode(left_x, left_y, right_x, right_y);
 }

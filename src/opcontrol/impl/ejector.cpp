@@ -16,33 +16,31 @@ static const double start_t = 0.05;
 static double default_hue = -1;
 
 void ejector::tick() {
-    #ifndef MIKU_TESTENV
-        if (default_hue == -1) {
-            default_hue = robot::classifier.get_hue();
-        }
+    if (default_hue == -1) {
+        default_hue = robot::classifier.get_hue();
+    }
 
-        auto hue = robot::classifier.get_hue();
-        auto diff = fmod(hue - default_hue + 180, 360) - 180;
+    auto hue = robot::classifier.get_hue();
+    auto diff = fmod(hue - default_hue + 180, 360) - 180;
 
-        if (diff < -30) {
-            last_detection = pros::micros();
-            color = 'R';
-        } else if (diff > 50) {
-            last_detection = pros::micros();
-            color = 'B';
-        }
+    if (diff < -30) {
+        last_detection = pros::micros();
+        color = 'R';
+    } else if (diff > 50) {
+        last_detection = pros::micros();
+        color = 'B';
+    }
 
-        if (color != robot::match::team && color != 'N' && last_detection != -1) {
-            auto dt = (pros::micros() - last_detection) / 1000000.0f;
-            if (dt > start_t && !robot::ejector.is_extended()) {
-                robot::ejector.extend();
-            } else if (dt > start_t + 0.2) {
-                last_detection = -1;
-                color = 'N';
-                robot::ejector.retract();
-            }
+    if (color != robot::match::team && color != 'N' && last_detection != -1) {
+        auto dt = (pros::micros() - last_detection) / 1000000.0f;
+        if (dt > start_t && !robot::ejector.is_extended()) {
+            robot::ejector.extend();
+        } else if (dt > start_t + 0.2) {
+            last_detection = -1;
+            color = 'N';
+            robot::ejector.retract();
         }
-    #endif
+    }
 }
 
 void ejector::run() {

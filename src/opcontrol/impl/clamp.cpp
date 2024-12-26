@@ -9,19 +9,17 @@ static bool last = false;
 static bool toggle = false;
 
 void clamp::tick() {
-    #ifndef MIKU_TESTENV
-        const bool cur = robot::master.get_digital(config::keybinds::clamp);
+    const bool cur = robot::master.get_digital(config::keybinds::clamp);
 
-        if (cur && !last) toggle = !toggle;
+    if (cur && !last) toggle = !toggle;
 
-        if (toggle && !robot::clamp.is_extended()) {
-            robot::clamp.extend();
-        } else if (!toggle && robot::clamp.is_extended()) {
-            robot::clamp.retract();
-        }
+    if (toggle && !robot::clamp.is_extended()) {
+        robot::clamp.extend();
+    } else if (!toggle && robot::clamp.is_extended()) {
+        robot::clamp.retract();
+    }
 
-        last = cur;
-    #endif
+    last = cur;
 }
 
 void clamp::run() {

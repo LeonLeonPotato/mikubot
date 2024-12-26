@@ -8,14 +8,12 @@ using namespace controls;
 static pros::task_t task = nullptr;
 
 void intake::tick() {
-    #ifndef MIKU_TESTENV
-        int speed = 
-            (robot::master.get_digital(config::keybinds::intake_up)
-            - robot::master.get_digital(config::keybinds::intake_down))
-            * 200;
+    int speed = 
+        (robot::master.get_digital(config::keybinds::intake_up)
+        - robot::master.get_digital(config::keybinds::intake_down))
+        * 200;
 
-        robot::intake.move_velocity(speed);
-    #endif
+    robot::intake.move_velocity(speed);
 }
 
 void intake::run() {

@@ -8,14 +8,12 @@ using namespace controls;
 static pros::task_t task = nullptr;
 
 void wallmech::tick() {
-    #ifndef MIKU_TESTENV
-        const int speed = 
-            (robot::partner.get_digital(config::keybinds::wallmech_up)
-            - robot::partner.get_digital(config::keybinds::wallmech_down))
-            * 200;
+    const int speed = 
+        (robot::partner.get_digital(config::keybinds::wallmech_up)
+        - robot::partner.get_digital(config::keybinds::wallmech_down))
+        * 200;
 
-        robot::wallmech.move_velocity(speed);
-    #endif
+    robot::wallmech.move_velocity(speed);
 }
 
 void wallmech::run() {

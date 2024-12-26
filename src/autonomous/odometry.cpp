@@ -10,39 +10,24 @@ static pros::task_t task = nullptr;
 void run(void* args) {
     long long iterations = 0;
     long long ltime = pros::micros();
-    #ifndef MIKU_TESTENV
-        float ls = rad(robot::side_encoder.get_position() / 100.0f);
-        float lb = rad(robot::back_encoder.get_position() / 100.0f);
-        float ltheta = rad(robot::inertial.get_rotation());
-    #else
-        float ls = 0;
-        float lb = 0;
-        float ltheta = 0;
-    #endif
+    float ls = rad(robot::side_encoder.get_position() / 100.0f);
+    float lb = rad(robot::back_encoder.get_position() / 100.0f);
+    float ltheta = rad(robot::inertial.get_rotation());
 
     pros::delay(10);
     while (true) {
         const double dt = (pros::micros() - ltime) / 1e6f;
         ltime = pros::micros();
 
-        #ifndef MIKU_TESTENV
-            robot::theta = rad(robot::inertial.get_rotation());
-        #else
-            robot::theta = 0;
-        #endif
+        robot::theta = rad(robot::inertial.get_rotation());
         const float dtheta = robot::theta - ltheta;
         ltheta = robot::theta;
 
         robot::angular_acceleration = (dtheta / dt - robot::angular_velocity) / dt;
         robot::angular_velocity = dtheta / dt;
 
-        #ifndef MIKU_TESTENV
-            const float cs = rad(robot::side_encoder.get_position() / 100.0);
-            const float cb = rad(robot::back_encoder.get_position() / 100.0);
-        #else
-            const float cs = 0;
-            const float cb = 0;
-        #endif
+        const float cs = rad(robot::side_encoder.get_position() / 100.0);
+        const float cb = rad(robot::back_encoder.get_position() / 100.0);
         float travel_side = (cs - ls) * robot::TRACKING_WHEEL_RADIUS;
         float travel_back = (cb - lb) * robot::TRACKING_WHEEL_RADIUS;
         ls = cs;

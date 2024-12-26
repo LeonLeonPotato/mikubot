@@ -13,7 +13,6 @@ static double compute_average(std::vector<double> vec) {
 }
 
 static void task_func(void* args) {
-    #ifndef MIKU_TESTENV
     while (true) {
             auto left_temps = robot::left_motors.get_temperature_all();
             auto right_temps = robot::right_motors.get_temperature_all();
@@ -32,7 +31,6 @@ static void task_func(void* args) {
             robot::master.set_text(2, 0, buf_battery);
             pros::delay(150);
     }
-    #endif
 }
 
 void opcontrolinfo::init(void) {
