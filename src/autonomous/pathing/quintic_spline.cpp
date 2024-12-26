@@ -1,4 +1,6 @@
 #include "autonomous/pathing/quintic_spline.h"
+#include "Eigen/src/Core/Matrix.h"
+#include "ansicodes.h"
 
 #include "Eigen/Sparse" // IWYU pragma: keep
 
@@ -84,7 +86,7 @@ void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, f
     solver.compute(A);
 
     if (solver.info() != Eigen::Success) {
-        std::cerr << "Decomposition failed!" << std::endl;
+        std::cerr << PREFIX << "Quintic spline decomposition failed!" << std::endl;
     }
     
     Eigen::VectorXf X = solver.solve(B);
@@ -132,6 +134,12 @@ void QuinticSpline::full_sample(int resolution, Eigen::MatrixX2f& res, int deriv
             ref,
             deriv
         );
+    }
+
+    int remainder = resolution % segments.size();
+    if (remainder != 0) {
+        Eigen::Vector2f last_point = segments.back().compute(1.0f, deriv);
+        res.block(resolution - remainder, 0, remainder, 2).rowwise() = last_point.transpose();
     }
 }
 

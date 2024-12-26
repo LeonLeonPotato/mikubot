@@ -1,6 +1,7 @@
 #include "autonomous/pathing/base_path.h"
-#include "Eigen/src/Core/Matrix.h"
+#include "ansicodes.h"
 #include "pros/rtos.hpp"
+#include <iostream>
 
 using namespace pathing;
 
@@ -65,23 +66,28 @@ void BasePath::profile_path(const ProfileParams& params) {
     // compute(Eigen::VectorXf::LinSpaced(params.resolution+1, 0, maxt()), res);
     // printf("[2D MP] Computed path in %lld us\n", pros::micros() - start_t);
 
+    int start_t = pros::millis();
     Eigen::MatrixX2f res(params.resolution+1, 2);
     full_sample(
         params.resolution+1, 
         res, 
     0);
+    int diff = pros::millis() - start_t;
 
-    printf("Computed path\n");
+    std::cout << PREFIX << "Computed path in " << diff << " ms\n";
 
+    start_t = pros::millis();
     Eigen::ArrayXf differences = 
         (res.block(1, 0, params.resolution, 2)
             - res.block(0, 0, params.resolution, 2))
                 .rowwise().norm();
+    std::cout << PREFIX << "Computed differences in " << pros::millis() - start_t << " ms\n";
 
-    printf("Computed differences\n");
     profile.clear();
     profile.reserve(2500);
-    profile.emplace_back(0, 0, curvature(0), 0, params.start_v, 0);
+    profile.emplace_back(compute(0), angle(0), 0, 0, curvature(0), 0, params.start_v, 0);
+
+    start_t = pros::millis();
 
     int i = 1, j = 0;
     float s = params.ds;
@@ -94,7 +100,13 @@ void BasePath::profile_path(const ProfileParams& params) {
         const float ds = lengths[i] - lengths[j];
 
         const float time_param = (float) i / params.resolution * maxt();
-        const float curve = curvature(time_param);
+
+        const Eigen::Vector2f d0 = compute(time_param, 0);
+        const Eigen::Vector2f d1 = compute(time_param, 1);
+        const Eigen::Vector2f d2 = compute(time_param, 2);
+
+        const float curve = (d1(0) * d2(1) - d1(1) * d2(0)) / ((d1(0) * d1(0) + d1(1) * d1(1)) * 
+            sqrtf(d1(0) * d1(0) + d1(1) * d1(1)) + 1e-6);
         const float scale = 1 + fabsf(curve) * params.track_width / 2.0f;
         const float ecv = profile.back().center_v * scale;
         const float cv = std::clamp(
@@ -103,7 +115,7 @@ void BasePath::profile_path(const ProfileParams& params) {
             params.max_speed
         ) / scale;
 
-        profile.emplace_back(lengths[i], time_param, curve, 0, cv, 0, 0);
+        profile.emplace_back(d0, atan2f(d1(0), d1(1)), lengths[i], time_param, curve, 0, cv, 0, 0);
         s += params.ds;
         j = i;
     }
@@ -136,6 +148,9 @@ void BasePath::profile_path(const ProfileParams& params) {
         p.right_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
         p.angular_v = (p.left_v - p.right_v) / 2.0f;
     }
+
+    diff = pros::millis() - start_t;
+    std::cout << PREFIX << "Computed profile in " << diff << " ms\n";
 }
 
 ProfilePoint BasePath::profile_point(const float s) const {
@@ -187,11 +202,12 @@ float BasePath::angle(float t) const {
 float BasePath::angular_velocity(float t) const {
     Eigen::Vector2f d1 = compute(t, 1);
     Eigen::Vector2f d2 = compute(t, 2);
-    return (d1(0) * d2(1) - d1(1) * d2(0)) / d1.dot(d1);
+    return (d1(0) * d2(1) - d1(1) * d2(0)) / (d1.dot(d1) + 1e-6);
 }
 
 float BasePath::curvature(float t) const {
     const Eigen::Vector2f d1 = compute(t, 1);
     const Eigen::Vector2f d2 = compute(t, 2);
-    return (d1.coeffRef(0) * d2.coeffRef(1) - d1.coeffRef(1) * d2.coeffRef(0)) / (powf(d1.dot(d1), 1.5) + 1e-6);
+    return (d1(0) * d2(1) - d1(1) * d2(0)) / ((d1(0) * d1(0) + d1(1) * d1(1)) * 
+        sqrtf(d1(0) * d1(0) + d1(1) * d1(1)) + 1e-6);
 }

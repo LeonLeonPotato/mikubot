@@ -1,4 +1,5 @@
 #include "autonomous/pathing/cubic_spline.h"
+#include "ansicodes.h"
 
 #include "Eigen/Sparse" // IWYU pragma: keep
 
@@ -35,8 +36,48 @@ void CubicSpline::solve_spline(int axis, float ic, float bc) {
     triplets.emplace_back(1, 1, 1); B(1) = ic;
     triplets.emplace_back(2, n-4, 1); B(2) = bc;
 
-    for (int i = 1; i < segments.size(); i++) {
-        int r = 4 * i;
+    for (int i = 0; i < segments.size() - 1; i++) {
+        int r = 4 * i + 2;
+        for (int k = 0; k < 3; k++) {
+            for (int j = 0; j < 3; j++) { // Derivative continuity loop
+                triplets.emplace_back(r + k, r + j + k - 1, differential_matrix_1.coeffRef(k+1, j+1));
+                triplets.emplace_back(r + k, r + j + k + 3, -differential_matrix_0.coeffRef(k+1, j+1));
+                B[r + k] = 0;
+            }
+        }
+        // C0 continuity
+        triplets.emplace_back(r + 4, r + 4, 1);
+        B[r + 4] = points[i+1](axis);
+    }
+
+    for (int i = 0; i < 4; i++) {
+        triplets.emplace_back(n-2, n-1-i, 1);
+    }
+    triplets.emplace_back(n-1, n-2, 2);
+    triplets.emplace_back(n-1, n-1, 6);
+    B[n-2] = ic;
+    B[n-1] = points[segments.size()](axis);
+
+    Eigen::SparseMatrix<float> A(n, n);
+    A.setFromTriplets(triplets.begin(), triplets.end());
+
+    Eigen::SparseQR<Eigen::SparseMatrix<float>, Eigen::COLAMDOrdering<int>> solver;
+    solver.compute(A);
+
+    if (solver.info() != Eigen::Success) {
+        std::cerr << PREFIX << "Cubic spline decomposition failed!" << std::endl;
+    }
+    
+    Eigen::VectorXf X = solver.solve(B);
+
+    if (axis == 0) {
+        for (int i = 0; i < segments.size(); i++) {
+            segments[i].x_poly.coeffs = X.segment(4 * i, 4);
+        }
+    } else {
+        for (int i = 0; i < segments.size(); i++) {
+            segments[i].y_poly.coeffs = X.segment(4 * i, 4);
+        }
     }
 }
 

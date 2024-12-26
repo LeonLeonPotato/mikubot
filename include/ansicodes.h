@@ -19,3 +19,5 @@ constexpr std::string ANSI_BLUE = "\x1b[34m";
 constexpr std::string ANSI_MAGENTA = "\x1b[35m";
 constexpr std::string ANSI_CYAN = "\x1b[36m";
 constexpr std::string ANSI_WHITE = "\x1b[37m";
+
+static const auto PREFIX = ANSI_BOLD + ANSI_CYAN + "[Miku" + ANSI_GREEN + "bot] " + ANSI_RESET;

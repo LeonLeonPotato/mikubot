@@ -23,8 +23,6 @@
 
 #include "pros/apix.h"
 
-static const auto PREFIX = ANSI_BOLD + ANSI_CYAN + "[Miku" + ANSI_GREEN + "bot] " + ANSI_RESET;
-
 void initialize(void) {
 	// ONLY uncomment for simulator usage!!!
 	// pros::c::serctl(SERCTL_DISABLE_COBS, nullptr);
@@ -87,7 +85,7 @@ static void profiling_test(void) {
 		.accel = 300,
 		.decel = 237,
 		.track_width = 39,
-		.ds = 2.0,
+		.ds = 0.1,
 		.resolution = 10000
 	});
 	// asd
@@ -96,20 +94,15 @@ static void profiling_test(void) {
 	pros::delay(20);
 	printf("Profile path took %lld us\n", t);
 
-	std::cout << "[";
+	std::cout << "[\n";
 	int cnt = 0;
 	for (auto& p : qs.get_profile()) {
 		std::cout << "(" + std::to_string(p.s) + ", " + std::to_string(p.right_v) << ")";
 		pros::delay(20);
-		cnt++;
-		if (cnt != qs.get_profile().size()) {
-			std::cout << ", ";
-		}
-		if (cnt % 10 == 0) {
-			std::cout << std::endl;
-		}
+		if (++cnt != qs.get_profile().size()) std::cout << ", ";
+		if (cnt % 10 == 0) std::cout << '\n';
 	}
-	std::cout << "]" << std::endl;
+	std::cout << "]\n";
 }
 
 #define PRINT_VEC(x) printf("[%.3f, %.3f]\n", x(0), x(1))
@@ -210,7 +203,7 @@ void opcontrol(void) {
 	autonselector::destroy(); pros::delay(10);
 	// opcontrolfun::init();
 
-	// profiling_test();
+	profiling_test();
 	// pros::delay(100);
 	// is_it_actually_faster();
 

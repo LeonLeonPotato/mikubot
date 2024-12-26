@@ -1,5 +1,4 @@
 #include "autonomous/movement/simple/boomerang.h"
-#include "autonomous/movement/simple/swing.h"
 #include "essential.h"
 
 using namespace movement;

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "Eigen/Dense"
+#include "Eigen/src/Core/Matrix.h"
 #include "autonomous/solvers.h"
 
 namespace pathing {
@@ -16,6 +17,9 @@ struct BaseParams {
 };
 
 struct ProfilePoint {
+    Eigen::Vector2f pos;
+    float heading;
+    
     float s, t;
     float curvature;
     float left_v, center_v, right_v;
