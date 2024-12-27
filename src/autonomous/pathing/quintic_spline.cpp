@@ -22,7 +22,7 @@ std::pair<float, float> QuinticSplineParams::end_accel_cartesian(void) const {
     );
 }
 
-const Eigen::Matrix<float, 6, 6> QuinticSpline::differential_matrix_1 {
+static const Eigen::Matrix<float, 6, 6> differential_matrix_1 {
     {1, 1, 1, 1, 1, 1},
     {0, 1, 2, 3, 4, 5},
     {0, 0, 2, 6, 12, 20},
@@ -31,7 +31,7 @@ const Eigen::Matrix<float, 6, 6> QuinticSpline::differential_matrix_1 {
     {0, 0, 0, 0, 0, 120}
 };
 
-const Eigen::Matrix<float, 6, 6> QuinticSpline::differential_matrix_0 {
+static const Eigen::Matrix<float, 6, 6> differential_matrix_0 {
     {1, 0, 0, 0, 0, 0},
     {0, 1, 0, 0, 0, 0},
     {0, 0, 2, 0, 0, 0},

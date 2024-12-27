@@ -8,9 +8,6 @@ using CubicSplineParams = BaseParams;
 
 class CubicSpline : public BasePath {
     private:
-        static const Eigen::Matrix<float, 4, 4> differential_matrix_1;
-        static const Eigen::Matrix<float, 4, 4> differential_matrix_0;
-
         std::vector<Polynomial2D<4>> segments;
 
         void solve_spline(int axis, float ic, float bc);

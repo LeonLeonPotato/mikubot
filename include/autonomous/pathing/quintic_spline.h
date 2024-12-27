@@ -16,9 +16,6 @@ struct QuinticSplineParams : BaseParams {
 
 class QuinticSpline : public BasePath {
     private:
-        static const Eigen::Matrix<float, 6, 6> differential_matrix_1;
-        static const Eigen::Matrix<float, 6, 6> differential_matrix_0;
-
         std::vector<Polynomial2D<6>> segments;
 
         void solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1);
