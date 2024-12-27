@@ -1,4 +1,5 @@
 #include "autonomous/pathing/cubic_spline.h"
+#include "Eigen/src/Core/Matrix.h"
 #include "ansicodes.h"
 
 #include "Eigen/Sparse" // IWYU pragma: keep
@@ -7,82 +8,101 @@
 
 using namespace pathing;
 
-static const Eigen::Matrix<float, 4, 4> differential_matrix_1 {
-    {1, 1, 1, 1},
-    {0, 1, 2, 3},
-    {0, 0, 2, 6},
-    {0, 0, 0, 6}
+static const Eigen::Matrix<float, 3, 3> pattern {
+    {1, 1, 1},
+    {1, 2, -1},
+    {1, 1, -1}
 };
 
-static const Eigen::Matrix<float, 4, 4> differential_matrix_0 {
-    {1, 0, 0, 0},
-    {0, 1, 0, 0},
-    {0, 0, 2, 0},
-    {0, 0, 0, 6}
-};
+inline int CubicSpline::i_helper(float& t) const {
+    t = std::clamp(t, 0.0f, (float) segments.size());
+    const int i = (int) t - (int) (t == segments.size());
+    t -= i;
+    return i;
+}
+
+static void tridiangular(Eigen::MatrixX3f& A, Eigen::VectorXf& B, Eigen::VectorXf& X) {
+    // Funny that githubs shit AI made a shit thomas solver so i had to make it myself
+
+    const int n = A.rows();
+    float alpha = A(1, 0) / A(0, 1);
+
+    // Eliminate all ai's
+    for (int i = 1; i < n; i++) {
+        A(i, 0) -= alpha * A(i-1, 1);
+        A(i, 1) -= alpha * A(i-1, 2);
+        B(i) -= alpha * B(i-1);
+        alpha = A(i+(i != n-1), 0) / A(i, 1);
+    }
+
+    // Last row should be x_n * b_n = d_n
+    X(n-1) = B(n-1) / A(n-1, 1);
+    for (int i = n - 2; i >= 0; i--) {
+        X(i) = (B(i) - A(i, 2) * X(i+1)) / A(i, 1);
+    }
+}
 
 void CubicSpline::solve_spline(int axis, float ic, float bc) {
-    int n = 4 * segments.size();
+    // Special christmas gift from the math gods
 
-    std::vector<Eigen::Triplet<float>> triplets; triplets.reserve(n);
+    if (segments.size() == 1) {
+        auto& poly = axis == 0 ? segments[0].x_poly : segments[0].y_poly;
+        poly.coeffs = {
+            points[0][axis],
+            ic,
+            3 * (points[1][axis] - points[0][axis]) - 2 * ic - bc,
+            2 * (points[0][axis] - points[1][axis]) + ic + bc
+        };
+        return;
+    }
+
+    const int n = 3 * segments.size() - 1;
+
+    Eigen::MatrixX3f A(n, 3);
     Eigen::VectorXf B(n);
 
-    triplets.emplace_back(0, 0, 1); B(0) = points[0](axis);
-    triplets.emplace_back(1, 1, 1); B(1) = ic;
+    // Initial rows
+    A.block(0, 0, 3, 3) = Eigen::Matrix3f {
+        {0, 1, 1},
+        {2, 3, -1},
+        {3, 1, -2}
+    };
+    B[0] = points[1](axis) - points[0](axis) - ic;
+    B[1] = -ic;
+    B[2] = ic;
 
-    for (int i = 0; i < segments.size() - 1; i++) {
-        int r = 4 * i;
-        for (int k = 0; k < 3; k++) {
-            for (int j = k; j < 4; j++) {
-                triplets.emplace_back(r + k + 2, r + j, differential_matrix_1(k, j));
-            }
+    // Inner point method (the meat of the algorithm)
+    for (int i = 1; i < segments.size() - 1; i++) {
+        const int r = 3 * i;
+        for (int j = 0; j < 3; j++) {
+            A.row(r + j) = pattern.row(j);
+            B[r + j] = (points[i + 1](axis) - points[i](axis)) * ((j % 2) * -2 + 1);
         }
-        // C0 continuity part 1 (fn(1) = p[n+1])
-        B[r + 2] = points[i+1](axis);
-
-        // C1 continuity
-        triplets.emplace_back(r + 3, r + 5, -1);
-        B[r + 3] = 0;
-
-        // C2 continuity
-        triplets.emplace_back(r + 4, r + 6, -2);
-        B[r + 4] = 0;
-
-        // C0 continuity part 2 (fn+1(0) = p[n+1])
-        triplets.emplace_back(r + 5, r + 4, 1);
-        B[r + 5] = points[i+1](axis);
     }
 
-    for (int i = 0; i < 4; i++) {
-        triplets.emplace_back(n-2, n-1-i, 1);
-        triplets.emplace_back(n-1, n-4+i, i);
-    }
-    B[n-2] = points[segments.size()](axis);
-    B[n-1] = bc;
+    const float lastdiff = points[segments.size()](axis)
+        - points[segments.size() - 1](axis);
 
-    Eigen::SparseMatrix<float> A(n, n);
-    A.setFromTriplets(triplets.begin(), triplets.end());
-
-    std::cout << A << std::endl;
-    std::cout << B << std::endl;
-
-    Eigen::SparseQR<Eigen::SparseMatrix<float>, Eigen::COLAMDOrdering<int>> solver;
-    solver.compute(A);
-
-    if (solver.info() != Eigen::Success) {
-        std::cerr << PREFIX << "Cubic spline decomposition failed!" << std::endl;
-    }
+    // Row n-2
+    A.row(n-2).setConstant(1.0f);
+    B[n-2] = lastdiff;
     
-    Eigen::VectorXf X = solver.solve(B);
+    // Row n-1
+    A.row(n-1) = Eigen::Vector3f {1, 2, 0};
+    B[n-1] = bc - lastdiff;
 
-    if (axis == 0) {
-        for (int i = 0; i < segments.size(); i++) {
-            segments[i].x_poly.coeffs = X.segment(4 * i, 4);
-        }
-    } else {
-        for (int i = 0; i < segments.size(); i++) {
-            segments[i].y_poly.coeffs = X.segment(4 * i, 4);
-        }
+    // Solve the system
+    Eigen::VectorXf X(n);
+    tridiangular(A, B, X);
+
+    // Manually do the first segment as it uses IC instead of X
+    auto& poly0 = axis == 0 ? segments[0].x_poly : segments[0].y_poly;
+    poly0.coeffs = {points[0](axis), ic, X[0], X[1]};
+
+    for (int i = 1; i < segments.size(); i++) {
+        auto& poly = axis == 0 ? segments[i].x_poly : segments[i].y_poly;
+        int r = 3*i-1; // Skip a2 and a3
+        poly.coeffs = {points[i](axis), X[r], X[r+1], X[r+2]};
     }
 }
 
@@ -98,33 +118,42 @@ void CubicSpline::solve_coeffs(const BaseParams& params) {
 }
 
 void CubicSpline::compute(float t, Eigen::Vector2f& res, int deriv) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    segments[i].compute(t, res, deriv);
+    segments[i_helper(t)].compute(t, res, deriv);
 }
 
 Eigen::Vector2f CubicSpline::normal(float t) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i].normal(t);
+    return segments[i_helper(t)].normal(t);
 }
 
 float CubicSpline::angle(float t) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i].angle(t);
+    return segments[i_helper(t)].angle(t);
 }
 
 float CubicSpline::angular_velocity(float t) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i].angular_velocity(t);
+    return segments[i_helper(t)].angular_velocity(t);
 }
 
 float CubicSpline::curvature(float t) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i].curvature(t);
+    return segments[i_helper(t)].curvature(t);
+}
+
+void CubicSpline::full_sample(int resolution, Eigen::MatrixX2f& res, int deriv) const {
+    int inc = resolution / (int) segments.size();
+    const auto times = Eigen::ArrayXf::LinSpaced(inc, 0, 1);
+    for (int i = 0; i < segments.size(); i++) {
+        auto ref = Eigen::Ref<Eigen::MatrixX2f>(res.block(i*inc, 0, inc, 2));
+        segments[i].compute(
+            times,
+            ref,
+            deriv
+        );
+    }
+
+    int remainder = resolution % segments.size();
+    if (remainder != 0) {
+        Eigen::Vector2f last_point = segments.back().compute(1.0f, deriv);
+        res.block(resolution - remainder, 0, remainder, 2).rowwise() = last_point.transpose();
+    }
 }
 
 std::string CubicSpline::debug_out(void) const {

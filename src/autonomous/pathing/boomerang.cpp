@@ -2,6 +2,8 @@
 
 using namespace pathing;
 
+// Why'd you ever use this now?
+
 void BoomerangPath::solve_coeffs(const BaseParams& params) {
     float dist = (points.back() - points.front()).norm();
     carrot = points.back() - Eigen::Vector2f(

@@ -5,7 +5,6 @@
 
 #include "Eigen/Dense"
 
-#define deg(x) (x * M_PI / 180.0)
 #define __timediff(x) ((int) (pros::millis() - x))
 
 namespace movement {

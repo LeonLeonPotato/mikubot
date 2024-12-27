@@ -68,13 +68,11 @@ void autonomous(void) {
 static void test_cs(void) {
 	pathing::CubicSpline cb;
 	cb.points = {
-		{rand() % 100, rand() % 100},
-		{rand() % 100, rand() % 100},
-		{rand() % 100, rand() % 100},
-		{rand() % 100, rand() % 100}
+		{0, 0},
+		{9, 4},
 	};
 
-	cb.solve_coeffs(pathing::BaseParams {0, 0, 0, 0});
+	cb.solve_coeffs(pathing::BaseParams {0, 1, 0, -1});
 
 	std::cout << cb.debug_out() << std::endl;
 }

@@ -10,6 +10,7 @@ class CubicSpline : public BasePath {
     private:
         std::vector<Polynomial2D<4>> segments;
 
+        int i_helper(float& t) const;
         void solve_spline(int axis, float ic, float bc);
         
     public:
@@ -19,6 +20,8 @@ class CubicSpline : public BasePath {
 
         bool need_solve() const override { return true; }
         void solve_coeffs(const BaseParams& params) override;
+
+        void full_sample(int resolution, Eigen::MatrixX2f& res, int deriv = 0) const override;
 
         void compute(float t, Eigen::Vector2f& res, int deriv = 0) const override;
 

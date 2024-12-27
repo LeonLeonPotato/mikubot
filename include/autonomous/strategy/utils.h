@@ -10,7 +10,6 @@
 
 #define TILE 59.5f
 #define THETA_SOLVE pathing::BaseParams { .start_heading = robot::theta, .start_magnitude = 20, .end_heading = 0, .end_magnitude = 0 }
-#define rad(x) (x * M_PI / 180.0f)
 
 static const controllers::PIDArgs linear_args {
     .kp = 1.0f / 45.0f,

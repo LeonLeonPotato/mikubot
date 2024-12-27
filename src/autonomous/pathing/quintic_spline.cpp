@@ -40,6 +40,13 @@ static const Eigen::Matrix<float, 6, 6> differential_matrix_0 {
     {0, 0, 0, 0, 0, 120}
 };
 
+inline int QuinticSpline::i_helper(float& t) const {
+    t = std::clamp(t, 0.0f, (float) segments.size());
+    const int i = (int) t - (int) (t == segments.size());
+    t -= i;
+    return i;
+}
+
 void QuinticSpline::solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1) {
     int n = 6 * segments.size();
     std::vector<Eigen::Triplet<float>> triplets;
@@ -144,33 +151,23 @@ void QuinticSpline::full_sample(int resolution, Eigen::MatrixX2f& res, int deriv
 }
 
 void QuinticSpline::compute(float t, Eigen::Vector2f& res, int deriv) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    segments[i].compute(t, res, deriv);
+    segments[i_helper(t)].compute(t, res, deriv);
 }
 
 Eigen::Vector2f QuinticSpline::normal(float t) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i].normal(t);
+    return segments[i_helper(t)].normal(t);
 }
 
 float QuinticSpline::angle(float t) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i].angle(t);
+    return segments[i_helper(t)].angle(t);
 }
 
 float QuinticSpline::angular_velocity(float t) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i].angular_velocity(t);
+    return segments[i_helper(t)].angular_velocity(t);
 }
 
 float QuinticSpline::curvature(float t) const {
-    t = std::clamp(t, 0.0f, (float) segments.size());
-    const int i = (int) t - (int) (t == segments.size()); t = t - i;
-    return segments[i].curvature(t);
+    return segments[i_helper(t)].curvature(t);
 }
 
 std::string QuinticSpline::debug_out(void) const {

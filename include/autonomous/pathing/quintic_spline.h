@@ -18,6 +18,7 @@ class QuinticSpline : public BasePath {
     private:
         std::vector<Polynomial2D<6>> segments;
 
+        int i_helper(float& t) const;
         void solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1);
         
     public:
