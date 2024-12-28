@@ -7,7 +7,7 @@ k_cu = 398  # thermal conductivity of copper (W/m·K)
 k_fe = 73   # thermal conductivity of iron (W/m·K)
 T_initial = 25  # initial temperature in degrees Celsius
 T_source = 80  # temperature of heating element in degrees Celsius
-L_values = np.linspace(0, 3, 10)  # 10 different values of L from 0 to 3 cm
+L_values = np.linspace(0, 3, 100)  # 10 different values of L from 0 to 3 cm
 
 # Function to calculate temperature at the other end
 def calculate_temperature(L, k_cu, k_fe, area, T_initial, T_source):

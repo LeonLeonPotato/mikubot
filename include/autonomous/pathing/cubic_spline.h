@@ -4,14 +4,14 @@
 #include "autonomous/pathing/polynomial.h"
 
 namespace pathing {
-using CubicSplineParams = BaseParams;
+static const std::vector<Condition> NaturalCubicCondition {{2, 0, 0}};
 
 class CubicSpline : public BasePath {
     private:
         std::vector<Polynomial2D<4>> segments;
 
         int i_helper(float& t) const;
-        void solve_spline(int axis, float ic, float bc);
+        void solve_spline(int axis, const std::vector<Condition>& ics, const std::vector<Condition>& bcs);
         
     public:
         CubicSpline(void) {}
@@ -19,7 +19,7 @@ class CubicSpline : public BasePath {
         CubicSpline(const std::vector<Eigen::Vector2f>& verts) { points = verts; }
 
         bool need_solve() const override { return true; }
-        void solve_coeffs(const BaseParams& params) override;
+        void solve_coeffs(const std::vector<Condition>& ics, const std::vector<Condition>& bcs) override;
 
         void full_sample(int resolution, Eigen::MatrixX2f& res, int deriv = 0) const override;
 

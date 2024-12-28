@@ -22,8 +22,6 @@ inline int CubicSpline::i_helper(float& t) const {
 }
 
 static void tridiangular(Eigen::MatrixX3f& A, Eigen::VectorXf& B, Eigen::VectorXf& X) {
-    // Funny that githubs shit AI made a shit thomas solver so i had to make it myself
-
     const int n = A.rows();
     float alpha = A(1, 0) / A(0, 1);
 
@@ -42,8 +40,9 @@ static void tridiangular(Eigen::MatrixX3f& A, Eigen::VectorXf& B, Eigen::VectorX
     }
 }
 
-void CubicSpline::solve_spline(int axis, float ic, float bc) {
-    // Special christmas gift from the math gods
+void CubicSpline::solve_spline(int axis, const std::vector<Condition>& ics, const std::vector<Condition>& bcs) {
+    const float ic = ics[0].cartesian()[axis];
+    const float bc = bcs[0].cartesian()[axis];
 
     if (segments.size() == 1) {
         auto& poly = axis == 0 ? segments[0].x_poly : segments[0].y_poly;
@@ -107,14 +106,12 @@ void CubicSpline::solve_spline(int axis, float ic, float bc) {
 }
 
 
-void CubicSpline::solve_coeffs(const BaseParams& params) {
+void CubicSpline::solve_coeffs(const std::vector<Condition>& ics, const std::vector<Condition>& bcs) {
     segments.clear(); 
     segments.resize(points.size() - 1);
 
-    auto [icx, icy] = params.start_cartesian();
-    auto [bcx, bcy] = params.end_cartesian();
-    solve_spline(0, icx, bcx);
-    solve_spline(1, icy, bcy);
+    solve_spline(0, ics, bcs);
+    solve_spline(1, ics, bcs);
 }
 
 void CubicSpline::compute(float t, Eigen::Vector2f& res, int deriv) const {

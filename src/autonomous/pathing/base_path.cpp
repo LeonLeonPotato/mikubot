@@ -11,20 +11,6 @@ void BasePath::set_relative(const Eigen::Vector2f& p) {
     }
 }
 
-std::pair<float, float> BaseParams::start_cartesian() const {
-    return std::make_pair(
-        start_magnitude * sinf(start_heading), 
-        start_magnitude * cosf(start_heading)
-    );
-}
-
-std::pair<float, float> BaseParams::end_cartesian() const {
-    return std::make_pair(
-        end_magnitude * sinf(end_heading), 
-        end_magnitude * cosf(end_heading)
-    );
-}
-
 float BasePath::time_parameter(const float s, int b_off, int e_off) const {
     if (s > lengths.back()) return maxt();
     int i = std::lower_bound(lengths.begin() + b_off, lengths.end() - e_off, s) - lengths.begin();

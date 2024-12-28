@@ -1,4 +1,5 @@
 #include "main.h"
+#include "autonomous/pathing/base_path.h"
 #include "autonomous/pathing/cubic_spline.h"
 #include "essential.h"
 #include "ansicodes.h"
@@ -20,6 +21,7 @@
 
 #include "opcontrol/opcontrol.h"
 #include <cmath>
+#include <iostream>
 #include <string>
 
 #include "pros/apix.h"
@@ -66,15 +68,89 @@ void autonomous(void) {
 }
 
 static void test_cs(void) {
-	pathing::CubicSpline cb;
-	cb.points = {
-		{0, 0},
-		{9, 4},
-	};
+	constexpr int degree = 7;
+	pathing::NthDegreeSpline<degree> path;
 
-	cb.solve_coeffs(pathing::BaseParams {0, 1, 0, -1});
+	for (int test = 0; test < 100; test++) {
+		
+		Eigen::Vector2f p2 = {rand() % 100, rand() % 100};
+		std::vector<Eigen::Vector2f> points = {
+			{rand() % 100, rand() % 100},
+			p2, p2,
+			{rand() % 100, rand() % 100},
+			{rand() % 100, rand() % 100},
+			{rand() % 100, rand() % 100}
+		};
 
-	std::cout << cb.debug_out() << std::endl;
+		std::vector<pathing::Condition> natural;
+		for (int i = 0; i < degree/2; i++) {
+			natural.push_back(pathing::Condition::from_cartesian(i+2, 0, 0));
+		}
+
+		path.points = points;
+		auto start_t = pros::micros();
+		path.solve_coeffs(natural, natural);
+		std::cout << PREFIX << "Solving took " << (pros::micros() - start_t) << "us\n";
+
+		auto assert_point = [&](float t, int deriv, const Eigen::Vector2f& expected) {
+			Eigen::Vector2f actual = path.pathing::BasePath::compute(t, deriv);
+			if ((actual - expected).norm() > 1e-3) {
+				printf("%sExpected: (%f, %f) | Actual: (%f, %f) | t=%f, deriv=%d\n", PREFIX.c_str(), expected.x(), expected.y(), actual.x(), actual.y(), t, deriv);
+				return 1;
+			}
+			return 0;
+		};
+
+		bool failed_c0_test = false;
+		for (int t = 0; t < points.size(); t += 1) {
+			failed_c0_test = failed_c0_test || assert_point((float) t - 1e-6, 0, points[t]);
+		}
+
+		// bool failed_ic_test = assert_point(0, 2, {0, 0}) || assert_point(0, 3, {0, 0});
+		// bool failed_bc_test = assert_point(path.maxt(), 2, {0, 0}) || assert_point(path.maxt(), 3, {0, 0});
+		bool failed_ic_test = false;
+		bool failed_bc_test = false;
+
+		if (failed_c0_test) {
+			std::cout << PREFIX << "Failed C0 test\n";
+			std::cout << path.debug_out() << std::endl;
+			break;
+		}
+		if (failed_ic_test) {
+			std::cout << PREFIX << "Failed C1 test\n";
+			std::cout << path.debug_out() << std::endl;
+			break;
+		}
+		if (failed_bc_test) {
+			std::cout << PREFIX << "Failed C2 test\n";
+			std::cout << path.debug_out() << std::endl;
+			break;
+		}
+
+		std::cout << PREFIX << "Test " << test << " passed\n";
+	}
+}
+
+static void sample_spline(void) {
+	constexpr int degree = 11;
+	pathing::NthDegreeSpline<degree> path;
+
+	std::vector<Eigen::Vector2f> points;
+	for (int i = 0; i < 10; i++) {
+		// points.emplace_back(sinf(i)*i/2.0f, cosf(i)*i/2.0f);
+		points.emplace_back( ((i % 2)*2-1)*i, i);
+	}
+
+	path.points = points;
+	std::vector<pathing::Condition> natural;
+	for (int i = 0; i < degree/2; i++) {
+		natural.push_back(pathing::Condition::from_cartesian(i+1, 0, 0));
+	}
+	auto start_t = pros::micros();
+	path.solve_coeffs(natural, natural);
+	std::cout << PREFIX << "Solving took " << (pros::micros() - start_t) << "us\n";
+
+	std::cout << path.debug_out() << std::endl;
 }
 
 void opcontrol(void) {
@@ -84,6 +160,7 @@ void opcontrol(void) {
 	// opcontrolfun::init();
 
 	test_cs();
+	// sample_spline();
 
 	while (true) {
 		for (auto& func : controls::ticks) {

@@ -2,24 +2,17 @@
 
 #include "autonomous/pathing/base_path.h"
 #include "autonomous/pathing/polynomial.h"
+#include <vector>
 
 namespace pathing {
-struct QuinticSplineParams : BaseParams {
-    float start_accel_heading;
-    float start_accel_magnitude;
-    float end_accel_heading;
-    float end_accel_magnitude;
-
-    std::pair<float, float> start_accel_cartesian() const;
-    std::pair<float, float> end_accel_cartesian() const;
-};
+static const std::vector<Condition> NaturalQuinticCondition {{2, 0, 0}, {3, 0, 0}};
 
 class QuinticSpline : public BasePath {
     private:
         std::vector<Polynomial2D<6>> segments;
 
         int i_helper(float& t) const;
-        void solve_spline(int axis, float ic_0, float ic_1, float bc_0, float bc_1);
+        void solve_spline(int axis, const std::vector<Condition>& ics, const std::vector<Condition>& bcs);
         
     public:
         QuinticSpline(void) {}
@@ -27,8 +20,7 @@ class QuinticSpline : public BasePath {
         QuinticSpline(const std::vector<Eigen::Vector2f>& verts) { points = verts; }
 
         bool need_solve() const override { return true; }
-        void solve_coeffs(const QuinticSplineParams& params);
-        void solve_coeffs(const BaseParams& params) override;
+        void solve_coeffs(const std::vector<Condition>& ics, const std::vector<Condition>& bcs) override;
 
         void full_sample(int resolution, Eigen::MatrixX2f& res, int deriv = 0) const override;
         

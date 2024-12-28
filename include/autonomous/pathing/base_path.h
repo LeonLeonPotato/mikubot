@@ -3,17 +3,28 @@
 #include <vector>
 #include "Eigen/Dense"
 #include "Eigen/src/Core/Matrix.h"
+#include "Eigen/src/Core/util/Macros.h"
 #include "autonomous/solvers.h"
 
 namespace pathing {
-struct BaseParams {
-    float start_heading;
-    float start_magnitude;
-    float end_heading;
-    float end_magnitude;
+struct Condition {
+    int derivative; 
+    float theta, magnitude;
 
-    std::pair<float, float> start_cartesian() const;
-    std::pair<float, float> end_cartesian() const;
+    Eigen::Vector2f cartesian() const {
+        return Eigen::Vector2f(sinf(theta) * magnitude, cosf(theta) * magnitude);
+    }
+
+    float x() const { return sinf(theta) * magnitude; }
+    float y() const { return cosf(theta) * magnitude; }
+
+    static Condition from_cartesian(const int deriv, const Eigen::Vector2f& p) {
+        return {deriv, atan2f(p.x(), p.y()), p.norm()};
+    }
+
+    static Condition from_cartesian(const int deriv, const float x, const float y) {
+        return {deriv, atan2f(x, y), sqrtf(x*x + y*y)};
+    }
 };
 
 struct ProfilePoint {
@@ -45,7 +56,7 @@ class BasePath {
 
         void set_relative(const Eigen::Vector2f& p);
         
-        virtual void solve_coeffs(const BaseParams& params) {}
+        virtual void solve_coeffs(const std::vector<Condition>& ics, const std::vector<Condition>& bcs) {}
         virtual bool need_solve() const = 0;
 
         virtual solvers::Solver get_solver() const { return solvers::Solver::Newton; }
