@@ -34,7 +34,7 @@ class Polynomial {
         template <typename... Args>
         auto operator()(Args... args) -> decltype(compute(args...)) const { return compute(args...); }
 
-        std::string debug_out() const;
+        std::string debug_out(int precision = 8) const;
 };
 
 template <int N>
@@ -137,11 +137,14 @@ inline float Polynomial<N>::compute(float t, int deriv) const {
 }
 
 template <int N>
-inline std::string Polynomial<N>::debug_out() const {
+inline std::string Polynomial<N>::debug_out(int precision) const {
     std::string result = "";
     for (int i = 0; i < N; i++) {
-        std::string coeff = std::to_string(fabs(coeffs(i)));
-        if (i == 0) coeff = std::to_string(coeffs(i));
+        std::ostringstream out;
+        out << std::fixed << std::setprecision(precision);
+        if (i == 0) out << coeffs(i);
+        else out << fabs(coeffs(i));
+        std::string coeff = out.str();
 
         std::string term = "t^{" + std::to_string(i) + "}";
         if (i == 1) term = "t";

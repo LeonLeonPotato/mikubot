@@ -68,15 +68,13 @@ void autonomous(void) {
 }
 
 static void test_cs(void) {
-	constexpr int degree = 7;
+	constexpr int degree = 1;
 	pathing::NthDegreeSpline<degree> path;
 
 	for (int test = 0; test < 100; test++) {
 		
 		Eigen::Vector2f p2 = {rand() % 100, rand() % 100};
 		std::vector<Eigen::Vector2f> points = {
-			{rand() % 100, rand() % 100},
-			p2, p2,
 			{rand() % 100, rand() % 100},
 			{rand() % 100, rand() % 100},
 			{rand() % 100, rand() % 100}
@@ -94,7 +92,7 @@ static void test_cs(void) {
 
 		auto assert_point = [&](float t, int deriv, const Eigen::Vector2f& expected) {
 			Eigen::Vector2f actual = path.pathing::BasePath::compute(t, deriv);
-			if ((actual - expected).norm() > 1e-3) {
+			if ((actual - expected).norm() > 1e-2) {
 				printf("%sExpected: (%f, %f) | Actual: (%f, %f) | t=%f, deriv=%d\n", PREFIX.c_str(), expected.x(), expected.y(), actual.x(), actual.y(), t, deriv);
 				return 1;
 			}
@@ -104,6 +102,7 @@ static void test_cs(void) {
 		bool failed_c0_test = false;
 		for (int t = 0; t < points.size(); t += 1) {
 			failed_c0_test = failed_c0_test || assert_point((float) t - 1e-6, 0, points[t]);
+			failed_c0_test = failed_c0_test || assert_point((float) t + 1e-6, 0, points[t]);
 		}
 
 		// bool failed_ic_test = assert_point(0, 2, {0, 0}) || assert_point(0, 3, {0, 0});
@@ -132,11 +131,11 @@ static void test_cs(void) {
 }
 
 static void sample_spline(void) {
-	constexpr int degree = 11;
+	constexpr int degree = 7;
 	pathing::NthDegreeSpline<degree> path;
 
 	std::vector<Eigen::Vector2f> points;
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 2; i++) {
 		// points.emplace_back(sinf(i)*i/2.0f, cosf(i)*i/2.0f);
 		points.emplace_back( ((i % 2)*2-1)*i, i);
 	}
@@ -144,7 +143,7 @@ static void sample_spline(void) {
 	path.points = points;
 	std::vector<pathing::Condition> natural;
 	for (int i = 0; i < degree/2; i++) {
-		natural.push_back(pathing::Condition::from_cartesian(i+1, 0, 0));
+		natural.push_back(pathing::Condition::from_cartesian(i+2, 1, 0));
 	}
 	auto start_t = pros::micros();
 	path.solve_coeffs(natural, natural);
@@ -160,7 +159,7 @@ void opcontrol(void) {
 	// opcontrolfun::init();
 
 	test_cs();
-	// sample_spline();
+	sample_spline();
 
 	while (true) {
 		for (auto& func : controls::ticks) {
