@@ -24,7 +24,7 @@ class NthDegreeSpline : public BasePath {
         static Eigen::MatrixXf pascal;
         static void ensure(int n);
 
-        std::vector<Polynomial2D<N+1>> segments;
+        std::vector<Polynomial2D<N>> segments;
 
         int i_helper(float& t) const;
         float get_pascal_coefficient(int i, int j) const;
@@ -33,6 +33,8 @@ class NthDegreeSpline : public BasePath {
             const std::vector<Condition>& bcs);
         
     public:
+        static const std::vector<Condition> natural_conditions;
+
         NthDegreeSpline(void) { ensure(N); }
         NthDegreeSpline(int n) { segments.resize(n); ensure(N);}
         NthDegreeSpline(const std::vector<Eigen::Vector2f>& verts) { points = verts; ensure(N); }
@@ -44,6 +46,7 @@ class NthDegreeSpline : public BasePath {
         void full_sample(int resolution, Eigen::MatrixX2f& res, int deriv = 0) const override;
         
         void compute(float t, Eigen::Vector2f& res, int deriv = 0) const override;
+        using BasePath::compute;
 
         Eigen::Vector2f normal(float t) const override;
         float angle(float t) const override;
@@ -51,13 +54,23 @@ class NthDegreeSpline : public BasePath {
         float curvature(float t) const override;
 
         std::string debug_out(void) const override;
+        std::string debug_out_precise(int precision = 4) const;
 };
 
 template <int N>
-Eigen::MatrixXf NthDegreeSpline<N>::pascal = Eigen::MatrixXf::Ones(1, 1);
+inline Eigen::MatrixXf NthDegreeSpline<N>::pascal = Eigen::MatrixXf::Ones(1, 1);
 
 template <int N>
-std::vector<float> NthDegreeSpline<N>::zerodiffs = {1};
+inline std::vector<float> NthDegreeSpline<N>::zerodiffs = {1};
+
+template <int N>
+inline const std::vector<Condition> NthDegreeSpline<N>::natural_conditions = []() {
+    std::vector<Condition> cs;
+    for (int i = 0; i < N/2; i++) {
+        cs.push_back({i+2, 0, 0});
+    }
+    return cs;
+}();
 
 template<int N>
 void NthDegreeSpline<N>::ensure(int n) {
@@ -147,7 +160,7 @@ void NthDegreeSpline<N>::solve_spline(int axis,
         for (int i = 0; i < bcs_length; i++) {
             B[N-1-i] = bcs[i].cartesian()[axis];
             // cast to float as well
-            A.row(N-1-i) = Polynomial<N>::get_differential(N+1)->col(bcs[i].derivative).tail(N).template cast<float>();
+            A.row(N-1-i) = Polynomial<N>::get_differential(N).col(bcs[i].derivative).tail(N).template cast<float>();
         }
 
         Eigen::VectorXf X = A.colPivHouseholderQr().solve(B);
@@ -196,7 +209,7 @@ void NthDegreeSpline<N>::solve_spline(int axis,
         int r = n - bcs_length + i;
         int d = bcs[i].derivative;
         for (int j = 0; j < N - i - 1; j++) {
-            A(r, j) = Polynomial<N>::get_differential(N+1)->coeff(j+d, d);
+            A(r, j) = Polynomial<N>::get_differential(N).coeff(j+d, d);
         }
         B[r] = bcs[i].cartesian()[axis];
         if (d == 1) { // Special case for first derivative BC because it destroys the diagonal
@@ -277,8 +290,6 @@ void NthDegreeSpline<N>::solve_spline(int axis,
             }
         }
 
-        // std::cout << sparse_A << std::endl;
-
         Eigen::SparseLU<Eigen::SparseMatrix<float>> solver;
         solver.compute(sparse_A);
 
@@ -348,7 +359,6 @@ void NthDegreeSpline<N>::full_sample(int resolution, Eigen::MatrixX2f& res, int 
     }
 }
 
-
 __DEFINE_FORWARDER(normal, Eigen::Vector2f)
 __DEFINE_FORWARDER(angle, float)
 __DEFINE_FORWARDER(angular_velocity, float)
@@ -356,12 +366,21 @@ __DEFINE_FORWARDER(curvature, float)
 
 template<int N>
 std::string NthDegreeSpline<N>::debug_out(void) const {
+    return debug_out_precise(4);
+}
+
+template<int N>
+std::string NthDegreeSpline<N>::debug_out_precise(int precision) const {
     std::stringstream result;
 
     result << "============== " << N << "-th Degree Spline ==============\n";
     for (int i = 0; i < segments.size(); i++) {
         char buf[4096];
-        sprintf(buf, "P_{%d}\\left(t\\right) = \\left(%s,\\ %s\\right)\n", i, segments[i].x_poly.debug_out().c_str(), segments[i].y_poly.debug_out().c_str());
+        sprintf(buf, "P_{%d}\\left(t\\right) = \\left(%s,\\ %s\\right)\n", 
+            i, 
+            segments[i].x_poly.debug_out(precision).c_str(), 
+            segments[i].y_poly.debug_out(precision).c_str()
+        );
         result << buf;
     }
 
@@ -386,4 +405,9 @@ std::string NthDegreeSpline<N>::debug_out(void) const {
 
     return result.str();
 }
+
+using LinearPath = NthDegreeSpline<1>;
+using CubicSpline = NthDegreeSpline<3>;
+using QuinticSpline = NthDegreeSpline<5>;
+using SepticSpline = NthDegreeSpline<7>;
 } // namespace pathing

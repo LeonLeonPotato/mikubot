@@ -1,6 +1,5 @@
 #include "main.h"
 #include "autonomous/pathing/base_path.h"
-#include "autonomous/pathing/cubic_spline.h"
 #include "essential.h"
 #include "ansicodes.h"
 #include "opcontrol/test/odom_center.h"
@@ -68,7 +67,7 @@ void autonomous(void) {
 }
 
 static void test_cs(void) {
-	constexpr int degree = 1;
+	constexpr int degree = 3;
 	pathing::NthDegreeSpline<degree> path;
 
 	for (int test = 0; test < 100; test++) {
@@ -91,7 +90,7 @@ static void test_cs(void) {
 		std::cout << PREFIX << "Solving took " << (pros::micros() - start_t) << "us\n";
 
 		auto assert_point = [&](float t, int deriv, const Eigen::Vector2f& expected) {
-			Eigen::Vector2f actual = path.pathing::BasePath::compute(t, deriv);
+			Eigen::Vector2f actual = path.compute(t, deriv);
 			if ((actual - expected).norm() > 1e-2) {
 				printf("%sExpected: (%f, %f) | Actual: (%f, %f) | t=%f, deriv=%d\n", PREFIX.c_str(), expected.x(), expected.y(), actual.x(), actual.y(), t, deriv);
 				return 1;
@@ -130,24 +129,27 @@ static void test_cs(void) {
 	}
 }
 
+#define print_vec(v) std::cout << v.x() << ", " << v.y() << std::endl;
+
 static void sample_spline(void) {
-	constexpr int degree = 7;
+	constexpr int degree = 3;
 	pathing::NthDegreeSpline<degree> path;
 
 	std::vector<Eigen::Vector2f> points;
-	for (int i = 0; i < 2; i++) {
-		// points.emplace_back(sinf(i)*i/2.0f, cosf(i)*i/2.0f);
-		points.emplace_back( ((i % 2)*2-1)*i, i);
+	for (int i = 0; i < 5; i++) {
+		points.emplace_back(sinf(i)*i/2.0f, cosf(i)*i/2.0f);
+		// points.emplace_back( ((i % 2)*2-1)*i, i);
 	}
 
 	path.points = points;
-	std::vector<pathing::Condition> natural;
-	for (int i = 0; i < degree/2; i++) {
-		natural.push_back(pathing::Condition::from_cartesian(i+2, 1, 0));
-	}
 	auto start_t = pros::micros();
-	path.solve_coeffs(natural, natural);
+	path.solve_coeffs(path.natural_conditions, path.natural_conditions);
 	std::cout << PREFIX << "Solving took " << (pros::micros() - start_t) << "us\n";
+
+	print_vec(path.compute(4.15f, 0));
+	print_vec(path.compute(4.15f, 1));
+	print_vec(path.compute(4.15f, 2));
+	print_vec(path.compute(4.15f, 3));
 
 	std::cout << path.debug_out() << std::endl;
 }
@@ -158,7 +160,7 @@ void opcontrol(void) {
 	autonselector::destroy(); pros::delay(10);
 	// opcontrolfun::init();
 
-	test_cs();
+	// test_cs();
 	sample_spline();
 
 	while (true) {

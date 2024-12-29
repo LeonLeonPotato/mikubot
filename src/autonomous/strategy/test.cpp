@@ -1,6 +1,4 @@
 #include "autonomous/strategy/test.h"
-#include "autonomous/pathing/base_path.h"
-#include "autonomous/pathing/cubic_spline.h"
 #include "autonomous/strategy/utils.h"
 #include "essential.h"
 
@@ -14,14 +12,14 @@ static void get_goal(void) {
 }
 
 static void long_path_part(void) {
-    pathing::QuinticSpline path;
+    pathing::CubicSpline path;
     path.points.emplace_back(-TILE * 2/3.0, TILE);
     path.points.emplace_back(-TILE, 0);
     path.points.emplace_back(-TILE-5, -TILE+10);
     path.set_relative({0, -2*TILE + START_OFFSET});
     path.points.insert(path.points.begin(), robot::pos);
 
-    path.solve_coeffs({{1, robot::theta, 200}}, pathing::NaturalCubicCondition);
+    path.solve_coeffs({{1, robot::theta, 200}}, path.natural_conditions);
     path.profile_path(profile_params);
     std::cout << path.debug_out() << std::endl;
 
@@ -80,7 +78,7 @@ static void test_ramsete(void) {
     path.points.emplace_back(TILE, 0);
     path.set_relative(robot::pos);
 
-    path.solve_coeffs(pathing::NaturalCubicCondition, pathing::NaturalCubicCondition);
+    // path.solve_coeffs(pathing::NaturalCubicCondition, pathing::NaturalCubicCondition);
     path.profile_path(profile_params);
 
     movement::ramsete::RamseteParams params { 
