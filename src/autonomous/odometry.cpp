@@ -3,8 +3,6 @@
 
 #include "api.h"
 
-#define rad(x) (x * 0.01745329251f)
-
 static pros::task_t task = nullptr;
 
 void run(void* args) {

@@ -75,12 +75,5 @@ void utils::recompute_path(
 }
 
 void utils::solve_path_default(pathing::BasePath& path) {
-    pathing::BaseParams solve_params;
-
-    solve_params.start_heading = robot::theta;
-    solve_params.start_magnitude = robot::velocity.norm();
-    solve_params.end_heading = 0;
-    solve_params.end_magnitude = 0;
-
-    path.solve_coeffs(solve_params);
+    path.solve_coeffs({}, {});
 }
