@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api.h"
+#include "api.h" // IWYU pragma: keep
 
 namespace config {
     using digital = pros::controller_digital_e_t;
