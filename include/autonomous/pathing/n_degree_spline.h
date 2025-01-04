@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "Eigen/Sparse"
+#include "utils.h"
 
 #define __DEFINE_FORWARDER(name, type) \
     template <int N> \
@@ -21,7 +22,6 @@ template <int N>
 class NthDegreeSpline : public BasePath {
     private:
         static std::vector<float> zerodiffs;
-        static Eigen::MatrixXf pascal;
         static void ensure(int n);
 
         std::vector<Polynomial2D<N>> segments;
@@ -58,9 +58,6 @@ class NthDegreeSpline : public BasePath {
 };
 
 template <int N>
-inline Eigen::MatrixXf NthDegreeSpline<N>::pascal = Eigen::MatrixXf::Ones(1, 1);
-
-template <int N>
 inline std::vector<float> NthDegreeSpline<N>::zerodiffs = {1};
 
 template <int N>
@@ -77,17 +74,6 @@ void NthDegreeSpline<N>::ensure(int n) {
     if (n % 2 == 0) {
         std::cerr << PREFIX << "N (Currently " << n << ") must be odd, do not use even-degreed splines!\n";
         return;
-    }
-
-    if (pascal.rows() >= n) return;
-
-    pascal.resize(n, n);
-    pascal.row(0).setConstant(1.0f);
-    pascal.col(0).setConstant(1.0f);
-    for (int i = 1; i < n; i++) {
-        for (int j = 1; j < n - i; j++) {
-            pascal(i, j) = pascal(i-1, j) + pascal(i, j-1);
-        }
     }
 
     zerodiffs.resize(n+1);
@@ -108,7 +94,8 @@ inline int NthDegreeSpline<N>::i_helper(float& t) const {
 template<int N>
 float NthDegreeSpline<N>::get_pascal_coefficient(int i, int j) const {
     if (j >= N - i) return j % 2 == 0 ? -1 : 1;
-    return NthDegreeSpline::pascal(i, j);
+    // return NthDegreeSpline::pascal(i, j);
+    return utils::get_pascal_matrix(N).coeff(i, j);
 }
 
 template<int N>
@@ -160,7 +147,7 @@ void NthDegreeSpline<N>::solve_spline(int axis,
         for (int i = 0; i < bcs_length; i++) {
             B[N-1-i] = bcs[i].cartesian()[axis];
             // cast to float as well
-            A.row(N-1-i) = Polynomial<N>::get_differential(N).col(bcs[i].derivative).tail(N).template cast<float>();
+            A.row(N-1-i) = utils::get_differential_matrix(N).col(bcs[i].derivative).tail(N).template cast<float>();
         }
 
         Eigen::VectorXf X = A.colPivHouseholderQr().solve(B);
@@ -209,7 +196,7 @@ void NthDegreeSpline<N>::solve_spline(int axis,
         int r = n - bcs_length + i;
         int d = bcs[i].derivative;
         for (int j = 0; j < N - i - 1; j++) {
-            A(r, j) = Polynomial<N>::get_differential(N).coeff(j+d, d);
+            A(r, j) = utils::get_differential_matrix(N).coeff(j+d, d);
         }
         B[r] = bcs[i].cartesian()[axis];
         if (d == 1) { // Special case for first derivative BC because it destroys the diagonal

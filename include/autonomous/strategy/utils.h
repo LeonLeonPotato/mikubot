@@ -20,13 +20,13 @@ static const controllers::PIDArgs linear_args {
 static const controllers::PIDArgs angular_args {
     .kp = 1.0,
     .ki = 0,
-    .kd = -0.0
+    .kd = 0.0
 };
 
 static const controllers::PIDArgs in_place_args {
     .kp = 1.0,
     .ki = 0,
-    .kd = -0.0
+    .kd = 0.0
 };
 
 static controllers::PID linear_pid(linear_args);

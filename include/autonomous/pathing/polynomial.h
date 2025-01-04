@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Eigen/Dense"
-#include "Eigen/src/Core/Matrix.h"
 #include "ansicodes.h"
 #include "pros/rtos.hpp"
+#include "autonomous/pathing/utils.h"
 #include <iostream>
 #include <map>
 #include <type_traits>
@@ -11,15 +11,7 @@
 namespace pathing {
 template <int N>
 class Polynomial {
-    private:
-        static Eigen::MatrixXi differential_matrix;
-        static void build_differential_matrix(int n);
-
-        static int falling_factorial(int i, int n);
     public:
-        static const Eigen::MatrixXi& get_differential(int n);
-        static void clear_cache();
-
         Eigen::Vector<float, N+1> coeffs;
 
         Polynomial(void) { }
@@ -69,44 +61,9 @@ class Polynomial2D {
 };
 
 template <int N>
-inline Eigen::MatrixXi Polynomial<N>::differential_matrix = Eigen::MatrixXi::Ones(1, 1);
-
-template <int N>
-inline void Polynomial<N>::build_differential_matrix(int n) {
-    int old = differential_matrix.rows();
-    differential_matrix.conservativeResize(n+1, n+1); // n+1 coefficients for n-th degree polynomial
-    for (int i = old; i < n+1; i++) {
-        for (int j = 0; j <= i; j++) {
-            differential_matrix(i, j) = falling_factorial(i, j);
-            differential_matrix(j, i) = falling_factorial(j, i);
-        }
-    }
-}
-
-template <int N>
-inline const Eigen::MatrixXi& Polynomial<N>::get_differential(int n) {
-    if (differential_matrix.rows() <= n) build_differential_matrix(n);
-    return differential_matrix;
-}
-
-template <int N>
-inline void Polynomial<N>::clear_cache() {
-    differential_matrix.resize(1, 1);
-    differential_matrix(0, 0) = 1;
-}
-
-template <int N>
-inline int Polynomial<N>::falling_factorial(int i, int n) {
-    if (i < n) return 0;
-    int result = 1;
-    for (int j = i; j > i - n; j--) result *= j;
-    return result;
-}
-
-template <int N>
 template <typename T, typename R>
 inline void Polynomial<N>::compute(const T& t, R res, int deriv) const {
-    float fact_tracker = get_differential(N).coeff(N, deriv);
+    float fact_tracker = utils::get_differential_matrix(N).coeff(N, deriv);
     res.setConstant(coeffs.coeff(N) * fact_tracker);
     for (int i = N-1; i >= deriv; i--) {
         fact_tracker = (fact_tracker / (i + 1)) * (i - deriv + 1);
@@ -124,7 +81,7 @@ inline Eigen::ArrayXf Polynomial<N>::compute(const T& t, int deriv) const {
 
 template <int N>
 inline float Polynomial<N>::compute(float t, int deriv) const {
-    float fact_tracker = get_differential(N).coeff(N, deriv);
+    float fact_tracker = utils::get_differential_matrix(N).coeff(N, deriv);
     float result = coeffs.coeff(N) * fact_tracker;
     for (int i = N-1; i >= deriv; i--) {
         fact_tracker = (fact_tracker / (i + 1)) * (i - deriv + 1);
@@ -181,7 +138,7 @@ inline Eigen::MatrixX2f Polynomial2D<N>::compute(const T& t, int deriv) const {
 template <int N>
 template <typename V>
 inline void Polynomial2D<N>::compute(float t, V& res, int deriv) const {
-    float fact_tracker = x_poly.get_differential(N).coeff(N, deriv);
+    float fact_tracker = utils::get_differential_matrix(N).coeff(N, deriv);
     res.coeffRef(0) = x_poly.coeffs.coeff(N) * fact_tracker;
     res.coeffRef(1) = y_poly.coeffs.coeff(N) * fact_tracker;
     for (int i = N-1; i >= deriv; i--) {
