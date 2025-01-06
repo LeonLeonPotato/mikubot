@@ -1,14 +1,13 @@
 #include "gui/autonselector.h"
 #include "gui/utils.h"
 #include "autonomous/strategies.h"
+#include "librsc/gifs.hpp"
 #include "version.h"
 #include "essential.h"
 
 #include "api.h" // IWYU pragma: keep
 #include "liblvgl/lvgl.h" // IWYU pragma: keep
-#include "gui/fonts/roboto_regular_16.c"
-#include "gui/fonts/roboto_regular_bold_16.c"
-#include "gui/fonts/roboto_regular_30.c"
+#include "librsc/fonts.hpp"
 
 #include <vector>
 
@@ -40,7 +39,7 @@ static void create_logo(void) {
 
     lv_style_init(&big_m->style);
     lv_style_set_text_color(&big_m->style, lv_color_hex(0x34aeeb));
-    lv_style_set_text_font(&big_m->style, &roboto_regular_30);
+    lv_style_set_text_font(&big_m->style, &fonts::roboto_regular_30);
 
     lv_span_t* logo_rest = lv_spangroup_new_span(logo);
     std::string remaining_text = "ikuBot version " + std::string(VERSION_STRING);
@@ -48,7 +47,7 @@ static void create_logo(void) {
 
     lv_style_init(&logo_rest->style);
     lv_style_set_text_color(&logo_rest->style, lv_color_hex(0xFFFFFF));
-    lv_style_set_text_font(&logo_rest->style, &roboto_regular_16);
+    lv_style_set_text_font(&logo_rest->style, &fonts::roboto_regular_16);
 
     lv_spangroup_refr_mode(logo);
 }
@@ -72,18 +71,18 @@ static void side_switch_callback(lv_event_t* e) {
 static void team_selector(void) {
     team_selection_text = new renderer::Text(
         "Team",
-        roboto_regular_30, 
+        fonts::roboto_regular_30, 
         10, 70
     );
     team_button = new renderer::NamedButton(
         robot::match::get_team_name(), 
-        roboto_regular_bold_16, 
+        fonts::roboto_regular_bold_16, 
         110, 60, 120, 50, 
         0xFF0000
     );
     side_button = new renderer::NamedButton(
         robot::match::get_side_name(), 
-        roboto_regular_bold_16, 
+        fonts::roboto_regular_bold_16, 
         240, 60, 120, 50,
         0x838482
     );
@@ -103,8 +102,8 @@ static void auton_selection_callback(lv_event_t* e) {
         lv_obj_get_y(clicked_button->button)-5
     );
 
-    clicked_button->set_font(roboto_regular_bold_16);
-    auton_buttons[current_selected_idx].second->set_font(roboto_regular_16);
+    clicked_button->set_font(fonts::roboto_regular_bold_16);
+    auton_buttons[current_selected_idx].second->set_font(fonts::roboto_regular_16);
     printf("[AutonSelector] Setting strategy to %s\n", strategies::names.at(clicked_strategy).c_str());
     strategies::chosen_strategy = clicked_strategy;
 
@@ -114,7 +113,7 @@ static void auton_selection_callback(lv_event_t* e) {
 static void auton_strategy(void) {
     auton_selection_text = new renderer::Text(
         "Auton",
-        roboto_regular_30, 
+        fonts::roboto_regular_30, 
         10, 130
     );
 
@@ -124,7 +123,7 @@ static void auton_strategy(void) {
     for (const auto& strat : strategies::names) {
         auto* btn = new renderer::NamedButton(
             strat.second, 
-            roboto_regular_16, 
+            fonts::roboto_regular_16, 
             x, y, 130, 50
         );
         lv_obj_add_event_cb(btn->button, auton_selection_callback, LV_EVENT_CLICKED, reinterpret_cast<void*>(i));
@@ -132,7 +131,7 @@ static void auton_strategy(void) {
         auton_buttons.emplace_back(strat.first, btn);
 
         if (strat.first == strategies::chosen_strategy) {
-            btn->set_font(roboto_regular_bold_16);
+            btn->set_font(fonts::roboto_regular_bold_16);
 
             selected_auton_box = lv_obj_create(lv_scr_act());
             lv_obj_remove_style_all(selected_auton_box);
@@ -165,7 +164,7 @@ static void confirm_selection_callback(lv_event_t* e) {
 static void confirm_selection(void) {
     confirm_button = new renderer::NamedButton(
         "Confirm", 
-        roboto_regular_16, 
+        fonts::roboto_regular_16, 
         20, 175, 70, 50
     );
 
@@ -173,14 +172,9 @@ static void confirm_selection(void) {
 }
 
 static void init_gif(void) {
-    if (!renderer::check_exists("/", "kaito-miku.gif")) {
-        printf("[AutonSelector] Miku gif not found\n");
-        return;
-    }
-
     miku_gif = lv_gif_create(lv_scr_act());
     lv_obj_set_pos(miku_gif, 380, 10);
-    lv_gif_set_src(miku_gif, "S/kaito-miku.gif");
+    lv_gif_set_src(miku_gif, &gifs::kaito_miku);
 }
 
 void autonselector::init(void) {

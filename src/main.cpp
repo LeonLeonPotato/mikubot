@@ -15,15 +15,15 @@
 
 #include "gui/autonselector.h"
 #include "gui/autonrunner.h"
-#include "gui/goofymiku.h"
-#include "gui/opcontrolinfo.h"
+#include "gui/funnymiku.h"
+#include "gui/driverinfo.h"
 
 #include "opcontrol/opcontrol.h"
 #include <cmath>
 #include <iostream>
 #include <string>
 
-#include "pros/apix.h"
+#include "pros/apix.h" // IWYU pragma: keep
 
 void initialize(void) {
 	// ONLY uncomment for simulator usage!!!
@@ -32,13 +32,13 @@ void initialize(void) {
 
 	robot::init();
 	odometry::start_task();
-	opcontrolinfo::init();
+	driverinfo::init();
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
-		// competition_initialize();
-		// telemetry::start_task();
-		// autonomous();
+		competition_initialize();
+		telemetry::start_task();
+		autonomous();
 	}
 }
 
@@ -158,7 +158,7 @@ void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
 	autonrunner::destroy(); pros::delay(10);
 	autonselector::destroy(); pros::delay(10);
-	// opcontrolfun::init();
+	opcontrolfun::init();
 
 	// test_cs();
 	sample_spline();
