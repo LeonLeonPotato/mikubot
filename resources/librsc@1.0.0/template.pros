@@ -1,0 +1,16 @@
+{
+    "py/object": "pros.conductor.templates.external_template.ExternalTemplate",
+    "py/state": {
+        "metadata": {},
+        "name": "librsc",
+        "supported_kernels": "^4.1.1",
+        "system_files": [
+            "firmware/librsc.a",
+            "include/librsc/gifs.hpp",
+            "include/librsc/fonts.hpp"
+        ],
+        "target": "v5",
+        "user_files": [],
+        "version": "1.0.0"
+    }
+}
