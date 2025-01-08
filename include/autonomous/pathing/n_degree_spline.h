@@ -7,7 +7,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "Eigen/Sparse"
+#include "Eigen/Sparse" // IWYU pragma: keep
 
 #define __DEFINE_FORWARDER(name, type) \
     template <int N> \
@@ -123,16 +123,22 @@ void NthDegreeSpline<N>::solve_spline(int axis,
     std::vector<Condition> ics = ics_og; std::sort(ics.begin(), ics.end(), comp);
     std::vector<Condition> bcs = bcs_og; std::sort(bcs.begin(), bcs.end(), comp);
 
+    // Useful constants
     const int ics_length = ics.size();
     const int bcs_length = bcs.size();
+    // Originally, we have N * segments.size() unknowns, but we "collapse" the ICs into the initial rows
+    int n = N * segments.size() - ics_length;
+    int half = N / 2;
+    int max_pivot_find = std::min(half, 3); 
+    int eff_length = half + max_pivot_find + 1;
 
-    if (ics_length != N/2) {
-        std::cerr << PREFIX << "Invalid number of ICs: Expected " << N/2 << ", but got " << ics_length << std::endl;
+    if (ics_length != half) {
+        std::cerr << PREFIX << "Invalid number of ICs: Expected " << half << ", but got " << ics_length << std::endl;
         return;
     }
 
-    if (bcs_length != N/2) {
-        std::cerr << PREFIX << "Invalid number of BCs: Expected " << N/2 << ", but got " << bcs_length << std::endl;
+    if (bcs_length != half) {
+        std::cerr << PREFIX << "Invalid number of BCs: Expected " << half << ", but got " << bcs_length << std::endl;
         return;
     }
 
@@ -155,8 +161,8 @@ void NthDegreeSpline<N>::solve_spline(int axis,
             B[i] = ics[i].cartesian()[axis];
         }
 
-        A.row(N/2).setConstant(1.0f);
-        B[N/2] = points[1][axis] - points[0][axis];
+        A.row(half).setConstant(1.0f);
+        B[half] = points[1][axis] - points[0][axis];
         for (int i = 0; i < bcs_length; i++) {
             B[N-1-i] = bcs[i].cartesian()[axis];
             // cast to float as well
@@ -173,9 +179,6 @@ void NthDegreeSpline<N>::solve_spline(int axis,
         return;
     }
 
-    // Originally, we have N * segments.size() unknowns, but IC collapse causes a reduction
-    int n = N * segments.size() - ics_length;
-
     // IC Collapse preparation
     bool ic_flags[N]; std::fill(ic_flags, ic_flags + N, false);
     float ic_vals[N]; std::fill(ic_vals, ic_vals + N, 0.0f);
@@ -183,10 +186,6 @@ void NthDegreeSpline<N>::solve_spline(int axis,
         ic_flags[ic.derivative - 1] = 1;
         ic_vals[ic.derivative - 1] = ic.cartesian()[axis] / zerodiffs[ic.derivative];
     }
-    
-    // Pivot constants
-    int max_pivot_find = std::min(N/2, 3); 
-    int eff_length = N/2 + max_pivot_find + 1;
 
     // Prepare LHS N-diagonal matrix and RHS vector
     Eigen::MatrixXf A(n, N + max_pivot_find); A.setZero();
@@ -234,6 +233,7 @@ void NthDegreeSpline<N>::solve_spline(int axis,
     }
 
     // Use Pascal triangle to fill in the rest of the matrix
+    // 12/30/2024: Why does the pascal triangle show up here?
     for (int i = N; i < n - bcs_length - 1; i++) {
         for (int j = 0; j < N; j++) {
             A(i, j) = get_pascal_coefficient(i % N, j);
@@ -245,14 +245,14 @@ void NthDegreeSpline<N>::solve_spline(int axis,
 
     bool use_own_solver = true;
     if (use_own_solver) {
-        // N-diagonal "LU" decomposition algorithm (Forward pass)
+        // N-diagonal banded matrix solver for Ax=B with partial pivoting (Forward pass)
         for (int i = 0; i < n - 1; i++) {
             int max_magnitude_ei = i;
-            int max_magnitude_ej = N/2;
+            int max_magnitude_ej = half;
 
             // Find pivot
             for (int j = 1; j <= max_pivot_find; j++) {
-                int ei = i+j; int ej = N/2-j;
+                int ei = i+j; int ej = half-j;
                 if (ei >= n) break;
 
                 if (fabsf(A(ei, ej)) > fabsf(A(max_magnitude_ei, max_magnitude_ej))) {
@@ -261,30 +261,31 @@ void NthDegreeSpline<N>::solve_spline(int axis,
                 }
             }
 
+            // Pivot the rows
             A.row(i).tail(eff_length).swap(A.row(max_magnitude_ei).segment(max_magnitude_ej, eff_length));
             std::swap(B[i], B[max_magnitude_ei]);
 
-            for (int j = 1; j <= N/2; j++) {
-                int ei = i+j; int ej = N/2-j;
+            for (int j = 1; j <= half; j++) {
+                int ei = i+j; int ej = half-j;
                 if (ei >= n) break;
 
-                double alpha = A(ei, ej) / A(i, N/2); // Use double for precision
+                double alpha = A(ei, ej) / A(i, half); // Use double for precision
 
                 // Eliminate row
-                A.row(ei).segment(ej, eff_length) -= alpha * A.row(i).segment(N/2, eff_length);
+                A.row(ei).segment(ej, eff_length) -= alpha * A.row(i).segment(half, eff_length);
                 B[ei] -= alpha * B[i];
             }
         }
 
         // Backsubstitute to find values
         for (int i = n - 1; i >= 0; i--) {
-            X[i] = (B[i] - A.row(i).tail(eff_length-1).dot(X.segment(i+1, eff_length-1))) / A(i, N/2);
+            X[i] = (B[i] - A.row(i).tail(eff_length-1).dot(X.segment(i+1, eff_length-1))) / A(i, half);
         }
     } else {
         Eigen::SparseMatrix<float> sparse_A(n, n);
         for (int dst_j = 0; dst_j < n; dst_j++) {
             for (int src_i = 0; src_i < N; src_i++) {
-                int dst_i = dst_j + src_i - N/2;
+                int dst_i = dst_j + src_i - half;
                 if (dst_i < 0 || dst_i >= n) continue;
                 sparse_A.insert(dst_j, dst_i) = A(dst_j, src_i);
             }

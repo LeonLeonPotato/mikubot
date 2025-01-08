@@ -42,13 +42,13 @@ for i in range(10):
     rand = random.random() * 2 * math.pi
     poses2.append(r.pose + robot.Pose(200 * math.cos(rand), 200 * math.sin(rand), 0))
 
-path = ramsete.TwoDSpline(poses1)
+path = ramsete.TwoDSpline(poses2)
 path.generate_spline(robot.Pose(0, 100, 0), robot.Pose(0, 0, 0))
 path.construct_profile(ramsete.ProfileParams(0, 0, 
                                              maxspeed * wheelsize * ratio, 
                                              maxaccel * wheelsize * ratio, 
                                              maxdecel * wheelsize * ratio, 
-                                             39, 0.1))
+                                             39, 0.5))
 
 def draw_path():
     xs = path.xspline(np.linspace(0, path.maxt(), 100))
@@ -75,9 +75,8 @@ while True:
         else:
             break
 
-    lookahead = tracking_i + int(point.center_v < 20)*1
-    if lookahead >= len(path.profile):
-        lookahead = len(path.profile) - 1
+    lookahead = tracking_i - 0
+    lookahead = np.clip(lookahead, 0, len(path.profile)-1)
     
     lp = path.profile[lookahead-1]
     p = path.profile[lookahead]
@@ -86,9 +85,9 @@ while True:
     profiled_pose = path.pose(p.time_param)
     print(profiled_pose.dist(r.pose))
 
-    # max_angular = maxspeed * wheelsize * ratio * -np.sign(point.curvature) / 5
-    max_angular = 1000000
-    v, w = ramsete.ramsete(r, profiled_pose, p.center_v, min(max_angular, -p.angular_v/2, key=abs), 2.0, 0.7)
+    max_angular = maxspeed * wheelsize * ratio * -np.sign(point.curvature) * 0.5
+    # max_angular = 1000000
+    v, w = ramsete.ramsete(r, profiled_pose, p.center_v, min(max_angular, -p.angular_v, key=abs), 2.0, 0.7)
     # print(-p.angular_v)
     # v = point.center_v
     # w = point.angular_v
