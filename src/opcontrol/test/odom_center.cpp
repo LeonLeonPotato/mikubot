@@ -1,12 +1,11 @@
 #include "opcontrol/test/odom_center.h"
 #include "essential.h"
 #include "config.h"
-#include <vector>
 
-static int rotations = 10;
-static int max_time = 5e3;
-static int iterations = 5;
-static float speed = 0.2f;
+static const int rotations = 10;
+static const int max_time = 5e3;
+static const int iterations = 5;
+static const float speed = 0.2f;
 
 static bool last = false;
 static bool toggle = false;

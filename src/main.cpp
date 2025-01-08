@@ -1,4 +1,7 @@
 #include "main.h"
+#include "autonomous/controllers/pid.h"
+#include "autonomous/movement/base_movement.h"
+#include "autonomous/movement/simple/boomerang.h"
 #include "autonomous/pathing/base_path.h"
 #include "essential.h"
 #include "ansicodes.h"
@@ -7,6 +10,7 @@
 #include "pros/misc.hpp"
 #include "pros/rtos.hpp"
 #include "telemetry.h" // IWYU pragma: keep
+#include "gui/simtest.h"
 
 #include "autonomous/odometry.h"
 #include "autonomous/pathing.h"
@@ -31,14 +35,15 @@ void initialize(void) {
 	std::cout << PREFIX << "Initializing robot\n";
 
 	robot::init();
-	odometry::start_task();
+	// odometry::start_task();
 	driverinfo::init();
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
-		competition_initialize();
-		telemetry::start_task();
-		autonomous();
+		// simtest::init();
+		// competition_initialize();
+		// telemetry::start_task();
+		// autonomous();
 	}
 }
 
@@ -154,6 +159,32 @@ static void sample_spline(void) {
 	std::cout << path.debug_out() << std::endl;
 }
 
+static void unit_test_boomerang(void) {
+	using Vec = const Eigen::Vector2f;
+	using PID = controllers::PID;
+	auto test_tick = [&] (Vec Rpos, float theta, Vec dest, float lead) {
+		robot::pos = Rpos;
+		PID linear(1, 0, 0); PID angular(1, 0, 0); 
+		auto res = movement::simple::boomerang_tick(dest, theta, lead, {}, {linear, angular});
+		std::cout << res.debug_out() << std::endl;
+	};
+
+	auto test_standard = [&] (Vec Rpos, float theta, Vec dest, float lead) {
+		robot::pos = Rpos;
+		PID linear(1, 0, 0); PID angular(1, 0, 0); 
+		movement::SimpleMovementParams params {.exit_threshold=0.1f, .timeout=2000, .delay=200};
+		auto res = movement::simple::boomerang_async(dest, theta, lead, params, {linear, angular});
+		std::cout << res.get().debug_out() << std::endl;
+	};
+
+
+	test_tick({0, 0}, M_PI, {1, 1}, 0.5f);
+	test_tick({0, 0}, 0, {1, 1}, 0.5f);
+
+	test_standard({0, 0}, M_PI/2, {2, 1}, 0.3f);
+	std::cout << "Test done" << std::endl;
+}
+
 void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
 	autonrunner::destroy(); pros::delay(10);
@@ -161,7 +192,8 @@ void opcontrol(void) {
 	opcontrolfun::init();
 
 	// test_cs();
-	sample_spline();
+	// sample_spline();
+	// unit_test_boomerang();
 
 	while (true) {
 		for (auto& func : controls::ticks) {

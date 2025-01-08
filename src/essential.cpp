@@ -1,5 +1,6 @@
 #include "essential.h"
 #include "config.h"
+#include "pros/abstract_motor.hpp"
 
 using namespace robot;
 
@@ -24,21 +25,21 @@ pros::Controller robot::partner(pros::E_CONTROLLER_PARTNER);
 
 pros::adi::Pneumatics robot::doinker('b', false, true);
 pros::adi::Pneumatics robot::ejector('c', false, false);
-pros::adi::Pneumatics robot::clamp('e', false, false);
+pros::adi::Pneumatics robot::clamp('a', false, false);
 
-pros::Motor robot::conveyor(10, pros::MotorGearset::green);
-pros::Motor robot::intake(10);
-pros::Motor robot::wallmech(0); 
+pros::Motor robot::conveyor(-2, pros::MotorGearset::blue);
+pros::Motor robot::intake(-11);
+pros::Motor robot::wallmech(1); 
 
-pros::Imu robot::inertial(20);
+pros::Imu robot::inertial(0);
 pros::Optical robot::classifier(0);
-pros::Rotation robot::side_encoder(12);
-pros::Rotation robot::back_encoder(7);
+pros::Rotation robot::side_encoder(0);
+pros::Rotation robot::back_encoder(0);
 
 // pros::MotorGroup robot::left_motors({-11, -12, -13}, pros::MotorGearset::blue);
 // pros::MotorGroup robot::right_motors({1, 2, 3}, pros::MotorGearset::blue);
-pros::MotorGroup robot::left_motors({-1, -2, -3}, pros::MotorGearset::blue);
-pros::MotorGroup robot::right_motors({8, 9, 5}, pros::MotorGearset::blue);
+pros::MotorGroup robot::left_motors({-8, -9, -10}, pros::MotorGearset::blue);
+pros::MotorGroup robot::right_motors({18, 19, 20}, pros::MotorGearset::blue);
 
 int robot::max_speed(void) {
     switch (left_motors.get_gearing()) {
@@ -100,6 +101,7 @@ void robot::init(void) {
     inertial.reset(true);
     left_motors.set_brake_mode_all(config::default_brake_mode);
     right_motors.set_brake_mode_all(config::default_brake_mode);
+    wallmech.set_brake_mode(pros::MotorBrake::hold);
 
     master.clear();
     pros::delay(150);

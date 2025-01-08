@@ -32,7 +32,7 @@ class Future {
             state->available = true;
         }
 
-        bool wait(int timeout = TIMEOUT_MAX, int delay = 5) const {
+        bool wait(uint32_t timeout = TIMEOUT_MAX, int delay = 5) const {
             int start = pros::millis();
             while (!state->available && pros::millis() - start < timeout) {
                 pros::delay(delay);
@@ -41,7 +41,7 @@ class Future {
         }
 
         // We dont want to use T&& as we dont know if the user will call get() multiple times
-        T& get(int timeout = TIMEOUT_MAX, int delay = 5) const {
+        T& get(uint32_t timeout = TIMEOUT_MAX, int delay = 5) const {
             wait(timeout, delay);
             return state->value;
         }

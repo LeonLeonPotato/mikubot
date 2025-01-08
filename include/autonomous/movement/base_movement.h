@@ -84,12 +84,12 @@ struct SimpleMovementParams {
 };
 
 struct PIDGroup {
-    controllers::PID& angular;
     controllers::PID& linear;
+    controllers::PID& angular;
 
     void reset(void) const {
-        angular.reset();
         linear.reset();
+        angular.reset();
     }
 };
 } // namespace movement

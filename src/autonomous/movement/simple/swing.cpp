@@ -1,19 +1,19 @@
 #include "autonomous/movement/simple/swing.h"
+#include "Eigen/src/Core/Matrix.h"
+#include "autonomous/movement/base_movement.h"
 #include "essential.h"
+#include "simpletils.h"
 
 using namespace movement;
 
-SimpleResult simple::swing_to_tick(
-    const Eigen::Vector2f& point, 
-    const SimpleMovementParams& params,
-    PIDGroup pids)
+DEFINE_TICK(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     const float dist = robot::distance(point);
     const float angle_diff = robot::angular_diff(point, params.reversed);
     float speed = pids.linear.get(dist);
     float turn = pids.angular.get(angle_diff);
     if (params.reversed) speed = -speed;
-    if (params.use_cosine_scaling) speed *= fmax(0, cosf(angle_diff));
+    if (params.use_cosine_scaling) speed *= cosf(angle_diff);
     speed = std::clamp(speed, -params.max_linear_speed, params.max_linear_speed);
     // printf("Speed: %f, Turn: %f, Angular: %f, Reversed: %d, Dist: %f, Pos: [%f, %f]\n", speed, turn, angle_diff, reversed, dist, robot::pos.x(), robot::pos.y());
     robot::velo(speed + turn, speed - turn);
@@ -21,11 +21,7 @@ SimpleResult simple::swing_to_tick(
     return { ExitCode::SUCCESS, dist, 0 };
 }
 
-SimpleResult simple::swing_to_cancellable(
-    const Eigen::Vector2f& point, 
-    const SimpleMovementParams& params,
-    PIDGroup pids,
-    volatile bool& cancel_ref)
+DEFINE_CANCELLABLE(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     const int start = pros::millis();
     SimpleResult last_tick;
@@ -49,19 +45,13 @@ SimpleResult simple::swing_to_cancellable(
     return { ExitCode::SUCCESS, last_tick.error, __timediff(start) };
 }
 
-SimpleResult simple::swing_to(
-    const Eigen::Vector2f& point, 
-    const SimpleMovementParams& params,
-    PIDGroup pids)
+DEFINE_STANDARD(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     bool cancel = false;
     return swing_to_cancellable(point, params, pids, cancel);
 }
 
-Future<SimpleResult> simple::swing_to_async(
-    const Eigen::Vector2f& point, 
-    const SimpleMovementParams& params,
-    PIDGroup pids)
+DEFINE_ASYNC(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     Future<SimpleResult> future;
     pros::Task task([&point, &params, &pids, &future] () {

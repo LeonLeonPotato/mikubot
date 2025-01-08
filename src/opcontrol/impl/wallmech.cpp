@@ -9,9 +9,9 @@ static pros::task_t task = nullptr;
 
 void wallmech::tick() {
     const int speed = 
-        (robot::partner.get_digital(config::keybinds::wallmech_up)
-        - robot::partner.get_digital(config::keybinds::wallmech_down))
-        * 200;
+        (robot::master.get_digital(config::keybinds::wallmech_up)
+        - robot::master.get_digital(config::keybinds::wallmech_down))
+        * 150;
 
     robot::wallmech.move_velocity(speed);
 }

@@ -8,33 +8,33 @@
 #include "autonomous/movement.h" // IWYU pragma: export
 #include "autonomous/pathing.h" // IWYU pragma: export
 
+// One VEX tile in cm
 #define TILE 59.5f
-#define THETA_SOLVE pathing::BaseParams { .start_heading = robot::theta, .start_magnitude = 20, .end_heading = 0, .end_magnitude = 0 }
 
 static const controllers::PIDArgs linear_args {
-    .kp = 1.0f / 45.0f,
+    .kp = 1.0 / 45.0,
     .ki = 0,
-    .kd = -0.001f
+    .kd = 0.001f
 };
 
 static const controllers::PIDArgs angular_args {
     .kp = 1.0,
     .ki = 0,
-    .kd = -0.0
+    .kd = 0.0
 };
 
 static const controllers::PIDArgs in_place_args {
     .kp = 1.0,
     .ki = 0,
-    .kd = -0.0
+    .kd = 0.0
 };
 
 static controllers::PID linear_pid(linear_args);
 static controllers::PID angular_pid(angular_args);
 static controllers::PID in_place_pid(in_place_args);
 
-static const movement::PIDGroup path_group {angular_pid, linear_pid};
-static const movement::PIDGroup swing_group {angular_pid, linear_pid};
+static const movement::PIDGroup path_group {linear_pid, angular_pid};
+static const movement::PIDGroup swing_group {linear_pid, angular_pid};
 
 static const pathing::ProfileParams profile_params {
     .start_v = 10,

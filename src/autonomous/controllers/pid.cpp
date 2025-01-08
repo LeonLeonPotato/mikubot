@@ -32,7 +32,7 @@ void PID::reset() {
 }
 
 float PID::get(void) const {
-    const float dt = (cur_time - last_time) / 1000000.0;
+    const float dt = (cur_time - last_time) / 1000000.0f;
     const float derivative = (error - last_error) * (int) registered / dt;
-    return args.kp * error + args.ki * integral - args.kd * derivative;
+    return args.kp * error + args.ki * integral + args.kd * derivative;
 }

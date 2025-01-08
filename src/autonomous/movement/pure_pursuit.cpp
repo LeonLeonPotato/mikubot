@@ -74,7 +74,7 @@ static PurePursuitResult tick(
     float speed = pids.linear.get(res_dist);
     float turn = pids.angular.get(angular_diff);
     if (params.reversed) speed = -speed;
-    if (params.use_cosine_scaling) speed *= fmax(0, cosf(angular_diff));
+    if (params.use_cosine_scaling) speed *= cosf(angular_diff);
     speed = std::clamp(speed, -params.max_linear_speed, params.max_linear_speed);
 
     // Move the robot

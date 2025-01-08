@@ -14,13 +14,13 @@ namespace config::keybinds {
     constexpr digital doinker = pros::E_CONTROLLER_DIGITAL_A;
 
     constexpr digital conveyor_up = pros::E_CONTROLLER_DIGITAL_L1;
-    constexpr digital conveyor_down = pros::E_CONTROLLER_DIGITAL_R1;
+    constexpr digital conveyor_down = pros::E_CONTROLLER_DIGITAL_L2;
 
     constexpr digital intake_up = pros::E_CONTROLLER_DIGITAL_L1;
-    constexpr digital intake_down = pros::E_CONTROLLER_DIGITAL_R1;
+    constexpr digital intake_down = pros::E_CONTROLLER_DIGITAL_L2;
 
-    constexpr digital wallmech_up = pros::E_CONTROLLER_DIGITAL_X;
-    constexpr digital wallmech_down = pros::E_CONTROLLER_DIGITAL_B;
+    constexpr digital wallmech_up = pros::E_CONTROLLER_DIGITAL_R1;
+    constexpr digital wallmech_down = pros::E_CONTROLLER_DIGITAL_R2;
 };
 
 namespace config::test {

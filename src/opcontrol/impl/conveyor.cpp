@@ -11,7 +11,7 @@ void conveyor::tick() {
     const int speed = 
         (robot::master.get_digital(config::keybinds::conveyor_up)
         - robot::master.get_digital(config::keybinds::conveyor_down))
-        * 200;
+        * 450;
 
     robot::conveyor.move_velocity(speed);
 }
