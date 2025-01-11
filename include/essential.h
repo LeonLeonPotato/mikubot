@@ -62,8 +62,7 @@ int max_speed(void);
 
 void volt(int left, int right);
 void volt(float left, float right);
-void velo(int left, int right);
-void velo(float left, float right);
+void velo(float left, float right, float left_accel = 0.0f, float right_accel = 0.0f);
 
 void brake(void);
 void set_brake_mode(pros::motor_brake_mode_e_t mode);

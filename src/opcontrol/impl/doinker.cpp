@@ -10,7 +10,7 @@ static bool last = false;
 static bool toggle = false;
 
 void doinker::tick() {
-    const bool cur = robot::partner.get_digital(config::keybinds::doinker);
+    const bool cur = robot::master.get_digital(config::keybinds::doinker);
 
     if (cur && !last) toggle = !toggle;
 

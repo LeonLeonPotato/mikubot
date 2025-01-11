@@ -1,8 +1,20 @@
 #include "essential.h"
+#include "autonomous/controllers/pid.h"
 #include "config.h"
 #include "pros/abstract_motor.hpp"
+#include "pros/rtos.h"
 
 using namespace robot;
+
+static float left_kv = 0.0174021f*1000;
+static float left_ka = 0.0028005359521f*1000;
+static float left_kf = 0.852808*1000;
+static controllers::PID left_pid(15.0f, 0.0, 0);
+
+static float right_kv = 0.0174021f*1000;
+static float right_ka = 0.0028153546704f*1000;
+static float right_kf = 0.760359f*1000;
+static controllers::PID right_pid(15.0f, 0.0, 0);
 
 bool state::braking = false;
 Eigen::Vector2f state::pos = Eigen::Vector2f::Zero();
@@ -13,7 +25,9 @@ float state::angular_velocity = 0;
 float state::angular_acceleration = 0;
 
 int state::left_set_velocity = 0;
+static float left_set_acceleration = 0.0f;
 int state::right_set_velocity = 0;
+static float right_set_acceleration = 0.0f;
 int state::left_set_voltage = 0;
 int state::right_set_voltage = 0;
 
@@ -27,12 +41,12 @@ pros::adi::Pneumatics robot::doinker('b', false, true);
 pros::adi::Pneumatics robot::ejector('c', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
-pros::Motor robot::conveyor(-2, pros::MotorGearset::blue);
+pros::Motor robot::conveyor(-17, pros::MotorGearset::blue);
 pros::Motor robot::intake(-11);
 pros::Motor robot::wallmech(1); 
 
 pros::Imu robot::inertial(0);
-pros::Optical robot::classifier(0);
+pros::Optical robot::classifier(16);
 pros::Rotation robot::side_encoder(0);
 pros::Rotation robot::back_encoder(0);
 
@@ -71,18 +85,18 @@ void robot::volt(int left, int right) {
     robot::volt(left / 12000.0f, right / 12000.0f);
 }
 
-void robot::velo(float left, float right) {
-    int max = max_speed();
-    left_set_velocity = (int) (std::clamp(left, -1.0f, 1.0f) * max);
-    right_set_velocity = (int) (std::clamp(right, -1.0f, 1.0f) * max);
+void robot::velo(float left, float right, float left_accel, float right_accel) {
+    const int max = max_speed();
+
+    float left_velo = (std::clamp(left, -1.0f, 1.0f) * max);
+    float right_velo = (std::clamp(right, -1.0f, 1.0f) * max);
+    left_set_velocity = (int) roundf(left_velo);
+    right_set_velocity = (int) roundf(right_velo);
+
+    left_set_acceleration = left_accel;
+    right_set_acceleration = right_accel;
+
     braking = false;
-
-    left_motors.move_velocity(left_set_velocity);
-    right_motors.move_velocity(right_set_velocity);
-}
-
-void robot::velo(int left, int right) {
-    robot::velo(left / 12000.0f, right / 12000.0f);
 }
 
 void robot::brake(void) {
@@ -90,6 +104,11 @@ void robot::brake(void) {
 
     left_motors.brake();
     right_motors.brake();
+
+    left_set_velocity = 0; left_set_acceleration = 0;
+    right_set_velocity = 0; right_set_acceleration = 0;
+    left_set_voltage = 0;
+    right_set_voltage = 0;
 }
 
 void robot::set_brake_mode(pros::motor_brake_mode_e_t mode) {
@@ -97,7 +116,45 @@ void robot::set_brake_mode(pros::motor_brake_mode_e_t mode) {
     right_motors.set_brake_mode_all(mode);
 }
 
+static float slew(float current, float target) {
+    float max = fminf(current + 600, 12000);
+    float min = fmaxf(current - 600, -12000);
+    return std::clamp(target, min, max);
+}
+
+static void velocity_task(void* p) {
+    const int max = max_speed();
+
+    while (true) {
+        if (!braking) {
+            int left_sign = (left_set_velocity != 0) * (left_set_velocity > 0 ? 1 : -1);
+            int right_sign = (right_set_velocity != 0) * (right_set_velocity > 0 ? 1 : -1);
+
+            float left_ff = left_kv * left_set_velocity + left_ka * left_set_acceleration + left_kf * left_sign;
+            float right_ff = right_kv * right_set_velocity + right_ka * right_set_acceleration + right_kf * right_sign;
+
+            // printf("Left FF: %f | Right FF: %f\n", left_ff, right_ff);
+
+            float left_fb = left_pid.get(left_set_velocity - left_motors.get_actual_velocity());
+            float right_fb = right_pid.get(right_set_velocity - right_motors.get_actual_velocity());
+
+            // printf("Left FB: %f | Right FB: %f\n", left_fb, right_fb);
+
+
+            left_set_voltage = (int) slew(left_set_voltage, left_ff + left_fb);
+            right_set_voltage = (int) slew(right_set_voltage, right_ff + right_fb);
+
+            left_motors.move_voltage(left_set_voltage);
+            right_motors.move_voltage(right_set_voltage);
+        }
+
+        pros::delay(10);
+    }
+}
+
 void robot::init(void) {
+    pros::c::task_create(velocity_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "velocity");
+
     inertial.reset(true);
     left_motors.set_brake_mode_all(config::default_brake_mode);
     right_motors.set_brake_mode_all(config::default_brake_mode);

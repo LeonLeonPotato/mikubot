@@ -2,6 +2,7 @@
 #include "essential.h"
 #include "config.h"
 #include "api.h"
+#include "pros/motors.h"
 
 using namespace controls;
 
@@ -11,9 +12,9 @@ void intake::tick() {
     int speed = 
         (robot::master.get_digital(config::keybinds::intake_up)
         - robot::master.get_digital(config::keybinds::intake_down))
-        * 200;
+        * 12000;
 
-    robot::intake.move_velocity(speed);
+    robot::intake.move_voltage(speed);
 }
 
 void intake::run() {

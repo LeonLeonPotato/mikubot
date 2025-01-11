@@ -15,15 +15,15 @@ DEFINE_TICK(boomerang, PIDGroup,
          - lead * true_target_dist * Eigen::Vector2f(sinf(angle), cosf(angle));
     const float angle_diff = robot::angular_diff(carrot, params.reversed);
 
-    printf("%sCarrot: [%f, %f]\n", PREFIX.c_str(), carrot.x(), carrot.y());
+    // printf("%sCarrot: [%f, %f]\n", PREFIX.c_str(), carrot.x(), carrot.y());
 
-    float speed = pids.linear.get(true_target_dist);
+    float speed = pids.linear.get(robot::distance(carrot));
     float turn = pids.angular.get(angle_diff);
     if (params.reversed) speed = -speed;
     if (params.use_cosine_scaling) speed *= cosf(angle_diff);
     speed = std::clamp(speed, -params.max_linear_speed, params.max_linear_speed);
 
-    printf("%s%f, %f\n", PREFIX.c_str(), speed, turn);
+    // printf("%s%f, %f\n", PREFIX.c_str(), speed, turn);
     robot::velo(speed + turn, speed - turn);
 
     return { ExitCode::SUCCESS, true_target_dist, 0 };

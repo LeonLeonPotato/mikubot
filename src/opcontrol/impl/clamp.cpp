@@ -5,21 +5,18 @@
 using namespace controls;
 
 static pros::task_t task = nullptr;
-static bool last = false;
 static bool toggle = false;
 
 void clamp::tick() {
-    const bool cur = robot::master.get_digital(config::keybinds::clamp);
-
-    if (cur && !last) toggle = !toggle;
+    if (robot::master.get_digital_new_press(config::keybinds::clamp)) {
+        toggle = !toggle;
+    }
 
     if (toggle && !robot::clamp.is_extended()) {
         robot::clamp.extend();
     } else if (!toggle && robot::clamp.is_extended()) {
         robot::clamp.retract();
     }
-
-    last = cur;
 }
 
 void clamp::run() {

@@ -26,6 +26,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "pros/apix.h" // IWYU pragma: keep
 
@@ -35,13 +36,13 @@ void initialize(void) {
 	std::cout << PREFIX << "Initializing robot\n";
 
 	robot::init();
-	// odometry::start_task();
+	odometry::start_task();
 	driverinfo::init();
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
 		// simtest::init();
-		// competition_initialize();
+		competition_initialize();
 		// telemetry::start_task();
 		// autonomous();
 	}
@@ -185,6 +186,15 @@ static void unit_test_boomerang(void) {
 	std::cout << "Test done" << std::endl;
 }
 
+static void print_vector(std::vector<float>& vec, std::string name) {
+	printf("%s = \\left[", name.c_str());
+	for (int i = 0; i < vec.size(); i++) {
+		printf("\\left(%f,\\ %f\\right)", i*0.02, vec[i]);
+		if (i != vec.size() - 1) printf(",\\ ");
+	}
+	printf("\\right]\n");
+}
+
 void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
 	autonrunner::destroy(); pros::delay(10);
@@ -194,6 +204,20 @@ void opcontrol(void) {
 	// test_cs();
 	// sample_spline();
 	// unit_test_boomerang();
+
+	// const int volt = 1500*6;
+
+	// std::vector<float> pl, pr;
+	// for (int i = 0; i < 70; i++) {
+	// 	pros::delay(20);
+	// 	robot::velo(i / 70.0 * 1.0, i / 70.0 * 1.0, 428.571428571, 428.571428571);
+	// 	pl.push_back(robot::left_motors.get_actual_velocity());
+	// 	pr.push_back(robot::right_motors.get_actual_velocity());
+	// }
+	// robot::brake();
+
+	// print_vector(pl, "L");
+	// print_vector(pr, "R");
 
 	while (true) {
 		for (auto& func : controls::ticks) {

@@ -9,7 +9,7 @@ struct PIDArgs {
     float kp, ki, kd;
     float integral_limit = infinityf();
     float disable_integral_limit = infinityf();
-    bool sign_switch_reset;
+    bool sign_switch_reset = true;
 };
 
 class PID {
