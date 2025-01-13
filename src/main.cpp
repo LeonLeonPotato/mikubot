@@ -39,14 +39,14 @@ void initialize(void) {
 	robot::init();
 	odometry::start_task();
 	driverinfo::init();
-	debugscreen::init();
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
 		// simtest::init();
 		competition_initialize();
+		debugscreen::init();
 		// telemetry::start_task();
-		//autonomous();
+		autonomous();
 	}
 }
 
@@ -58,9 +58,11 @@ void competition_initialize(void) {
 	std::cout << PREFIX << "Competition initializing\n";
 
 	autonselector::init();
+
 	do {
 		pros::delay(50);
 	} while (autonselector::finished_selection == false);
+
 	autonselector::destroy();
 
 	std::cout << PREFIX << "Auton selection has finished\n";

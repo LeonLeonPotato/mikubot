@@ -157,13 +157,13 @@ class DifferentialDriveRobot(Robot):
 
     def get_info(self):
         return {
-            'x': self.pose.x,
-            'y': self.pose.y,
-            'theta': self.pose.theta,
-            'left_actual_velocity': self.left_drivetrain.get_linear_velocity(),
-            'right_actual_velocity': self.right_drivetrain.get_linear_velocity(),
-            'left_actual_accel': self.left_drivetrain.angular_accel,
-            'right_actual_accel': self.right_drivetrain.angular_accel,
+            'x': float(self.pose.x),
+            'y': float(self.pose.y),
+            'theta': float(self.pose.theta),
+            'left_actual_velocity': float(self.left_drivetrain.get_linear_velocity()),
+            'right_actual_velocity': float(self.right_drivetrain.get_linear_velocity()),
+            'left_actual_accel': float(self.left_drivetrain.angular_accel),
+            'right_actual_accel': float(self.right_drivetrain.angular_accel),
             'clamp': 0,
             'intake': 0,
             'conveyor': 0

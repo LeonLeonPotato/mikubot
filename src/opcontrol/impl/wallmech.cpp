@@ -12,14 +12,17 @@ static pros::task_t task = nullptr;
 static pros::task_t api_task = nullptr;
 static controllers::PID pid(1.0, 0.0, 0.1);
 
-float positions[3] = {0.0f, 575.0f, 2000.0f};
+float positions[3] = {0.0f, 600.0f, 2000.0f};
 static int special_fire_thing = -1;
 
 static State set_state = State::RESTING;
 
 static void api_task_func(void* p) {
     while (true) {
-        if (set_state == State::OVERRIDE) return;
+        pros::delay(10);
+        if (set_state == State::OVERRIDE) {
+            continue;
+        }
 
         if (special_fire_thing != -1) {
             if (pros::millis() < special_fire_thing) {

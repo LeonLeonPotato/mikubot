@@ -5,6 +5,7 @@
 #include "liblvgl/lvgl.h"
 #include "librsc/fonts.hpp"
 #include "pros/rtos.h"
+#include "pros/rtos.hpp"
 #include <cstddef>
 
 static bool initialized = false;
@@ -18,6 +19,7 @@ static void update_text_task_func(void* p) {
         sprintf(st, "Robot pos: [%.2f, %.2f]   Robot angle: %.2f\n%s", 
             robot::pos.x(), robot::pos.y(), robot::theta, debugscreen::debug_message.c_str());
         text->rename(st);
+        pros::delay(50);
     }
 }
 

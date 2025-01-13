@@ -13,11 +13,13 @@ tile = 59.5
 maxspeed = 200 / (wheelsize * ratio)
 maxaccel = 200 / (wheelsize * ratio)
 maxdecel = 200 / (wheelsize * ratio)
+gain = 10.9097943014
+time_constant = 0.685726606348
 
 r = robot.DifferentialDriveRobot(
     initial_pose=robot.Pose(0, 0, 0),
-    right_drivetrain=robot.DifferentialDrivetrain(maxspeed, -maxspeed, maxaccel, -maxdecel, wheelsize * ratio),
-    left_drivetrain=robot.DifferentialDrivetrain(maxspeed, -maxspeed, maxaccel, -maxdecel, wheelsize * ratio),
+    right_drivetrain=robot.DifferentialDrivetrain(gain, time_constant, wheelsize * ratio),
+    left_drivetrain=robot.DifferentialDrivetrain(gain, time_constant, wheelsize * ratio),
     track_width=39
 )
 
@@ -91,8 +93,8 @@ while True:
     # print(-p.angular_v)
     # v = point.center_v
     # w = point.angular_v
-    v /= wheelsize * ratio
-    w /= wheelsize * ratio
+    v /= wheelsize * ratio * gain
+    w /= wheelsize * ratio * gain
     r.update(v + w, v - w)
 
     buffer.fill((0, 0, 0))

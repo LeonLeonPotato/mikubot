@@ -9,8 +9,8 @@
 namespace strategies {
 enum class Strategy {
     PeakStrat,
-    Playback,
-    Test
+    Test,
+    None
 };
 
 extern const std::map<Strategy, std::string> names;

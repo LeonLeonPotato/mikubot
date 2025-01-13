@@ -46,14 +46,14 @@ pros::Motor robot::intake(-21);
 pros::Motor robot::wallmech(7); 
 
 pros::Imu robot::inertial(5);
-pros::Optical robot::classifier(16);
+pros::Optical robot::classifier(20);
 pros::Rotation robot::side_encoder(-2);
 pros::Rotation robot::back_encoder(1);
 
 // pros::MotorGroup robot::left_motors({-11, -12, -13}, pros::MotorGearset::blue);
 // pros::MotorGroup robot::right_motors({1, 2, 3}, pros::MotorGearset::blue);
 pros::MotorGroup robot::left_motors({-8, -9, -10}, pros::MotorGearset::blue);
-pros::MotorGroup robot::right_motors({18, 19, 20}, pros::MotorGearset::blue);
+pros::MotorGroup robot::right_motors({16, 18, 19}, pros::MotorGearset::blue);
 
 int robot::max_speed(void) {
     switch (left_motors.get_gearing()) {
