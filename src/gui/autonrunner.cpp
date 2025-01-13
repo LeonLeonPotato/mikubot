@@ -7,8 +7,8 @@
 #include "liblvgl/lvgl.h" // IWYU pragma: keep
 #include "librsc/fonts.hpp" // IWYU pragma: keep
 
-bool initialized = false;
-renderer::Text* text;
+static bool initialized = false;
+static renderer::Text* text;
 
 void autonrunner::init(void) {
     if (initialized) return;

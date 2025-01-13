@@ -15,7 +15,7 @@ namespace config::keybinds {
 
     constexpr digital conveyor_up = pros::E_CONTROLLER_DIGITAL_L1;
     constexpr digital conveyor_down = pros::E_CONTROLLER_DIGITAL_L2;
-    constexpr digital color_sort_toggle = pros::E_CONTROLLER_DIGITAL_B;
+    constexpr digital color_sort_toggle = pros::E_CONTROLLER_DIGITAL_A;
 
     constexpr digital intake_up = pros::E_CONTROLLER_DIGITAL_L1;
     constexpr digital intake_down = pros::E_CONTROLLER_DIGITAL_L2;

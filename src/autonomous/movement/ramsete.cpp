@@ -59,7 +59,7 @@ static RamseteResult tick(
     float motor_v = (v / robot::DRIVETRAIN_LINEAR_MULT) / max_rads_per_second;
     float motor_w = (w / robot::DRIVETRAIN_LINEAR_MULT) / max_rads_per_second;
     if (params.reversed) motor_v *= -1;
-    // motor_v = std::clamp(motor_v, -params.max_linear_speed, params.max_linear_speed);
+    motor_v = std::clamp(motor_v, -params.max_linear_speed, params.max_linear_speed);
 
     robot::velo(
         motor_v + motor_w,

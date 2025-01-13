@@ -50,22 +50,18 @@ class Pose:
         return f'Pose(x={self.x}, y={self.y}, theta={self.theta})'
 
 class DifferentialDrivetrain:
-    def __init__(self, max_velo:float, min_velo:float, max_accel:float, min_accel:float, wheel_size:float):
+    def __init__(self, gain:float, time_constant:float, wheel_size:float):
         self.cur_velocity:float = 0
-        self.max_velo:float = max_velo
-        self.min_velo:float = min_velo
-        self.max_accel:float = max_accel
-        self.min_accel:float = min_accel 
+        self.gain:float = gain
+        self.time_constant:float = time_constant
         self.wheel_size:float = wheel_size
         self.angular_accel:float = 0
 
-    def update(self, target_velo, dt) -> float:
-        target_velo = min(max(target_velo, self.min_velo), self.max_velo)
-        dv = target_velo - self.cur_velocity
-        dv = min(max(dv, self.min_accel * dt), self.max_accel * dt)
-        self.cur_velocity += dv
+    def update(self, volt, dt) -> float:
+        dvdt = 1/self.time_constant * (self.gain * volt - self.cur_velocity)
+        self.cur_velocity += dvdt * dt
         if dt != 0:
-            self.angular_accel = dv / dt
+            self.angular_accel = dvdt
 
         return self.cur_velocity
     
@@ -136,12 +132,12 @@ class DifferentialDriveRobot(Robot):
         else:
             return math.sin(x) / x
 
-    def update(self, left_velo, right_velo) -> Pose:
+    def update(self, left_volt, right_volt) -> Pose:
         dt = self.get_dt()
         self._pre_update()
 
-        self.left_drivetrain.update(left_velo, dt)
-        self.right_drivetrain.update(right_velo, dt)
+        self.left_drivetrain.update(left_volt, dt)
+        self.right_drivetrain.update(right_volt, dt)
 
         left_travel = self.left_drivetrain.get_linear_velocity() * dt
         right_travel =  self.right_drivetrain.get_linear_velocity() * dt

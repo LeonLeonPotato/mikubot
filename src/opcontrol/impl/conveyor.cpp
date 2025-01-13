@@ -42,7 +42,7 @@ void conveyor::tick() {
     const int speed = 
         (robot::master.get_digital(config::keybinds::conveyor_up)
         - robot::master.get_digital(config::keybinds::conveyor_down))
-        * 600;
+        * 12000;
 
     const float hue = robot::classifier.get_hue();
     const bool is_ring = robot::classifier.get_proximity() > 100;
@@ -72,7 +72,7 @@ void conveyor::tick() {
         }
     }
 
-    robot::conveyor.move_velocity(speed);
+    robot::conveyor.move_voltage(speed);
     total_ticks++;
 }
 

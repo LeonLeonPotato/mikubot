@@ -27,7 +27,7 @@ struct Scaling {
 void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	// https://www.desmos.com/calculator/v88re8mjh5
 	static Scaling forward_scale;
-	static Scaling turnging_scale = {.speed_scale = 0.45f, .smoothing = 0.0f};
+	static Scaling turnging_scale = {.speed_scale = 0.6f, .smoothing = 0.0f};
 
 	const float forward = forward_scale.compute(left_y);
 	const float turn = turnging_scale.compute(right_x);

@@ -5,6 +5,7 @@
 #include "autonomous/pathing/base_path.h"
 #include "essential.h"
 #include "ansicodes.h"
+#include "gui/debugscreen.h"
 #include "opcontrol/test/odom_center.h"
 #include "Eigen/Dense"
 #include "pros/misc.hpp"
@@ -38,13 +39,14 @@ void initialize(void) {
 	robot::init();
 	odometry::start_task();
 	driverinfo::init();
+	debugscreen::init();
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
 		// simtest::init();
 		competition_initialize();
 		// telemetry::start_task();
-		// autonomous();
+		//autonomous();
 	}
 }
 
@@ -60,16 +62,17 @@ void competition_initialize(void) {
 		pros::delay(50);
 	} while (autonselector::finished_selection == false);
 	autonselector::destroy();
-	std::cout << PREFIX << "Auton selection has finished\n";
 
-	autonrunner::init();
+	std::cout << PREFIX << "Auton selection has finished\n";
 }
 
 void autonomous(void) {
 	std::cout << PREFIX << "Running autonomous\n";
-	autonrunner::init();
+	// autonrunner::init();
 
 	strategies::functions.at(strategies::chosen_strategy)();
+
+	// autonrunner::destroy();
 }
 
 static void test_cs(void) {
@@ -197,27 +200,31 @@ static void print_vector(std::vector<float>& vec, std::string name) {
 
 void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
-	autonrunner::destroy(); pros::delay(10);
-	autonselector::destroy(); pros::delay(10);
-	opcontrolfun::init();
+	autonrunner::destroy();
+	autonselector::destroy();
+	// opcontrolfun::init();
 
 	// test_cs();
 	// sample_spline();
 	// unit_test_boomerang();
+	// int dir = 1;
 
-	// const int volt = 1500*6;
+	// std::vector<float> p; p.reserve(1000);
+	// for (int i = 1; i <= 500; i++) {
+	// 	if (i % 40 == 0) dir *= -1;
+	// 	robot::velo(dir, dir);
 
-	// std::vector<float> pl, pr;
-	// for (int i = 0; i < 70; i++) {
+	// 	p.push_back(
+	// 		(robot::left_motors.get_actual_velocity()
+	// 		+robot::right_motors.get_actual_velocity())
+	// 		/ 2.0f
+	// 	);
+
 	// 	pros::delay(20);
-	// 	robot::velo(i / 70.0 * 1.0, i / 70.0 * 1.0, 428.571428571, 428.571428571);
-	// 	pl.push_back(robot::left_motors.get_actual_velocity());
-	// 	pr.push_back(robot::right_motors.get_actual_velocity());
 	// }
 	// robot::brake();
 
-	// print_vector(pl, "L");
-	// print_vector(pr, "R");
+	// print_vector(p, "L");
 
 	while (true) {
 		for (auto& func : controls::ticks) {

@@ -12,30 +12,33 @@ static void get_goal(void) {
 }
 
 static void long_path_part(void) {
-    pathing::CubicSpline path;
-    path.points.emplace_back(-TILE * 2/3.0, TILE);
-    path.points.emplace_back(-TILE, 0);
-    path.points.emplace_back(-TILE-5, -TILE+10);
-    path.set_relative({0, -2*TILE + START_OFFSET});
-    path.points.insert(path.points.begin(), robot::pos);
+    movement::simple::boomerang({-TILE * 2/3.0, TILE}, -M_PI, 0.5f, {}, swing_group);
+    swing_group.reset(); robot::brake();
 
-    path.solve_coeffs({{1, robot::theta, 200}}, path.natural_conditions);
-    path.profile_path(profile_params);
-    std::cout << path.debug_out() << std::endl;
+    // pathing::CubicSpline path;
+    // path.points.emplace_back(-TILE * 2/3.0, TILE);
+    // path.points.emplace_back(-TILE, 0);
+    // path.points.emplace_back(-TILE-5, -TILE+10);
+    // path.set_relative({0, -2*TILE + START_OFFSET});
+    // path.points.insert(path.points.begin(), robot::pos);
 
-    movement::ramsete::RamseteParams params { 
-        {
-            .exit_threshold=5.0,
-            .timeout=10000
-        }, 
-        {
-            .beta=2.0,
-            .zeta=0.7
-        } 
-    };
+    // path.solve_coeffs({{1, robot::theta, 200}}, path.natural_conditions);
+    // path.profile_path(profile_params);
+    // std::cout << path.debug_out() << std::endl;
 
-    auto res = movement::ramsete::follow_path(path, params);
-    robot::brake();
+    // movement::ramsete::RamseteParams params { 
+    //     {
+    //         .exit_threshold=5.0,
+    //         .timeout=10000,
+    //     }, 
+    //     {
+    //         .beta=2.0,
+    //         .zeta=0.7
+    //     } 
+    // };
+
+    // auto res = movement::ramsete::follow_path(path, params);
+    // robot::brake();
 }
 
 static void go_back(void) {
@@ -83,7 +86,7 @@ static void test_ramsete(void) {
 
     movement::ramsete::RamseteParams params { 
         {
-            .exit_threshold=3.0,
+            .exit_threshold=5.0,
             .timeout=10000
         }, 
         {
@@ -100,9 +103,9 @@ void test_strategy::run(void) {
     //test_ramsete();
     get_goal();
     long_path_part();
-    go_back();
-    get_second_shit();
-    go_back();
+    // go_back();
+    // get_second_shit();
+    // go_back();
 
     robot::brake();
 }

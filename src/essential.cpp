@@ -37,18 +37,18 @@ int robot::match::side = 1;
 pros::Controller robot::master(pros::E_CONTROLLER_MASTER);
 pros::Controller robot::partner(pros::E_CONTROLLER_PARTNER);
 
-pros::adi::Pneumatics robot::doinker('b', false, true);
+pros::adi::Pneumatics robot::doinker('b', false, false);
 pros::adi::Pneumatics robot::ejector('c', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
 pros::Motor robot::conveyor(-17, pros::MotorGearset::blue);
-pros::Motor robot::intake(-11);
-pros::Motor robot::wallmech(1); 
+pros::Motor robot::intake(-21);
+pros::Motor robot::wallmech(7); 
 
-pros::Imu robot::inertial(0);
+pros::Imu robot::inertial(5);
 pros::Optical robot::classifier(16);
-pros::Rotation robot::side_encoder(0);
-pros::Rotation robot::back_encoder(0);
+pros::Rotation robot::side_encoder(-2);
+pros::Rotation robot::back_encoder(1);
 
 // pros::MotorGroup robot::left_motors({-11, -12, -13}, pros::MotorGearset::blue);
 // pros::MotorGroup robot::right_motors({1, 2, 3}, pros::MotorGearset::blue);

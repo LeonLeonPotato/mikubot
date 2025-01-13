@@ -39,8 +39,8 @@ static const movement::PIDGroup swing_group {linear_pid, angular_pid};
 static const pathing::ProfileParams profile_params {
     .start_v = 10,
     .end_v = 0,
-    .max_speed = 120,
-    .accel = 250,
+    .max_speed = 100, // true: around 150?
+    .accel = 200, // true: 427.376053809
     .decel = 200,
     .track_width = 39,
     .ds = 0.1,
