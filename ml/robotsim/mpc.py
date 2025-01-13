@@ -154,11 +154,13 @@ if __name__ == '__main__':
             0.0,
             0.0
         ])
-        U = mpc(n, xref.flatten(), last_u.flatten(), E, Q, R, Q, 0.01)
+        # U = mpc(n, xref.flatten(), last_u.flatten(), E, Q, R, Q, 0.01)
 
-        if U is not None:
-            last_u = torch.from_numpy(U[:2])
-            robot.update(U[0], U[1])
+        # if U is not None:
+        #     robot.update(last_u[0] + U[0], last_u[1] + U[1])
+        #     last_u = torch.from_numpy(U[:2])
+
+        pos = np.array([100, 100])
 
         buffer.fill((0, 0, 0))
         draw_path()
