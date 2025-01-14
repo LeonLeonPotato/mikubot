@@ -156,7 +156,7 @@ if __name__ == '__main__':
             float(robot.left_drivetrain.get_linear_velocity()),
             float(robot.right_drivetrain.get_linear_velocity())
         ])
-        U = mpc(n, xref.flatten(), last_u.flatten(), E, Q, R, Q*4)
+        # U = mpc(n, xref.flatten(), last_u.flatten(), E, Q, R, Q*4)
 
         if U is not None:
             set_u += U

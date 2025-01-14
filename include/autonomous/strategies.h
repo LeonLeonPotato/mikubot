@@ -10,6 +10,7 @@ namespace strategies {
 enum class Strategy {
     PeakStrat,
     Test,
+    BCIS,
     None
 };
 
