@@ -28,7 +28,7 @@ DEFINE_CANCELLABLE(forward, controllers::PID&, const float cm)
     const Eigen::Vector2f line = robot::pos + cm * normal;
 
     SimpleResult last_tick {.error = infinityf()};
-    while (last_tick.error > params.exit_threshold) {
+    while (fabsf(last_tick.error) > params.exit_threshold) {
         if (cancel_ref) {
             return { ExitCode::CANCELLED, last_tick.error, __timediff(start) };
         }

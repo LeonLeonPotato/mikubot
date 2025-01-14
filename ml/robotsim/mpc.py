@@ -158,12 +158,12 @@ if __name__ == '__main__':
         ])
         # U = mpc(n, xref.flatten(), last_u.flatten(), E, Q, R, Q*4)
 
-        if U is not None:
-            set_u += U
-            set_u = np.clip(set_u, -12, 12)
-            # print(U)
-            robot.update(*set_u)
-            last_u = torch.from_numpy(U)
+        # if U is not None:
+        #     set_u += U
+        #     set_u = np.clip(set_u, -12, 12)
+        #     # print(U)
+        #     robot.update(*set_u)
+        #     last_u = torch.from_numpy(U)
 
         buffer.fill((0, 0, 0))
         draw_path()

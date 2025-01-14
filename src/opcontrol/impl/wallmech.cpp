@@ -10,7 +10,7 @@ using State = wallmech::State;
 
 static pros::task_t task = nullptr;
 static pros::task_t api_task = nullptr;
-static controllers::PID pid(1.0, 0.0, 0.1);
+static controllers::PID pid(0.8, 0.0, 0.1);
 
 float positions[3] = {0.0f, 600.0f, 2000.0f};
 static int special_fire_thing = -1;
