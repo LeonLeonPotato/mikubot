@@ -15,7 +15,7 @@ constexpr float initial_offset = 17.0f;
 
 static void alliance_stake(void) {
     // Push middle rings out the way
-    movement::simple::forward(-25, { .max_linear_speed=0.5f, .timeout=500 }, linear_pid);
+    movement::simple::forward(-25, { .max_linear_speed = 0.5f, .timeout=500 }, linear_pid);
     linear_pid.reset();
 
     // Move to the alliance stake
