@@ -6,20 +6,16 @@ import time
 import numpy as np
 import ramsete
 
-wheelsize = 4.125
-ratio = 0.6
+linear_mult = 4.125 * 0.6
 
 tile = 59.5
-maxspeed = 200 / (wheelsize * ratio)
-maxaccel = 200 / (wheelsize * ratio)
-maxdecel = 200 / (wheelsize * ratio)
 gain = 10.9097943014
 time_constant = 0.685726606348
 
 r = robot.DifferentialDriveRobot(
     initial_pose=robot.Pose(0, 0, 0),
-    right_drivetrain=robot.DifferentialDrivetrain(gain, time_constant, wheelsize * ratio),
-    left_drivetrain=robot.DifferentialDrivetrain(gain, time_constant, wheelsize * ratio),
+    right_drivetrain=robot.DifferentialDrivetrain(gain, time_constant, linear_mult),
+    left_drivetrain=robot.DifferentialDrivetrain(gain, time_constant, linear_mult),
     track_width=39
 )
 
@@ -30,80 +26,65 @@ d = display.Display(42, 50)
 buffer = pygame.Surface((800, 600))
 screen = pygame.display.set_mode((800, 600))
 
-import random
+class PID:
+    def __init__(self, kp, ki, kd):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.integral = 0
+        self._last_time = 0
+        self._last_error = 0
+        self._registered_first = False
+    
+    def reset(self):
+        self.integral = 0
+        self._last_time = 0
+        self._last_error = 0
+        self._registered_first = False
 
-poses1 = [
-    r.pose,
-    r.pose + robot.Pose(tile * 2/3, tile),
-    r.pose + robot.Pose(tile, 0),
-    r.pose + robot.Pose(tile+5, -tile)
-]
+    def update(self, error, dt = -99999):
+        if not self._registered_first:
+            self._last_time = time.time() - 1
+            self._last_error = error
+            self._registered_first = True
+        
+        dt = time.time() - self._last_time
+        self.integral += error * dt
+        derivative = (error - self._last_error) / dt
+        self._last_error = error
+        return self.kp * error + self.ki * self.integral + self.kd * derivative
 
-poses2 = [r.pose]
-for i in range(10):
-    rand = random.random() * 2 * math.pi
-    poses2.append(r.pose + robot.Pose(200 * math.cos(rand), 200 * math.sin(rand), 0))
+linear_pid = PID(0.1, 0.0, 0.0)
+angular_pid = PID(20, 0.0, 0.0)
+lead = 0.5
 
-path = ramsete.TwoDSpline(poses2)
-path.generate_spline(robot.Pose(0, 100, 0), robot.Pose(0, 0, 0))
-path.construct_profile(ramsete.ProfileParams(0, 0, 
-                                             maxspeed * wheelsize * ratio, 
-                                             maxaccel * wheelsize * ratio, 
-                                             maxdecel * wheelsize * ratio, 
-                                             39, 0.5))
+# for angle in range(0, 420, 20):
+#     angle = angle * np.pi / 180
+#     print(angle, r.pose.minimum_angular_diff(angle, True))
 
-def draw_path():
-    xs = path.xspline(np.linspace(0, path.maxt(), 100))
-    ys = path.yspline(np.linspace(0, path.maxt(), 100))
-    coords = [
-        (xs[i] + 400, ys[i] + 300)
-        for i in range(len(xs))
-    ]
-    pygame.draw.lines(buffer, (255, 255, 255), False, coords, 2)
-
-tracking_i = 1
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
 
-    while tracking_i < len(path.profile):
-        point = path.profile[tracking_i]
-        profiled_pose = path.pose(point.time_param)
-        profiled_deriv = path.velocity(point.time_param)
-        if (profiled_pose - r.pose).dot(profiled_deriv) <= 0:
-            tracking_i += 1
-        else:
-            break
+    desired = robot.Pose(-50, -50, -np.pi/2)
+    carrot = desired + robot.Pose(np.sin(desired.theta), np.cos(desired.theta), 0) * -lead * r.pose.dist(desired)
+    angle_diff = r.pose.minimum_angular_diff(carrot, True)
+    linear_error = (desired - r.pose).norm()
+    linear = linear_pid.update(linear_error)
+    angular = angular_pid.update(angle_diff)
 
-    lookahead = tracking_i - 0
-    lookahead = np.clip(lookahead, 0, len(path.profile)-1)
-    
-    lp = path.profile[lookahead-1]
-    p = path.profile[lookahead]
-    # tracking_i += 1
-    # point = path.profile[tracking_i]
-    profiled_pose = path.pose(p.time_param)
-    print(profiled_pose.dist(r.pose))
+    print(angle_diff, linear_error, linear, angular)
 
-    max_angular = maxspeed * wheelsize * ratio * -np.sign(point.curvature) * 0.5
-    # max_angular = 1000000
-    v, w = ramsete.ramsete(r, profiled_pose, p.center_v, min(max_angular, -p.angular_v, key=abs), 2.0, 0.7)
-    # print(-p.angular_v)
-    # v = point.center_v
-    # w = point.angular_v
-    v /= wheelsize * ratio * gain
-    w /= wheelsize * ratio * gain
-    r.update(v + w, v - w)
+    linear = -linear
+    r.update((linear + angular) / 12, (linear - angular) / 12)
 
     buffer.fill((0, 0, 0))
-    
-    draw_path()
+
+    pygame.draw.circle(buffer, (255, 0, 0), (int(carrot.x) + 400, int(carrot.y) + 300), 5)
+    pygame.draw.circle(buffer, (0, 255, 0), (int(desired.x) + 400, int(desired.y) + 300), 5)
 
     buffer = d.draw_on_buffer(buffer, r.get_info())
-
-    pygame.draw.circle(buffer, (0, 255, 0), (profiled_pose.x + 400, 300 - profiled_pose.y), 2)
-
     screen.blit(buffer, (0, 0))
     pygame.display.flip()

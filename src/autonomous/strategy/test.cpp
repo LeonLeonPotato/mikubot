@@ -1,4 +1,6 @@
 #include "autonomous/strategy/test.h"
+#include "autonomous/movement/simple/forward.h"
+#include "autonomous/movement/simple/turn.h"
 #include "autonomous/strategy/utils.h"
 #include "essential.h"
 
@@ -101,11 +103,14 @@ static void test_ramsete(void) {
 
 void test_strategy::run(void) {
     //test_ramsete();
-    get_goal();
-    long_path_part();
+    // get_goal();
+    // long_path_part();
     // go_back();
     // get_second_shit();
     // go_back();
+
+    // movement::simple::turn_towards(M_PI/2, {.exit_threshold=rad(1.0), .timeout=2000}, in_place_pid);
+    movement::simple::forward(20, {.exit_threshold=0.1, .timeout=10000}, linear_pid);
 
     robot::brake();
 }

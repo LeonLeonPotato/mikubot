@@ -25,11 +25,11 @@ def transition(x, u):
     next_state[0] = x[0] + chord * torch.sin(x[2] + half)
     next_state[1] = x[1] + chord * torch.cos(x[2] + half)
     next_state[2] = x[2] + dtheta
-    next_state[3] = x[3] + (gain * u[0] - x[3]) / time_const * dt
-    next_state[4] = x[4] + (gain * u[1] - x[4]) / time_const * dt
+    next_state[3] = x[3] + u[0] * dt * linear_mult
+    next_state[4] = x[4] + u[1] * dt * linear_mult
     return next_state
 
-def mpc(n, xref:torch.Tensor, uref:torch.Tensor, poses:np.ndarray, Q, R, P, dt=0.1):
+def mpc(n, xref:torch.Tensor, uref:torch.Tensor, poses:np.ndarray, Q, R, P):
     a, b = jacobian(transition, (xref, uref))
     a = a.detach().numpy(); b = b.detach().numpy()
     xref = xref.numpy(); uref = uref.numpy()
@@ -63,7 +63,7 @@ def mpc(n, xref:torch.Tensor, uref:torch.Tensor, poses:np.ndarray, Q, R, P, dt=0
     prob = cp.Problem(cp.Minimize(cost), constraints)
     prob.solve()
     if prob.status == cp.OPTIMAL:
-        return U.value
+        return U.value.flatten()[:2]
     else:
         return None
 
@@ -88,13 +88,14 @@ if __name__ == '__main__':
         robot.pose + Pose(-50, -99, 0)
     ])
     spline.generate_spline(Pose(0, 100, 0), Pose(0, 0, 0))
-    spline.construct_profile(ramsete.ProfileParams(
+    spline.construct_profile_time_based(ramsete.ProfileParams(
         0, 0, 
-        200 * linear_mult, 
-        200 * linear_mult, 
-        200 * linear_mult, 
+        gain * 12 * linear_mult, 
+        gain * 6 * linear_mult, 
+        gain * 6 * linear_mult, 
         track_width, 
-        1.0
+        1.0,
+        dt=0.01
     ))
 
     def draw_path():
@@ -106,20 +107,21 @@ if __name__ == '__main__':
         ]
         pygame.draw.lines(buffer, (255, 255, 255), False, coords, 2)
 
-    n = 2
+    n = 10
     Q = np.array([
-        [3, 0, 0, 0, 0],
-        [0, 3, 0, 0, 0],
-        [0, 0, 100, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0]
+        [5, 0, 0, 0, 0],
+        [0, 5, 0, 0, 0],
+        [0, 0, 20, 0, 0],
+        [0, 0, 0, 0.00, 0],
+        [0, 0, 0, 0, 0.00]
     ])
     R = np.array([
-        [0.00, 0],
-        [0, 0.00]
+        [0, 0],
+        [0, 0]
     ])
 
     last_u = torch.tensor([0, 0], dtype=float)
+    set_u = np.zeros((2,), dtype=float)
     tracking_i = 2
     while True:
         for event in pygame.event.get():
@@ -143,24 +145,25 @@ if __name__ == '__main__':
                 _pose.x,
                 _pose.y,
                 _pose.theta,
-                0,
-                0
+                spline.profile[tracking_i + i].left_v,
+                spline.profile[tracking_i + i].right_v,
             ])
         
         xref = torch.tensor([
             float(robot.pose.x),
             float(robot.pose.y),
             float(robot.pose.theta),
-            0.0,
-            0.0
+            float(robot.left_drivetrain.get_linear_velocity()),
+            float(robot.right_drivetrain.get_linear_velocity())
         ])
-        # U = mpc(n, xref.flatten(), last_u.flatten(), E, Q, R, Q, 0.01)
+        # U = mpc(n, xref.flatten(), last_u.flatten(), E, Q, R, Q*4)
 
         # if U is not None:
-        #     robot.update(last_u[0] + U[0], last_u[1] + U[1])
-        #     last_u = torch.from_numpy(U[:2])
-
-        pos = np.array([100, 100])
+        #     set_u += U
+        #     set_u = np.clip(set_u, -12, 12)
+        #     # print(U)
+        #     robot.update(*set_u)
+        #     last_u = torch.from_numpy(U)
 
         buffer.fill((0, 0, 0))
         draw_path()

@@ -25,7 +25,7 @@ static void update_text_task_func(void* p) {
 
 void debugscreen::init() {
     if (initialized) return; initialized = true;
-    text = new renderer::Text(debug_message.c_str(), fonts::jetbrains_mono_regular_24, 0, 0, 0xFFFFFF);
+    text = new renderer::Text(debug_message.c_str(), fonts::jetbrains_mono_regular_16, 0, 0, 0xFFFFFF);
     update_text_task = pros::c::task_create(update_text_task_func, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Update debug text");
 }
 

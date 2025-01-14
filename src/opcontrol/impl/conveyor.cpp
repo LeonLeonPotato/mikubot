@@ -42,7 +42,7 @@ void conveyor::tick() {
     const int speed = 
         (robot::master.get_digital(config::keybinds::conveyor_up)
         - robot::master.get_digital(config::keybinds::conveyor_down))
-        * 12000;
+        * 10000;
 
     const float hue = robot::classifier.get_hue();
     const bool is_ring = robot::classifier.get_proximity() > 100;
@@ -50,10 +50,8 @@ void conveyor::tick() {
 
     if (is_ring) {
         if (fabsf(minimum_mod_diff(hue, 220)) < 60) {
-            printf("Blue detected | current hue: %f\n", hue);
             team = 'B';
         } else if (fabsf(minimum_mod_diff(hue, 0)) < 60) {
-            printf("Red detected | current hue: %f\n", hue);
             team = 'R';
         }
         if (team != 'N' && team != robot::match::team) {

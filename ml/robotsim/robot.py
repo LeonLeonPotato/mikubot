@@ -24,8 +24,11 @@ class Pose:
         new_theta = self.theta + angle if self.has_theta() else None
         return Pose(new_x, new_y, new_theta)
     
-    def minimum_angular_diff(self, angle) -> float:
-        return (angle - self.theta + math.pi) % (2*math.pi) - math.pi
+    def minimum_angular_diff(self, angle, reversed = False) -> float:
+        if isinstance(angle, Pose):
+            print(angle.x, angle.y)
+            return self.minimum_angular_diff(math.atan2(angle.y - self.y, angle.x - self.x), reversed)
+        return ((angle - self.theta + math.pi * (1 - reversed)) % (2*math.pi) - math.pi) * (1 - reversed*2)
     
     def dist(self, other) -> float:
         return math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
@@ -133,6 +136,9 @@ class DifferentialDriveRobot(Robot):
             return math.sin(x) / x
 
     def update(self, left_volt, right_volt) -> Pose:
+        left_volt = max(-12, min(12, left_volt))
+        right_volt = max(-12, min(12, right_volt))
+
         dt = self.get_dt()
         self._pre_update()
 

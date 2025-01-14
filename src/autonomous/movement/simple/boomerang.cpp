@@ -1,6 +1,7 @@
 #include "autonomous/movement/simple/boomerang.h"
 #include "ansicodes.h"
 #include "essential.h"
+#include "gui/debugscreen.h"
 #include "pros/rtos.h"
 
 using namespace movement;
@@ -13,13 +14,25 @@ DEFINE_TICK(boomerang, PIDGroup,
     const float true_target_dist = robot::distance(point);
     const Eigen::Vector2f carrot = point
          - lead * true_target_dist * Eigen::Vector2f(sinf(angle), cosf(angle));
-    const float angle_diff = robot::angular_diff(carrot, params.reversed);
+    float angle_diff = robot::angular_diff(carrot, params.reversed);
+
+    // if (true_target_dist < 10) {
+    //     float scale = true_target_dist / 10;
+    //     angle_diff = scale * angle_diff + (1 - scale) * robot::angular_diff(angle, params.reversed);
+    // }
+
+    debugscreen::debug_message = "Carrot: [" + std::to_string(carrot.x()) + ", " + std::to_string(carrot.y()) + "]\n";
+    debugscreen::debug_message += "Angle diff: " + std::to_string(angle_diff) + "\n";
+
+    printf("Carrot: %f, %f Angular diff: %f | true diff: %f\n", 
+        carrot.x(), carrot.y(), angle_diff, 
+        robot::angular_diff(angle, params.reversed));
 
     // printf("%sCarrot: [%f, %f]\n", PREFIX.c_str(), carrot.x(), carrot.y());
 
     float speed = pids.linear.get(robot::distance(carrot));
     float turn = pids.angular.get(angle_diff);
-    if (params.reversed) speed = -speed;
+    if (params.reversed) speed *= -1;
     if (params.use_cosine_scaling) speed *= cosf(angle_diff);
     speed = std::clamp(speed, -params.max_linear_speed, params.max_linear_speed);
 
