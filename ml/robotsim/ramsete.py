@@ -30,8 +30,9 @@ class ProfileParams:
         self.resolution = resolution
 
 class ProfilePoint:
-    def __init__(self, s:float, time_param:float, curvature:float, left_v:float, center_v:float, right_v:float, angular_v:float=0):
+    def __init__(self, s:float, t:float, time_param:float, curvature:float, left_v:float, center_v:float, right_v:float, angular_v:float=0):
         self.s = s
+        self.t = t
         self.time_param = time_param
         self.curvature = curvature
         self.left_v = left_v
@@ -99,145 +100,47 @@ class TwoDSpline:
         for i in range(1, len(xs)):
             self.distances.append(self.distances[-1] + np.sqrt((xs[i] - xs[i-1])**2 + (ys[i] - ys[i-1])**2))
     
-    def construct_profile(self, params:ProfileParams) -> None:
+    def construct_profile_time_based(self, params:ProfileParams) -> None:
         t = np.linspace(0, self.maxt(), params.resolution+1)
         computed = [self.pose(ti) for ti in t]
-        self.distances = [0 for _ in range(params.resolution+1)]
+        self.distances = [0]
+        for i in range(1, len(computed)):
+            self.distances.append(self.distances[-1] + (computed[i] - computed[i-1]).norm())
 
         self.profile = [
-            ProfilePoint(0, 0, self.curvature(0), 0, 0, 0)
+            ProfilePoint(0, 0, 0, self.curvature(0), 0, params.start_v, 0)
         ]
 
-        i = 1; j = 0; s = params.ds
-        last_angular_vel = 0
-        while i < params.resolution:
-            while i <= params.resolution:
-                self.distances[i] = self.distances[i-1] + computed[i].dist(computed[i-1])
-                if self.distances[i] >= s:
-                    break
-                i += 1
-
-            if i > params.resolution: i = params.resolution
-            time_param = i / params.resolution * self.maxt()
+        t = params.dt; s = 0
+        time_param = 0
+        while time_param <= self.maxt():
             curve = self.curvature(time_param)
-            ds = self.distances[i] - self.distances[j]
             
-            vel = self.profile[-1].center_v
-            angular_vel = vel * curve
-            angular_accel = (angular_vel - last_angular_vel) * (vel / ds)
-            last_angular_vel = angular_vel
+            scale = 1 + abs(curve) * params.track_width / 2
+            vel = self.profile[-1].center_v + params.accel * params.dt / scale 
+            vel = min(vel, params.max_speed / scale)
+            self.profile.append(ProfilePoint(s, t, time_param, curve, 0, vel, 0))
 
-            accel = max(0, params.accel - abs(angular_accel * params.track_width / 2.0))
-            center_v = np.clip(
-                signed_sqrt(signed_square(vel) + 2*accel*ds),
-                -max_speed(curve, params),
-                max_speed(curve, params)
-            )
-            self.profile.append(ProfilePoint(self.distances[i], time_param, curve, 0, center_v, 0))
+            t += params.dt
+            ds = self.profile[-1].center_v * params.dt + 0.5 * params.accel / scale * params.dt ** 2
+            s += ds
+            time_param += ds / (self.velocity(time_param).norm() + 1e-6)
 
-            s += params.ds
-            j = i
+        self.profile[-1] = ProfilePoint(s, t, self.maxt(), self.curvature(self.maxt()), 0, params.end_v, 0)
 
-        __scale = self.profile[-1].curvature * params.track_width / 2.0
-        self.profile[-1].center_v = 0.0001
-        self.profile[-1].left_v = 0.0001
-        self.profile[-1].right_v = 0
-        self.profile[-1].angular_v = 0
-
-        last_angular_vel = 0
-        vel = 0.0001
-        for i in range(len(self.profile)-2, 0, -1):
-            lp = self.profile[i+1]
-            p = self.profile[i]
-
-            scale = p.curvature * params.track_width / 2.0
-            ds = lp.s - p.s
-
-            vel = lp.center_v
-            angular_vel = vel * p.curvature
-            angular_accel = (angular_vel - last_angular_vel) * (vel / ds)
-            last_angular_vel = angular_vel
-
-            decel = max(0, params.decel - abs(angular_accel * params.track_width / 2.0))
-            vel = np.clip(
-                signed_sqrt(signed_square(vel) + 2*decel*ds),
-                -max_speed(curve, params),
-                max_speed(curve, params)
-            )
-            p.center_v = min(p.center_v, vel)
-            p.left_v = np.clip(p.center_v * (1 - scale), -params.max_speed, params.max_speed)
-            p.right_v = np.clip(p.center_v * (1 + scale), -params.max_speed, params.max_speed)
-            p.angular_v = p.center_v * -p.curvature * params.track_width * 0.5
-
-    def construct_profile_2(self, params:ProfileParams) -> None:
-        t = np.linspace(0, self.maxt(), params.resolution+1)
-        computed = [self.pose(ti) for ti in t]
-        self.distances = [0 for _ in range(params.resolution+1)]
-
-        self.profile = [
-            ProfilePoint(0, 0, self.curvature(0), 0, 1, 0)
-        ]
-
-        i = 1; j = 0; s = params.ds
-        while i < params.resolution:
-            while i <= params.resolution:
-                self.distances[i] = self.distances[i-1] + computed[i].dist(computed[i-1])
-                if self.distances[i] >= s:
-                    break
-                i += 1
-
-            if i > params.resolution: i = params.resolution
-            time_param = i / params.resolution * self.maxt()
-            curve = self.curvature(time_param)
-            ds = self.distances[i] - self.distances[j]
-            center_scale = 1 + abs(curve) * params.track_width / 2.0
-            left_scale = 1 - curve * params.track_width / 2.0
-            right_scale = 1 + curve * params.track_width / 2.0
-
-            old_vel = self.profile[-1].center_v
-            lv = self.profile[-1].left_v
-            rv = self.profile[-1].right_v
-            lv = np.clip(
-                signed_sqrt(signed_square(lv) + 2*params.accel*ds * left_scale),
-                -params.max_speed, params.max_speed
-            )
-            rv = np.clip(
-                signed_sqrt(signed_square(rv) + 2*params.accel*ds * right_scale),
-                -params.max_speed, params.max_speed
-            )
-            vel = min(lv / left_scale, rv / right_scale, key=abs)
-            self.profile.append(ProfilePoint(self.distances[i], time_param, curve, lv, vel, rv))
-
-            s += params.ds
-            j = i
-
-        __scale = self.profile[-1].curvature * params.track_width / 2.0
-        self.profile[-1].center_v = 0
-        self.profile[-1].left_v = 0
-        self.profile[-1].right_v = 0
-        self.profile[-1].angular_v = 0
-
-        for i in range(len(self.profile)-2, 0, -1):
-            lp = self.profile[i+1]
-            p = self.profile[i]
-
-            ds = lp.s - p.s
-            center_scale = (1 + abs(p.curvature) * params.track_width / 2.0)
-            left_scale = 1 - p.curvature * params.track_width / 2.0
-            right_scale = 1 + p.curvature * params.track_width / 2.0
-
-            vel = lp.center_v
-            lv = lp.left_v
-            rv = lp.right_v
-
-            p.center_v = min(p.center_v, lv / left_scale, rv / right_scale, key=abs)
-            p.left_v =  p.center_v * left_scale
-            p.right_v =  p.center_v * right_scale
-            # p.angular_v = (p.left_v - p.right_v) / 2.0
-            p.angular_v = p.center_v * -p.curvature * params.track_width * 0.25
+        for i in range(len(self.profile) - 2, -1, -1):
+            last = self.profile[i+1]
+            current = self.profile[i]
+            
+            scale = 1 + abs(current.curvature) * params.track_width / 2
+            last_scale = 1 + abs(last.curvature) * params.track_width / 2
+            vel = last.center_v + params.decel * params.dt / scale
+            vel = min(vel, current.center_v, params.max_speed / scale)
+            left = vel * (1 + current.curvature * params.track_width / 2)
+            right = vel * (1 - current.curvature * params.track_width / 2)
+            self.profile[i] = ProfilePoint(current.s, current.t, current.time_param, current.curvature, left, vel, right)
 
 def ramsete(robot:DifferentialDriveRobot, desired_pose, desired_velocity, desired_angular, beta, zeta):
-
     error = desired_pose - robot.pose
     error = error.rotate(robot.pose.theta)
     theta_error = robot.pose.minimum_angular_diff(desired_pose.theta)
@@ -250,25 +153,26 @@ def ramsete(robot:DifferentialDriveRobot, desired_pose, desired_velocity, desire
     return v, w
 
 if __name__ == "__main__":
-    r = DifferentialDriveRobot(
+    robot = DifferentialDriveRobot(
         initial_pose=Pose(0, 0, 0),
-        right_drivetrain=DifferentialDrivetrain(40, -40, 200, -200, 4.25),
-        left_drivetrain=DifferentialDrivetrain(40, -40, 200, -200, 4.25),
+        right_drivetrain=DifferentialDrivetrain(10.9, 0.07, 4.25),
+        left_drivetrain=DifferentialDrivetrain(10.9, 0.07, 4.25),
         track_width=40
     )
     path = TwoDSpline([
-        r.pose,
-        r.pose + Pose(0, 100, 0),
-        r.pose + Pose(100, 0, 0),
-        r.pose
+        robot.pose,
+        robot.pose + Pose(0, 50, 0),
+        robot.pose + Pose(48, -320, 0),
+        robot.pose + Pose(150, 200, 0),
+        robot.pose + Pose(-50, -99, 0)
     ])
     path.generate_spline(Pose(10, 10, 0), Pose(0, 0, 0))
 
     maxspeed = 100
-    maxaccel = 300
-    maxdecel = 237
-    path.construct_profile_2(ProfileParams(
-        0, 0, maxspeed, maxaccel, maxdecel, 39, 0.1, resolution=10000
+    maxaccel = 100
+    maxdecel = 100
+    path.construct_profile_time_based(ProfileParams(
+        0, 0, maxspeed, maxaccel, maxdecel, 39, 0.1, resolution=10000, dt=0.001
     ))
 
     # P = eval(open("ml/robotsim/output.txt").read())
@@ -276,7 +180,7 @@ if __name__ == "__main__":
     #     [p[0] for p in P],
     #     [p[1] for p in P]
     # )
-    x = [p.s for p in path.profile]
+    x = [p.t for p in path.profile]
 
     y = [p.center_v for p in path.profile]
     plt.plot(x, y, label='center_v')
