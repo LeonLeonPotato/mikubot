@@ -4,6 +4,11 @@
 #include "gui/debugscreen.h"
 #include "pros/rtos.h"
 
+static inline float safe_sinc(float x) {
+    if (fabsf(x) < 1e-3) return 1 - (x*x/6.0f) + (x*x*x*x/120.0f);
+    return sinf(x) / x;
+}
+
 using namespace movement;
 
 DEFINE_TICK(boomerang, PIDGroup,
@@ -14,30 +19,42 @@ DEFINE_TICK(boomerang, PIDGroup,
     const float true_target_dist = robot::distance(point);
     const Eigen::Vector2f carrot = point
          - lead * true_target_dist * Eigen::Vector2f(sinf(angle), cosf(angle));
-    float angle_diff = robot::angular_diff(carrot, params.reversed);
+    float theta_error = robot::angular_diff(carrot, params.reversed);
 
-    // if (true_target_dist < 10) {
-    //     float scale = true_target_dist / 10;
-    //     angle_diff = scale * angle_diff + (1 - scale) * robot::angular_diff(angle, params.reversed);
-    // }
+    Eigen::Rotation2D<float> rot(robot::theta);
+    Eigen::Vector2f error = rot * (carrot - robot::pos);
+
+    if (true_target_dist < 10) {
+        float scale = true_target_dist / 10;
+        theta_error = scale * theta_error + (1 - scale) * robot::angular_diff(angle, params.reversed);
+    }
 
     debugscreen::debug_message = "Carrot: [" + std::to_string(carrot.x()) + ", " + std::to_string(carrot.y()) + "]\n";
-    debugscreen::debug_message += "Angle diff: " + std::to_string(angle_diff) + "\n";
+    debugscreen::debug_message += "Angle diff: " + std::to_string(theta_error) + "\n";
 
     printf("Carrot: %f, %f Angular diff: %f | true diff: %f\n", 
-        carrot.x(), carrot.y(), angle_diff, 
+        carrot.x(), carrot.y(), theta_error, 
         robot::angular_diff(angle, params.reversed));
 
     // printf("%sCarrot: [%f, %f]\n", PREFIX.c_str(), carrot.x(), carrot.y());
 
-    float speed = pids.linear.get(robot::distance(carrot));
-    float turn = pids.angular.get(angle_diff);
-    if (params.reversed) speed *= -1;
-    if (params.use_cosine_scaling) speed *= cosf(angle_diff);
-    speed = std::clamp(speed, -params.max_linear_speed, params.max_linear_speed);
+    // float speed = pids.linear.get(robot::distance(carrot));
+    // float turn = pids.angular.get(theta_error);
+    // if (params.reversed) speed *= -1;
+    // if (params.use_cosine_scaling) speed *= cosf(theta_error);
+    // speed = std::clamp(speed, -params.max_linear_speed, params.max_linear_speed);
 
-    // printf("%s%f, %f\n", PREFIX.c_str(), speed, turn);
-    robot::velo(speed + turn, speed - turn);
+    // // printf("%s%f, %f\n", PREFIX.c_str(), speed, turn);
+    // robot::velo(speed + turn, speed - turn);
+    float klat = 2.0f;
+
+    float vd = pids.linear.get(error.norm() * (cosf(theta_error) > 0 ? 1 : -1));
+    float omega = pids.angular.get(theta_error) + klat * vd * error.y() * safe_sinc(theta_error);
+    float v = vd * fabsf(cosf(theta_error));
+
+    if (params.reversed) v = -v;
+
+    robot::velo(v + omega, v - omega);
 
     return { ExitCode::SUCCESS, true_target_dist, 0 };
 }
@@ -49,7 +66,9 @@ DEFINE_CANCELLABLE(boomerang, PIDGroup,
 {
     const int start = pros::millis();
     SimpleResult last_tick;
-    while (robot::distance(point) > params.exit_threshold) {
+    while (robot::distance(point) > params.linear_exit_threshold && 
+           fabs(robot::angular_diff(angle, params.reversed)) > params.angular_exit_threshold) 
+    {
         if (cancel_ref) {
             return { ExitCode::CANCELLED, last_tick.error, __timediff(start) };
         }

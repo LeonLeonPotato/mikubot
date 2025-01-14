@@ -77,7 +77,7 @@ RamseteResult ramsete::follow_path_cancellable(
     const int start_t = pros::millis();
 
     RamseteResult last_tick {.i = 1};
-    while (robot::distance(path.points.back()) > params.exit_threshold || last_tick.i != path.get_profile().size()-1) {
+    while (robot::distance(path.points.back()) > params.linear_exit_threshold || last_tick.i != path.get_profile().size()-1) {
         // De morgans law
         if (cancel_ref) {
             return {ExitCode::CANCELLED, last_tick.error, __timediff(start_t), last_tick.i};

@@ -55,17 +55,19 @@ struct SimpleResult {
 
 struct SimpleMovementParams {
     bool reversed = false;
-    float exit_threshold = 5.0;
+    float linear_exit_threshold = 1.0f;
+    float angular_exit_threshold = 2.5f * M_PI / 180.0f;
 
     float max_linear_speed = 1.0;
     bool use_cosine_scaling = true;
 
     int timeout = 2000;
-    int delay = 20;
+    int delay = 10;
 
     void copy_from(const SimpleMovementParams& other) {
         reversed = other.reversed;
-        exit_threshold = other.exit_threshold;
+        linear_exit_threshold = other.linear_exit_threshold;
+        angular_exit_threshold = other.angular_exit_threshold;
         max_linear_speed = other.max_linear_speed;
         use_cosine_scaling = other.use_cosine_scaling;
         timeout = other.timeout;
@@ -74,8 +76,9 @@ struct SimpleMovementParams {
 
     std::string debug_out(void) {
         return "SimpleMovementParams { reversed: "
-            + std::to_string(reversed) + ", exit_threshold: "
-            + std::to_string(exit_threshold) + ", max_linear_speed: "
+            + std::to_string(reversed) + ", linear exit thres: "
+            + std::to_string(linear_exit_threshold) + ", angular exit thres: "
+            + std::to_string(angular_exit_threshold) + ", max_linear_speed: "
             + std::to_string(max_linear_speed) + ", use_cosine_scaling: " 
             + std::to_string(use_cosine_scaling) + ", timeout: " 
             + std::to_string(timeout) + ", delay: " 

@@ -131,7 +131,7 @@ PurePursuitResult purepursuit::follow_path_cancellable(
     utils::recompute_path(path, path_solver, 1);
     std::tie(result.t, result.error) = utils::compute_initial_t(path, params.recomputation_guesses, recomp_params);
 
-    while (robot::distance(path.points.back()) > params.exit_threshold) {
+    while (robot::distance(path.points.back()) > params.linear_exit_threshold) {
         if (cancel_ref) { // cancel handling
             result.code = ExitCode::CANCELLED;
             break;

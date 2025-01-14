@@ -47,7 +47,6 @@ static void go_back(void) {
     Eigen::Vector2f target = robot::pos + Eigen::Vector2f {0, TILE};
     movement::SimpleMovementParams params {
         .reversed = true, 
-        .exit_threshold = 10.0f, 
         .max_linear_speed = 0.8f
     };
     auto res = movement::simple::swing_to(target, params, swing_group);
@@ -59,7 +58,6 @@ static void get_second_shit(void) {
     movement::simple::turn_towards(
         second, 
         {
-            .exit_threshold=rad(5),
             .timeout=5000
         }, 
         in_place_pid
@@ -68,7 +66,6 @@ static void get_second_shit(void) {
 
     movement::SimpleMovementParams params {
         .reversed = false, 
-        .exit_threshold = 5.0f, 
         .max_linear_speed = 0.8f
     };
     auto res = movement::simple::swing_to(second, params, swing_group);
@@ -88,7 +85,6 @@ static void test_ramsete(void) {
 
     movement::ramsete::RamseteParams params { 
         {
-            .exit_threshold=5.0,
             .timeout=10000
         }, 
         {
@@ -110,7 +106,7 @@ void test_strategy::run(void) {
     // go_back();
 
     // movement::simple::turn_towards(M_PI/2, {.exit_threshold=rad(1.0), .timeout=2000}, in_place_pid);
-    movement::simple::forward(20, {.exit_threshold=0.1, .timeout=10000}, linear_pid);
+    movement::simple::forward(20, {.linear_exit_threshold=0.1, .timeout=10000}, linear_pid);
 
     robot::brake();
 }
