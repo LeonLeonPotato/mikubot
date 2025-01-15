@@ -7,6 +7,8 @@ namespace config {
     using analog = pros::controller_analog_e_t;
 
     constexpr pros::motor_brake_mode_e default_brake_mode = pros::E_MOTOR_BRAKE_COAST;
+    
+    constexpr bool SIM_MODE = true;
 }
 
 namespace config::keybinds {

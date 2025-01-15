@@ -3,12 +3,17 @@
 #include "api.h"
 
 #include "Eigen/Dense"
+#include "autonomous/controllers/velocity.h"
 
 namespace robot {
 constexpr float TRACKING_WHEEL_RADIUS = 4.1275f;
 constexpr float DRIVETRAIN_LINEAR_MULT = 4.1275f * 0.6f;
 constexpr float BACK_TRACKING_WHEEL_OFFSET = -6.46794f;
 constexpr float SIDE_TRACKING_WHEEL_OFFSET = -3.7031f;
+constexpr float DRIVETRAIN_WIDTH = 39.0f;
+
+extern controllers::VelocityController left_velo_controller;
+extern controllers::VelocityController right_velo_controller;
 
 inline namespace state {
 extern bool braking;

@@ -1,14 +1,10 @@
 #include "autonomous/movement/ramsete.h"
 #include "essential.h"
+#include "mathtils.h"
 #include <math.h>
 
 using namespace movement::ramsete;
 using namespace movement;
-
-static float safe_sinc(float x) {
-    if (fabsf(x) < 1e-3) return 1 - (x*x/6.0f) + (x*x*x*x/120.0f);
-    return sinf(x) / x;
-}
 
 static RamseteResult tick(
     pathing::BasePath& path, 
@@ -51,7 +47,7 @@ static RamseteResult tick(
 
     float w = angular
         + gain * angle_local
-            + params.beta * p.center_v * safe_sinc(angle_local) * crosstrack_local.x();
+            + params.beta * p.center_v * sinc(angle_local) * crosstrack_local.x();
 
     // printf("Terms: %f, %f, %f, %f\n", angular, gain*angle_local, params.beta * p.center_v * sinf(angle_local), params.beta * crosstrack_local.x());
 

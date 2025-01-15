@@ -1,20 +1,14 @@
 #include "essential.h"
 #include "autonomous/controllers/pid.h"
+#include "autonomous/controllers/velocity.h"
 #include "config.h"
 #include "pros/abstract_motor.hpp"
 #include "pros/rtos.h"
 
 using namespace robot;
 
-static float left_kv = 0.0174021f*1000;
-static float left_ka = 0.0028005359521f*1000;
-static float left_kf = 0.852808*1000;
-static controllers::PID left_pid(15.0f, 0.0, 0);
-
-static float right_kv = 0.0174021f*1000;
-static float right_ka = 0.0028153546704f*1000;
-static float right_kf = 0.760359f*1000;
-static controllers::PID right_pid(15.0f, 0.0, 0);
+controllers::VelocityController robot::left_velo_controller(17.4021f, 2.8005f, 852.808f);
+controllers::VelocityController robot::right_velo_controller(17.4021f, 2.8005f, 760.359f);
 
 bool state::braking = false;
 Eigen::Vector2f state::pos = Eigen::Vector2f::Zero();
@@ -24,10 +18,8 @@ float state::theta = 0;
 float state::angular_velocity = 0;
 float state::angular_acceleration = 0;
 
-int state::left_set_velocity = 0;
-static float left_set_acceleration = 0.0f;
-int state::right_set_velocity = 0;
-static float right_set_acceleration = 0.0f;
+int state::left_set_velocity = 0; static float left_set_acceleration = 0.0f;
+int state::right_set_velocity = 0; static float right_set_acceleration = 0.0f;
 int state::left_set_voltage = 0;
 int state::right_set_voltage = 0;
 
@@ -56,6 +48,7 @@ pros::MotorGroup robot::left_motors({-8, -9, -10}, pros::MotorGearset::blue);
 pros::MotorGroup robot::right_motors({16, 18, 19}, pros::MotorGearset::blue);
 
 int robot::max_speed(void) {
+    if (config::SIM_MODE) return 600;
     switch (left_motors.get_gearing()) {
         case pros::MotorGears::blue:
             return 600;
@@ -122,27 +115,29 @@ static float slew(float current, float target) {
     return std::clamp(target, min, max);
 }
 
+static float average(std::vector<double> vec) {
+    double sum = 0;
+    for (auto& val : vec) {
+        sum += val;
+    }
+    return sum / vec.size();
+}
+
 static void velocity_task(void* p) {
     const int max = max_speed();
 
     while (true) {
         if (!braking) {
-            int left_sign = (left_set_velocity != 0) * (left_set_velocity > 0 ? 1 : -1);
-            int right_sign = (right_set_velocity != 0) * (right_set_velocity > 0 ? 1 : -1);
+            float left_current = config::SIM_MODE ? left_set_velocity : average(left_motors.get_actual_velocity_all());
+            float right_current = config::SIM_MODE ? right_set_velocity : average(right_motors.get_actual_velocity_all());
+            
+            float left_target_voltage = robot::left_velo_controller.get(
+                left_current, left_set_velocity, left_set_acceleration);
+            float right_target_voltage = robot::right_velo_controller.get(
+                right_current, right_set_velocity, right_set_acceleration);
 
-            float left_ff = left_kv * left_set_velocity + left_ka * left_set_acceleration + left_kf * left_sign;
-            float right_ff = right_kv * right_set_velocity + right_ka * right_set_acceleration + right_kf * right_sign;
-
-            // printf("Left FF: %f | Right FF: %f\n", left_ff, right_ff);
-
-            float left_fb = left_pid.get(left_set_velocity - left_motors.get_actual_velocity());
-            float right_fb = right_pid.get(right_set_velocity - right_motors.get_actual_velocity());
-
-            // printf("Left FB: %f | Right FB: %f\n", left_fb, right_fb);
-
-
-            left_set_voltage = (int) slew(left_set_voltage, left_ff + left_fb);
-            right_set_voltage = (int) slew(right_set_voltage, right_ff + right_fb);
+            left_set_voltage = (int) slew(left_set_voltage, left_target_voltage);
+            right_set_voltage = (int) slew(right_set_voltage, right_target_voltage);
 
             left_motors.move_voltage(left_set_voltage);
             right_motors.move_voltage(right_set_voltage);
@@ -155,17 +150,19 @@ static void velocity_task(void* p) {
 void robot::init(void) {
     pros::c::task_create(velocity_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "velocity");
 
-    inertial.reset(true);
-    left_motors.set_brake_mode_all(config::default_brake_mode);
-    right_motors.set_brake_mode_all(config::default_brake_mode);
-    wallmech.set_brake_mode(pros::MotorBrake::hold);
+    if (!config::SIM_MODE) {
+        inertial.reset(true);
+        left_motors.set_brake_mode_all(config::default_brake_mode);
+        right_motors.set_brake_mode_all(config::default_brake_mode);
+        wallmech.set_brake_mode(pros::MotorBrake::hold);
 
-    master.clear();
-    pros::delay(150);
-    partner.clear();
-    pros::delay(150);
+        master.clear();
+        pros::delay(150);
+        partner.clear();
+        pros::delay(150);
 
-    master.set_text(0, 0, "Master");
-    pros::delay(150);
-    partner.set_text(0, 0, "Partner");
+        master.set_text(0, 0, "Master");
+        pros::delay(150);
+        partner.set_text(0, 0, "Partner");
+    }
 }

@@ -1,11 +1,13 @@
 #include "autonomous/odometry.h"
+#include "config.h"
 #include "essential.h"
 
 #include "api.h"
+#include "mathtils.h"
 
 static pros::task_t task = nullptr;
 
-void run(void* args) {
+static void run(void* args) {
     long long iterations = 0;
     long long ltime = pros::micros();
     float ls = rad(robot::side_encoder.get_position() / 100.0f);
@@ -55,9 +57,42 @@ void run(void* args) {
     }
 }
 
+static void run_sim_mode(void* args) {
+    const float gain = 13.01f / 1000;
+    const float time_constant = 0.120339f;
+
+    float lv = 0, rv = 0;
+    long long last_time = pros::micros();
+    while (true) {
+        float dt = (pros::micros() - last_time) / 1e6f;
+        last_time = pros::micros();
+
+        lv += (robot::left_set_voltage * gain - lv) / time_constant * dt;
+        rv += (robot::right_set_voltage * gain - rv) / time_constant * dt;
+
+        float v_theta = (lv - rv) * robot::DRIVETRAIN_LINEAR_MULT / robot::DRIVETRAIN_WIDTH;
+        float half = v_theta * dt / 2;
+        float v_chord = (lv + rv) * robot::DRIVETRAIN_LINEAR_MULT * 0.5f * sinc(half);
+
+        Eigen::Vector2f velocity = {
+            v_chord * sinf(half + robot::theta),
+            v_chord * cosf(half + robot::theta)
+        };
+        robot::angular_acceleration = (v_theta - robot::angular_velocity) / dt;
+        robot::angular_velocity = v_theta;
+        robot::theta += v_theta * dt;
+        robot::acceleration = (velocity - robot::velocity) / dt;
+        robot::velocity = velocity;
+        robot::pos += velocity * dt;
+    }
+}
+
 void odometry::start_task() {
     if (task != nullptr) return;
-    task = pros::c::task_create(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "odometry");
+    if (config::SIM_MODE) 
+        task = pros::c::task_create(run_sim_mode, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "odometry");
+    else
+        task = pros::c::task_create(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "odometry");
 }
 
 void odometry::pause() {

@@ -3,6 +3,8 @@
 #include "autonomous/movement/base_movement.h"
 #include "autonomous/movement/simple/boomerang.h"
 #include "autonomous/pathing/base_path.h"
+#include "autonomous/strategy/test.h"
+#include "config.h"
 #include "essential.h"
 #include "ansicodes.h"
 #include "gui/debugscreen.h"
@@ -31,23 +33,21 @@
 
 #include "pros/apix.h" // IWYU pragma: keep
 
-constexpr bool SIM_MODE = false;
-
 void initialize(void) {
-	if (SIM_MODE) pros::c::serctl(SERCTL_DISABLE_COBS, nullptr);
+	if (config::SIM_MODE) pros::c::serctl(SERCTL_DISABLE_COBS, nullptr);
 	std::cout << PREFIX << "Initializing robot\n";
 
-	if (!SIM_MODE) robot::init();
-	if (!SIM_MODE) odometry::start_task();
-	if (!SIM_MODE) driverinfo::init();
+	robot::init();
+	driverinfo::init();
+	odometry::start_task();
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
 		// simtest::init();
-		if (!SIM_MODE) competition_initialize();
-		if (!SIM_MODE) debugscreen::init();
+		if (!config::SIM_MODE) competition_initialize();
+		if (!config::SIM_MODE) debugscreen::init();
 		// telemetry::start_task();
-		if (!SIM_MODE) autonomous();
+		if (!config::SIM_MODE) autonomous();
 	}
 }
 
@@ -203,30 +203,37 @@ static void print_vector(std::vector<float>& vec, std::string name) {
 
 void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
-	if (!SIM_MODE) autonrunner::destroy();
-	if (!SIM_MODE) autonselector::destroy();
+	if (!config::SIM_MODE) autonrunner::destroy();
+	if (!config::SIM_MODE) autonselector::destroy();
 	// opcontrolfun::init();
 
+	strategies::test_strategy::run();
 	// test_cs();
 	// sample_spline();
 	// unit_test_boomerang();
 	// int dir = 1;
 
-	auto unit_test_angle = [&] (float desired, float theta = 1.0f, bool reversed = false) {
-		const float res = fmodf(desired - theta + (M_PI * (int) !reversed), M_TWOPI) - M_PI;
-		return (res + (res < -M_PI) * M_TWOPI) * (reversed ? 1 : -1);
-	};
+	// while (true) {
+	// 	robot::velo(0, 1);
+	// 	pros::delay(20);
+	// 	printf("pos: (%f, %f), theta: %f\n", robot::pos.x(), robot::pos.y(), robot::theta);
+	// }
 
-	auto unit_test_point = [&] (const Eigen::Vector2f& point, float theta = 0.0f, bool reversed = false) {
-		return unit_test_angle(atan2f(point(0) - 0, point(1) - 0), theta, reversed);
-	};
+	// auto unit_test_angle = [&] (float desired, float theta = 1.0f, bool reversed = false) {
+	// 	const float res = fmodf(desired - theta + (M_PI * (int) !reversed), M_TWOPI) - M_PI;
+	// 	return (res + (res < -M_PI) * M_TWOPI) * (reversed ? 1 : -1);
+	// };
 
-	for (float angle = -100; angle <= 400; angle += 20) {
-		float rad = rad(angle);
-		Eigen::Vector2f projected = Eigen::Vector2f {sinf(rad), cosf(rad)};
-		printf("%sAngle: %f | Result: %f\n", PREFIX.c_str(), deg(rad), deg(unit_test_angle(rad, rad(45), false)));
-		printf("Angle: %f | Result: %f\n", deg(rad), deg(unit_test_point(projected, rad(45), false)));
-	}
+	// auto unit_test_point = [&] (const Eigen::Vector2f& point, float theta = 0.0f, bool reversed = false) {
+	// 	return unit_test_angle(atan2f(point(0) - 0, point(1) - 0), theta, reversed);
+	// };
+
+	// for (float angle = -100; angle <= 400; angle += 20) {
+	// 	float rad = rad(angle);
+	// 	Eigen::Vector2f projected = Eigen::Vector2f {sinf(rad), cosf(rad)};
+	// 	printf("%sAngle: %f | Result: %f\n", PREFIX.c_str(), deg(rad), deg(unit_test_angle(rad, rad(45), false)));
+	// 	printf("Angle: %f | Result: %f\n", deg(rad), deg(unit_test_point(projected, rad(45), false)));
+	// }
 
 	// std::vector<float> p; p.reserve(1000);
 	// for (int i = 1; i <= 500; i++) {
@@ -245,7 +252,7 @@ void opcontrol(void) {
 
 	// print_vector(p, "L");
 
-	while (true && !SIM_MODE) {
+	while (true && !config::SIM_MODE) {
 		for (auto& func : controls::ticks) {
 			func();
 		}
