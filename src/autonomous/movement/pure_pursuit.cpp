@@ -36,14 +36,14 @@ static PurePursuitResult tick(
 
     bool end_of_path = fabs(t - path.maxt()) < 0.0001; // is old t the end of the path?
     if (!end_of_path) { // lets update t and store it in result
-        std::tie(result.t, result.error) = utils::compute_updated_t(path, t, update_params);
+        std::tie(result.t, result.linear_error) = utils::compute_updated_t(path, t, update_params);
         end_of_path = fabs(result.t - path.maxt()) < 0.0001;
     } else { // update result to reflect end of path
         result.t = path.maxt();
-        result.error = recomp_params.funcs.funcs[0](result.t); // should give raw error
+        result.linear_error = recomp_params.funcs.funcs[0](result.t); // should give raw error
     }
 
-    const bool pathing_error = fabs(result.error) > params.recomputation_threshold || result.t < 0;
+    const bool pathing_error = fabs(result.linear_error) > params.recomputation_threshold || result.t < 0;
 
     if ((pathing_error || params.force_recomputation != NumericalRecomputation::NONE) && !end_of_path) {
         // Error is too high, or intersection not found, or some mode of always recompute is enabled
@@ -57,9 +57,9 @@ static PurePursuitResult tick(
             utils::recompute_path(path, path_recomputer, goal);
         }
 
-        std::tie(result.t, result.error) = utils::compute_initial_t(path, params.recomputation_guesses, recomp_params);
+        std::tie(result.t, result.linear_error) = utils::compute_initial_t(path, params.recomputation_guesses, recomp_params);
 
-        if (fabs(result.error) > params.recomputation_threshold || result.t < 0) {
+        if (fabs(result.linear_error) > params.recomputation_threshold || result.t < 0) {
             // Error is still too high or intersection still not found
             // We have to abort since compute_initial_t is deterministic, so we can't just call it again
             result.code = ExitCode::RECOMPUTATION_ERROR;
@@ -84,6 +84,7 @@ static PurePursuitResult tick(
     );
 
     result.code = ExitCode::SUCCESS;
+    result.angular_error = angular_diff;
     return result;
 }
 
@@ -129,7 +130,7 @@ PurePursuitResult purepursuit::follow_path_cancellable(
 
     // Compute our initial path with the goal being the first point in the path (discounting robot)
     utils::recompute_path(path, path_solver, 1);
-    std::tie(result.t, result.error) = utils::compute_initial_t(path, params.recomputation_guesses, recomp_params);
+    std::tie(result.t, result.linear_error) = utils::compute_initial_t(path, params.recomputation_guesses, recomp_params);
 
     while (robot::distance(path.points.back()) > params.linear_exit_threshold) {
         if (cancel_ref) { // cancel handling
@@ -151,7 +152,8 @@ PurePursuitResult purepursuit::follow_path_cancellable(
         }
 
         result.t = tick_result.t;
-        result.error = tick_result.error;
+        result.linear_error = tick_result.linear_error;
+        result.angular_error = tick_result.angular_error;
         if (tick_result.recomputation_level != NumericalRecomputation::NONE) {
             result.num_time_recomputations++;
             if (tick_result.recomputation_level == NumericalRecomputation::PATH_AND_TIME) result.num_path_recomputations++;

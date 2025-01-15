@@ -42,14 +42,15 @@ struct NumericalRecomputationParams {
 
 struct SimpleResult {
     ExitCode code = ExitCode::TBD;
-    float error = 0;
+    float linear_error = infinityf();
+    float angular_error = infinityf();
     int time_taken_ms = 0;
 
     std::string debug_out(void) {
-        return "SimpleResult { code: " 
-            + std::to_string((int) code) + ", error: " 
-            + std::to_string(error) + ", time: " 
-            + std::to_string(time_taken_ms) + " }";
+        return "SimpleResult { code: " + std::to_string((int) code)
+            + ", linear_error: " + std::to_string(linear_error)
+            + ", angular_error: " + std::to_string(angular_error)
+            + ", time_taken_ms: " + std::to_string(time_taken_ms);
     }
 };
 

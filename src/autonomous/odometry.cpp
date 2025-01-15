@@ -57,7 +57,7 @@ static void run(void* args) {
     }
 }
 
-static void run_sim_mode(void* args) {
+static void simulated_odometry(void* args) {
     const float gain = 13.01f / 1000;
     const float time_constant = 0.120339f;
 
@@ -84,13 +84,15 @@ static void run_sim_mode(void* args) {
         robot::acceleration = (velocity - robot::velocity) / dt;
         robot::velocity = velocity;
         robot::pos += velocity * dt;
+
+        pros::delay(10);
     }
 }
 
 void odometry::start_task() {
     if (task != nullptr) return;
-    if (config::SIM_MODE) 
-        task = pros::c::task_create(run_sim_mode, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "odometry");
+    if (config::ONLY_BRAIN) 
+        task = pros::c::task_create(simulated_odometry, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "odometry");
     else
         task = pros::c::task_create(run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "odometry");
 }

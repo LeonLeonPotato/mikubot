@@ -11,27 +11,9 @@
 // One VEX tile in cm
 #define TILE 59.5f
 
-static const controllers::PIDArgs linear_args {
-    .kp = 1.0 / 45.0,
-    .ki = 0,
-    .kd = 0.002f
-};
-
-static const controllers::PIDArgs angular_args {
-    .kp = 0.5,
-    .ki = 0,
-    .kd = 0.08
-};
-
-static const controllers::PIDArgs in_place_args {
-    .kp = 0.9,
-    .ki = 0.0,
-    .kd = 0.1
-};
-
-static controllers::PID linear_pid(linear_args);
-static controllers::PID angular_pid(angular_args);
-static controllers::PID in_place_pid(in_place_args);
+static controllers::PID linear_pid({.kp = 1.0 / 45.0, .ki = 1.0 / 90, .kd = 0.002f});
+static controllers::PID angular_pid({.kp = 2.0, .ki = 0, .kd = 0.08});
+static controllers::PID in_place_pid({.kp = 0.9, .ki = 0.0, .kd = 0.1});
 
 static const movement::PIDGroup path_group {linear_pid, angular_pid};
 static const movement::PIDGroup swing_group {linear_pid, angular_pid};

@@ -22,17 +22,14 @@ constexpr float initial_offset_x = 6.60 + 5.0;
 static void alliance_stake(void) {
     // Push middle rings out the way
     movement::simple::forward(initial_offset_y, { .reversed=true, .max_linear_speed=0.5f, .timeout=2000 }, linear_pid);
-    linear_pid.reset();
 
     // Turn to back the alliance stake
     movement::simple::turn_towards({20, -initial_offset_y}, { .reversed=true, .timeout=1000 }, in_place_pid);
-    in_place_pid.reset();
     
-    movement::simple::forward(999, { .reversed=true, .linear_exit_threshold=0.1f, .max_linear_speed=0.5f, .timeout=600 }, linear_pid);
-    linear_pid.reset();
+    movement::simple::forward(999, { .reversed=true, .max_linear_speed=0.5f, .timeout=600 }, linear_pid);
     
     movement::simple::forward(7, { .reversed=false, .linear_exit_threshold=0.1f, .max_linear_speed=1.0f, .timeout=1000 }, linear_pid);
-    reset_all();
+    robot::brake();
 
     // Run conveyor and score
     robot::conveyor.move_voltage(12000);
@@ -43,31 +40,18 @@ static void alliance_stake(void) {
 }
 
 static void get_the_mobile_goal(void) {
-    // movement::simple::swing_to({-66.4, 25}, {.reversed=true, .timeout=5000}, swing_group);
-    // swing_group.reset();
-
     movement::simple::turn_towards(pi, {.reversed=false, .angular_exit_threshold=rad(5), .timeout=1500}, in_place_pid);
-    in_place_pid.reset();
     movement::simple::forward(50, {.reversed = true}, linear_pid);
-    reset_all();
+    robot::brake();
 
     Eigen::Vector2f goal_pos {-50.4, 30};
-
     movement::simple::turn_towards(goal_pos, {.reversed=true, .angular_exit_threshold=rad(0.5), .timeout=1500}, in_place_pid);
-    in_place_pid.reset();
 
-    auto fut = movement::simple::forward_async(100, {.reversed=true, .max_linear_speed=0.6f, .timeout=2000}, linear_pid);
-    pros::delay(1000);
+    auto fut = movement::simple::forward(100, {.reversed=true, .max_linear_speed=0.6f, .timeout=2000}, linear_pid);
 
-    // // Move "into" the goal delay
-    // pros::delay(100);
     robot::clamp.extend();
-    fut.get();
 
-    linear_pid.reset();
-    // pros::delay(250); // For safety
-
-    // robot::brake();
+    robot::brake();
 }
 
 static void get_first_ring(void) {
@@ -87,7 +71,7 @@ static void get_first_ring(void) {
 
     // robot::intake.move_voltage(0);
     // robot::conveyor.move_voltage(0);
-    reset_all();
+    robot::brake();
 }
 
 void bcis::run(void) {

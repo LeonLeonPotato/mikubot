@@ -17,37 +17,41 @@ DEFINE_TICK(forward, controllers::PID&, const Eigen::Vector2f& line, const Eigen
     robot::velo(control, control);
 
     float error_sign = 2*((line - robot::pos).dot(normal) >= 0) - 1;
-    return {.code = ExitCode::SUCCESS, .error = dist * error_sign, .time_taken_ms = 0};
+    return {ExitCode::SUCCESS, dist * error_sign, 0, 0};
 }
 
 DEFINE_CANCELLABLE(forward, controllers::PID&, const float cm)
 {
     const int start = pros::millis();
+
     const float reversed = 1 - 2*params.reversed;
     const Eigen::Vector2f normal = Eigen::Vector2f {sinf(robot::theta), cosf(robot::theta)} * reversed;
     const Eigen::Vector2f line = robot::pos + cm * normal;
 
-    SimpleResult last_tick {.error = infinityf()};
-    while (fabsf(last_tick.error) > params.linear_exit_threshold) {
+    SimpleResult last_tick;
+    while (last_tick.linear_error > params.linear_exit_threshold) {
         if (cancel_ref) {
-            return { ExitCode::CANCELLED, last_tick.error, __timediff(start) };
+            last_tick.code = ExitCode::CANCELLED;
+            break;
         }
 
-        if (pros::millis() - start > params.timeout) {
-            return { ExitCode::TIMEOUT, last_tick.error, __timediff(start) };
+        if (__timediff(start) >= params.timeout) {
+            last_tick.code = ExitCode::TIMEOUT;
+            break;
         }
 
         last_tick = forward_tick(line, normal, params, pids);
-        printf("Ticking forward %f\n", last_tick.error);
-        printf("Args: %f, %f, %f, %d\n", cm, last_tick.error, params.linear_exit_threshold, __timediff(start));
+
         if (last_tick.code != ExitCode::SUCCESS) {
-            return { last_tick.code, last_tick.error, __timediff(start) };
+            break;
         }
 
         pros::delay(params.delay);
     }
 
-    return { ExitCode::SUCCESS, last_tick.error, __timediff(start) };
+    last_tick.time_taken_ms = __timediff(start);
+    pids.reset();
+    return last_tick;
 }
 
 DEFINE_STANDARD(forward, controllers::PID&, const float cm)
@@ -60,10 +64,8 @@ DEFINE_ASYNC(forward, controllers::PID&, const float cm)
 {
     Future<SimpleResult> future;
     pros::Task task([&future, cm, &pids, &params] () {
-        volatile bool breaking = false;
-        printf("Starting forward async\n");
         future.set_value(forward_cancellable(
-            cm, params, pids, breaking
+            cm, params, pids, future.get_state()->cancelled
         ));
     });
     return future;

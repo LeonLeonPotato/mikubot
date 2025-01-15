@@ -18,32 +18,36 @@ DEFINE_TICK(swing_to, PIDGroup, const Eigen::Vector2f& point)
     // printf("Speed: %f, Turn: %f, Angular: %f, Reversed: %d, Dist: %f, Pos: [%f, %f]\n", speed, turn, angle_diff, reversed, dist, robot::pos.x(), robot::pos.y());
     robot::velo(speed + turn, speed - turn);
 
-    return { ExitCode::SUCCESS, dist, 0 };
+    return { ExitCode::SUCCESS, dist, angle_diff, 0 };
 }
 
 DEFINE_CANCELLABLE(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     const int start = pros::millis();
     SimpleResult last_tick;
-    while (robot::distance(point) > params.linear_exit_threshold)
-    {
+    while (fabsf(last_tick.angular_error) > params.angular_exit_threshold || last_tick.linear_error > params.linear_exit_threshold) {
         if (cancel_ref) {
-            return { ExitCode::CANCELLED, last_tick.error, __timediff(start) };
+            last_tick.code = ExitCode::CANCELLED;
+            break;
         }
 
-        if (pros::millis() - start > params.timeout) {
-            return { ExitCode::TIMEOUT, last_tick.error, __timediff(start) };
+        if (__timediff(start) >= params.timeout) {
+            last_tick.code = ExitCode::TIMEOUT;
+            break;
         }
 
         last_tick = swing_to_tick(point, params, pids);
+
         if (last_tick.code != ExitCode::SUCCESS) {
-            return { last_tick.code, last_tick.error, __timediff(start) };
+            break;
         }
 
         pros::delay(params.delay);
     }
 
-    return { ExitCode::SUCCESS, last_tick.error, __timediff(start) };
+    last_tick.time_taken_ms = __timediff(start);
+    pids.reset();
+    return last_tick;
 }
 
 DEFINE_STANDARD(swing_to, PIDGroup, const Eigen::Vector2f& point)

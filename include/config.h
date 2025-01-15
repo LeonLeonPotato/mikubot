@@ -9,6 +9,7 @@ namespace config {
     constexpr pros::motor_brake_mode_e default_brake_mode = pros::E_MOTOR_BRAKE_COAST;
     
     constexpr bool SIM_MODE = false;
+    constexpr bool ONLY_BRAIN = false;
 }
 
 namespace config::keybinds {

@@ -32,10 +32,6 @@ DEFINE_TICK(boomerang, PIDGroup,
     debugscreen::debug_message = "Carrot: [" + std::to_string(carrot.x()) + ", " + std::to_string(carrot.y()) + "]\n";
     debugscreen::debug_message += "Angle diff: " + std::to_string(theta_error) + "\n";
 
-    printf("Carrot: %f, %f Angular diff: %f | true diff: %f\n", 
-        carrot.x(), carrot.y(), theta_error, 
-        robot::angular_diff(angle, params.reversed));
-
     // printf("%sCarrot: [%f, %f]\n", PREFIX.c_str(), carrot.x(), carrot.y());
 
     // float speed = pids.linear.get(robot::distance(carrot));
@@ -46,21 +42,22 @@ DEFINE_TICK(boomerang, PIDGroup,
 
     // // printf("%s%f, %f\n", PREFIX.c_str(), speed, turn);
     // robot::velo(speed + turn, speed - turn);
-    float klat = 2.0f;
+    float klat = 0.5f;
 
-    float vd = pids.linear.get(error.norm() * (cosf(theta_error) > 0 ? 1 : -1)) * 100;
-    debugscreen::debug_message += "VD: " + std::to_string(vd) + "\n";
+    float vd = pids.linear.get(error.norm() * (cosf(theta_error) > 0 ? 1 : -1) * 100.0f);
     float omega = pids.angular.get(theta_error) + klat * vd * error.y() * safe_sinc(theta_error);
-    debugscreen::debug_message += "Omega: " + std::to_string(omega) + "\n";
     float v = vd * fabsf(cosf(theta_error));
-    debugscreen::debug_message += "V: " + std::to_string(v) + "\n";
-    debugscreen::debug_message += "Error: " + std::to_string(error.x()) + ", " + std::to_string(error.y()) + "\n";
 
     if (params.reversed) v = -v;
 
+    debugscreen::debug_message += "VD: " + std::to_string(vd) + "\n";
+    debugscreen::debug_message += "Omega: " + std::to_string(omega) + "\n";
+    debugscreen::debug_message += "V: " + std::to_string(v) + "\n";
+    debugscreen::debug_message += "Error: " + std::to_string(error.x()) + ", " + std::to_string(error.y()) + "\n";
+
     robot::velo(v + omega, v - omega);
 
-    return { ExitCode::SUCCESS, true_target_dist, 0 };
+    return { ExitCode::SUCCESS, true_target_dist, theta_error, 0 };
 }
 
 DEFINE_CANCELLABLE(boomerang, PIDGroup,
@@ -70,25 +67,29 @@ DEFINE_CANCELLABLE(boomerang, PIDGroup,
 {
     const int start = pros::millis();
     SimpleResult last_tick;
-    while (robot::distance(point) > params.linear_exit_threshold) 
-    {
+    while (fabsf(last_tick.angular_error) > params.angular_exit_threshold || last_tick.linear_error > params.linear_exit_threshold) {
         if (cancel_ref) {
-            return { ExitCode::CANCELLED, last_tick.error, __timediff(start) };
+            last_tick.code = ExitCode::CANCELLED;
+            break;
         }
 
-        if (pros::millis() - start > params.timeout) {
-            return { ExitCode::TIMEOUT, last_tick.error, __timediff(start) };
+        if (__timediff(start) >= params.timeout) {
+            last_tick.code = ExitCode::TIMEOUT;
+            break;
         }
 
         last_tick = boomerang_tick(point, angle, lead, params, pids);
+
         if (last_tick.code != ExitCode::SUCCESS) {
-            return { last_tick.code, last_tick.error, __timediff(start) };
+            break;
         }
 
-        pros::c::task_delay(params.delay);
+        pros::delay(params.delay);
     }
 
-    return { ExitCode::SUCCESS, last_tick.error, __timediff(start) };
+    last_tick.time_taken_ms = __timediff(start);
+    pids.reset();
+    return last_tick;
 }
 
 DEFINE_STANDARD(boomerang, PIDGroup,

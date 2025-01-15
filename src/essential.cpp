@@ -129,8 +129,8 @@ static void velocity_task(void* p) {
 
     while (true) {
         if (!braking) {
-            float left_current = config::SIM_MODE ? left_set_velocity : average(left_motors.get_actual_velocity_all());
-            float right_current = config::SIM_MODE ? right_set_velocity : average(right_motors.get_actual_velocity_all());
+            float left_current = (config::ONLY_BRAIN || config::SIM_MODE) ? left_set_velocity : average(left_motors.get_actual_velocity_all());
+            float right_current = (config::ONLY_BRAIN || config::SIM_MODE) ? right_set_velocity : average(right_motors.get_actual_velocity_all());
             
             float left_target_voltage = robot::left_velo_controller.get(
                 left_current, left_set_velocity, left_set_acceleration);

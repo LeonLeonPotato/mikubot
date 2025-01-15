@@ -10,32 +10,36 @@ DEFINE_TICK(turn_towards, controllers::PID&, const float angle)
     const float diff = robot::angular_diff(angle, params.reversed);
     const float ctrl = pids.get(diff);
     robot::velo(ctrl, -ctrl);
-    return { ExitCode::SUCCESS, diff, 0 };
+    return { ExitCode::SUCCESS, 0, diff, 0 };
 }
 
 DEFINE_CANCELLABLE(turn_towards, controllers::PID&, const float angle)
 {
     const int start = pros::millis();
     SimpleResult last_tick;
-    while (fabs(robot::angular_diff(angle, params.reversed)) > params.angular_exit_threshold) {
+    while (fabsf(last_tick.angular_error) > params.angular_exit_threshold) {
         if (cancel_ref) {
-            return { ExitCode::CANCELLED, last_tick.error, __timediff(start) };
+            last_tick.code = ExitCode::CANCELLED;
+            break;
         }
 
-        if (pros::millis() - start >= params.timeout) {
-            return { ExitCode::TIMEOUT, last_tick.error, __timediff(start) };
+        if (__timediff(start) >= params.timeout) {
+            last_tick.code = ExitCode::TIMEOUT;
+            break;
         }
 
         last_tick = turn_towards_tick(angle, params, pids);
 
         if (last_tick.code != ExitCode::SUCCESS) {
-            return { last_tick.code, last_tick.error, __timediff(start) };
+            break;
         }
 
         pros::delay(params.delay);
     }
 
-    return { ExitCode::SUCCESS, last_tick.error, __timediff(start) };
+    last_tick.time_taken_ms = __timediff(start);
+    pids.reset();
+    return last_tick;
 }
 
 DEFINE_STANDARD(turn_towards, controllers::PID&, const float angle)

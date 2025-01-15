@@ -107,11 +107,19 @@ void test_strategy::run(void) {
     // go_back();
 
     // movement::simple::turn_towards(M_PI/2, {.exit_threshold=rad(1.0), .timeout=2000}, in_place_pid);
-    auto fut = movement::simple::boomerang_async({-50, -50}, -M_PI/2, 0.5f, {.linear_exit_threshold=0.1, .timeout=10000}, swing_group);
+    auto fut = movement::simple::boomerang_async({-50, 50}, 0, 0.5f, {.reversed = true, .linear_exit_threshold=2.0, .timeout=10000}, swing_group);
+
+    std::vector<std::pair<Eigen::Vector2f, float>> poses;
     while (!fut.available()) {
         printf("pos: %f, %f | angle: %f\n", robot::pos.x(), robot::pos.y(), robot::theta);
         pros::delay(20);
+        poses.push_back({robot::pos, robot::theta});
     }
+
+    std::cout << fut.get().debug_out() << std::endl;
+
+    std::cout << "P = \\left[";
+    for (auto& p : poses)
 
     robot::brake();
 }
