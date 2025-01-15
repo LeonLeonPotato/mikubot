@@ -179,7 +179,7 @@ static void unit_test_boomerang(void) {
 	auto test_standard = [&] (Vec Rpos, float theta, Vec dest, float lead) {
 		robot::pos = Rpos;
 		PID linear(1, 0, 0); PID angular(1, 0, 0); 
-		movement::SimpleMovementParams params {.exit_threshold=0.1f, .timeout=2000, .delay=200};
+		movement::SimpleMovementParams params {.linear_exit_threshold=0.1f, .timeout=2000, .delay=200};
 		auto res = movement::simple::boomerang_async(dest, theta, lead, params, {linear, angular});
 		std::cout << res.get().debug_out() << std::endl;
 	};
@@ -207,7 +207,6 @@ void opcontrol(void) {
 	if (!config::SIM_MODE) autonselector::destroy();
 	// opcontrolfun::init();
 
-	strategies::test_strategy::run();
 	// test_cs();
 	// sample_spline();
 	// unit_test_boomerang();

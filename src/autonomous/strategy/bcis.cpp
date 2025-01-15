@@ -1,7 +1,11 @@
 #include "bcis.h"
 #include "ansicodes.h"
 #include "autonomous/movement/simple/boomerang.h"
+#include "autonomous/movement/simple/forward.h"
+#include "autonomous/movement/simple/swing.h"
+#include "autonomous/movement/simple/turn.h"
 #include "essential.h"
+#include "gui/debugscreen.h"
 #include "opcontrol/impl/wallmech.h"
 #include "pros/rtos.hpp"
 #include "autonomous/strategy/utils.h"
@@ -12,27 +16,26 @@ using namespace strategies;
 #define pi M_PI
 #define reset_all() robot::brake(); swing_group.reset(); linear_pid.reset(); in_place_pid.reset();
 
-constexpr float initial_offset_y = -17.0f;
-constexpr float initial_offset_x = 40.5f;
+constexpr float initial_offset_y = 32.0f;
+constexpr float initial_offset_x = 6.60 + 5.0;
 
 static void alliance_stake(void) {
     // Push middle rings out the way
-    movement::simple::forward(initial_offset_x + 5, { .reversed=true, .max_linear_speed=0.5f, .timeout=2000 }, linear_pid);
-    linear_pid.reset();
-
-    // Move to the alliance stake
-    movement::simple::forward(5, { .max_linear_speed = 0.5f, .timeout=1000 }, linear_pid);
+    movement::simple::forward(initial_offset_y, { .reversed=true, .max_linear_speed=0.5f, .timeout=2000 }, linear_pid);
     linear_pid.reset();
 
     // Turn to back the alliance stake
-    movement::simple::turn_towards(-pi/2, { .timeout=1000 }, in_place_pid);
+    movement::simple::turn_towards({20, -initial_offset_y}, { .reversed=true, .timeout=1000 }, in_place_pid);
     in_place_pid.reset();
     
-    movement::simple::forward(10, { .reversed=true, .linear_exit_threshold=0.1f, .max_linear_speed=1.0f, .timeout=750 }, linear_pid);
+    movement::simple::forward(999, { .reversed=true, .linear_exit_threshold=0.1f, .max_linear_speed=0.5f, .timeout=600 }, linear_pid);
+    linear_pid.reset();
+    
+    movement::simple::forward(7, { .reversed=false, .linear_exit_threshold=0.1f, .max_linear_speed=1.0f, .timeout=1000 }, linear_pid);
     reset_all();
 
     // Run conveyor and score
-    robot::conveyor.move_voltage(10000);
+    robot::conveyor.move_voltage(12000);
     pros::delay(750);
     robot::conveyor.move_voltage(0);
 
@@ -40,29 +43,41 @@ static void alliance_stake(void) {
 }
 
 static void get_the_mobile_goal(void) {
-    Eigen::Vector2f goal_pos {89.5, TILE + initial_offset_y};
-    float goal_angle = pi/2;
-    // Boomerang so we get there facing backwards
-    movement::simple::boomerang(goal_pos, goal_angle, 0.5f, 
-        { .reversed=false, .max_linear_speed=0.5f, .timeout=1000 }, swing_group);
-    swing_group.reset();
+    // movement::simple::swing_to({-66.4, 25}, {.reversed=true, .timeout=5000}, swing_group);
+    // swing_group.reset();
 
-    // Move "into" the goal delay
-    pros::delay(100);
+    movement::simple::turn_towards(pi, {.reversed=false, .angular_exit_threshold=rad(5), .timeout=1500}, in_place_pid);
+    in_place_pid.reset();
+    movement::simple::forward(50, {.reversed = true}, linear_pid);
+    reset_all();
+
+    Eigen::Vector2f goal_pos {-50.4, 30};
+
+    movement::simple::turn_towards(goal_pos, {.reversed=true, .angular_exit_threshold=rad(0.5), .timeout=1500}, in_place_pid);
+    in_place_pid.reset();
+
+    auto fut = movement::simple::forward_async(100, {.reversed=true, .max_linear_speed=0.6f, .timeout=2000}, linear_pid);
+    pros::delay(1000);
+
+    // // Move "into" the goal delay
+    // pros::delay(100);
     robot::clamp.extend();
-    pros::delay(250); // For safety
+    fut.get();
 
-    robot::brake();
+    linear_pid.reset();
+    // pros::delay(250); // For safety
+
+    // robot::brake();
 }
 
 static void get_first_ring(void) {
-    Eigen::Vector2f ring_pos {89.5, 2*TILE + initial_offset_y};
+    Eigen::Vector2f ring_pos {-55, 87};
     // Look at the ring
     movement::simple::turn_towards(ring_pos, {.angular_exit_threshold = rad(2.5), .timeout = 1000}, in_place_pid);
     swing_group.reset();
 
     // Async so we start moving before we activate conveyor to prevent bad stuff happening
-    auto future = movement::simple::forward_async(TILE * 1.5, {.max_linear_speed = 1.0f, .timeout = 1000}, linear_pid);
+    auto future = movement::simple::forward_async(TILE * 1.5, {.max_linear_speed = 1.0f, .timeout = 3000}, linear_pid);
     pros::delay(200);
 
     // Start conveyor
@@ -81,12 +96,13 @@ void bcis::run(void) {
     controls::wallmech::start_api_task();
 
     // Back up and score on the alliance stake
-    // alliance_stake();
-    // get_the_mobile_goal();
-    // get_first_ring();
+    alliance_stake();
+    get_the_mobile_goal();
+    get_first_ring();
     // Boomerang to get the mobile goal
 
-    movement::simple::boomerang({-50, -50}, -pi/2, 0.5f, {.reversed = true, .linear_exit_threshold=10.0f, .max_linear_speed=1.0f, .timeout=5000}, swing_group);
+    // movement::simple::boomerang({-50, -50}, -pi/2, 0.25f, {.reversed = true, .linear_exit_threshold=1.0f, .timeout=20000}, swing_group);
+    // debugscreen::debug_message += "Boomerang done\n";
 
     reset_all();
 

@@ -38,6 +38,8 @@ DEFINE_CANCELLABLE(forward, controllers::PID&, const float cm)
         }
 
         last_tick = forward_tick(line, normal, params, pids);
+        printf("Ticking forward %f\n", last_tick.error);
+        printf("Args: %f, %f, %f, %d\n", cm, last_tick.error, params.linear_exit_threshold, __timediff(start));
         if (last_tick.code != ExitCode::SUCCESS) {
             return { last_tick.code, last_tick.error, __timediff(start) };
         }
@@ -57,10 +59,11 @@ DEFINE_STANDARD(forward, controllers::PID&, const float cm)
 DEFINE_ASYNC(forward, controllers::PID&, const float cm)
 {
     Future<SimpleResult> future;
-    pros::Task task([&] () {
+    pros::Task task([&future, cm, &pids, &params] () {
+        volatile bool breaking = false;
+        printf("Starting forward async\n");
         future.set_value(forward_cancellable(
-            cm, params, pids, 
-            future.get_state()->cancelled
+            cm, params, pids, breaking
         ));
     });
     return future;

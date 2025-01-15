@@ -54,6 +54,7 @@ extern pros::adi::Pneumatics clamp;
 extern pros::Motor conveyor;
 extern pros::Motor intake;
 extern pros::Motor wallmech;
+extern pros::Rotation wallmech_encoder;
 
 extern pros::IMU inertial;
 extern pros::Optical classifier;

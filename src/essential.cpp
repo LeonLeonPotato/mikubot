@@ -36,6 +36,7 @@ pros::adi::Pneumatics robot::clamp('a', false, false);
 pros::Motor robot::conveyor(-17, pros::MotorGearset::blue);
 pros::Motor robot::intake(-21);
 pros::Motor robot::wallmech(7); 
+pros::Rotation robot::wallmech_encoder(-6);
 
 pros::Imu robot::inertial(5);
 pros::Optical robot::classifier(20);
@@ -155,6 +156,7 @@ void robot::init(void) {
         left_motors.set_brake_mode_all(config::default_brake_mode);
         right_motors.set_brake_mode_all(config::default_brake_mode);
         wallmech.set_brake_mode(pros::MotorBrake::hold);
+        wallmech_encoder.set_position(0);
 
         master.clear();
         pros::delay(150);

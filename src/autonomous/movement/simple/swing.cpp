@@ -25,8 +25,7 @@ DEFINE_CANCELLABLE(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     const int start = pros::millis();
     SimpleResult last_tick;
-    while (robot::distance(point) > params.linear_exit_threshold && 
-           fabs(robot::angular_diff(point, params.reversed)) > params.angular_exit_threshold)
+    while (robot::distance(point) > params.linear_exit_threshold)
     {
         if (cancel_ref) {
             return { ExitCode::CANCELLED, last_tick.error, __timediff(start) };

@@ -10,9 +10,9 @@ using State = wallmech::State;
 
 static pros::task_t task = nullptr;
 static pros::task_t api_task = nullptr;
-static controllers::PID pid(0.8, 0.0, 0.1);
+static controllers::PID pid(0.02, 0.01, 0);
 
-float positions[3] = {0.0f, 600.0f, 2000.0f};
+float positions[3] = {0.0f, 45.9f, 175.9f};
 static int special_fire_thing = -1;
 
 static State set_state = State::RESTING;
@@ -26,7 +26,7 @@ static void api_task_func(void* p) {
 
         if (special_fire_thing != -1) {
             if (pros::millis() < special_fire_thing) {
-                robot::conveyor.move_voltage(-12000);
+                robot::conveyor.move_voltage(-6000);
             } else {
                 special_fire_thing = -1;
                 robot::conveyor.move_voltage(0);
@@ -34,9 +34,9 @@ static void api_task_func(void* p) {
         }
 
         const auto& desired = positions[(int) set_state];
-        const auto current = robot::wallmech.get_position();
+        const auto current = robot::wallmech_encoder.get_position() / 100.0f;
 
-        if (std::abs(desired - current) < 15.0f) {
+        if (std::abs(desired - current) < 2.5f) {
             robot::wallmech.brake();
         } else {
             float control = pid.get(desired - current);

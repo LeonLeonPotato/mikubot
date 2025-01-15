@@ -22,7 +22,7 @@ DEFINE_TICK(boomerang, PIDGroup,
     float theta_error = robot::angular_diff(carrot, params.reversed);
 
     Eigen::Rotation2D<float> rot(robot::theta);
-    Eigen::Vector2f error = rot * (carrot - robot::pos);
+    Eigen::Vector2f error = rot * (carrot - robot::pos) / 100.0f;
 
     if (true_target_dist < 10) {
         float scale = true_target_dist / 10;
@@ -48,9 +48,13 @@ DEFINE_TICK(boomerang, PIDGroup,
     // robot::velo(speed + turn, speed - turn);
     float klat = 2.0f;
 
-    float vd = pids.linear.get(error.norm() * (cosf(theta_error) > 0 ? 1 : -1));
+    float vd = pids.linear.get(error.norm() * (cosf(theta_error) > 0 ? 1 : -1)) * 100;
+    debugscreen::debug_message += "VD: " + std::to_string(vd) + "\n";
     float omega = pids.angular.get(theta_error) + klat * vd * error.y() * safe_sinc(theta_error);
+    debugscreen::debug_message += "Omega: " + std::to_string(omega) + "\n";
     float v = vd * fabsf(cosf(theta_error));
+    debugscreen::debug_message += "V: " + std::to_string(v) + "\n";
+    debugscreen::debug_message += "Error: " + std::to_string(error.x()) + ", " + std::to_string(error.y()) + "\n";
 
     if (params.reversed) v = -v;
 
@@ -66,8 +70,7 @@ DEFINE_CANCELLABLE(boomerang, PIDGroup,
 {
     const int start = pros::millis();
     SimpleResult last_tick;
-    while (robot::distance(point) > params.linear_exit_threshold && 
-           fabs(robot::angular_diff(angle, params.reversed)) > params.angular_exit_threshold) 
+    while (robot::distance(point) > params.linear_exit_threshold) 
     {
         if (cancel_ref) {
             return { ExitCode::CANCELLED, last_tick.error, __timediff(start) };
@@ -82,7 +85,7 @@ DEFINE_CANCELLABLE(boomerang, PIDGroup,
             return { last_tick.code, last_tick.error, __timediff(start) };
         }
 
-        pros::c::task_delay(20);
+        pros::c::task_delay(params.delay);
     }
 
     return { ExitCode::SUCCESS, last_tick.error, __timediff(start) };
