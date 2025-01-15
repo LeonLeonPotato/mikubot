@@ -42,7 +42,7 @@ static void blue_right(void) {
     movement::simple::turn_towards(
         {xto, yto}, 
         {
-            .exit_threshold=rad(5), 
+            .angular_exit_threshold=rad(5), 
             .timeout=750
         },
         in_place_pid);

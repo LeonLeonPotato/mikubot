@@ -17,7 +17,7 @@ DEFINE_CANCELLABLE(turn_towards, controllers::PID&, const float angle)
 {
     const int start = pros::millis();
     SimpleResult last_tick;
-    while (fabs(robot::angular_diff(angle, params.reversed)) > params.exit_threshold) {
+    while (fabs(robot::angular_diff(angle, params.reversed)) > params.angular_exit_threshold) {
         if (cancel_ref) {
             return { ExitCode::CANCELLED, last_tick.error, __timediff(start) };
         }
