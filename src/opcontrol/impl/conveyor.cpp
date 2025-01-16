@@ -42,7 +42,7 @@ void conveyor::tick() {
     const int speed = 
         (robot::master.get_digital(config::keybinds::conveyor_up)
         - robot::master.get_digital(config::keybinds::conveyor_down))
-        * 10000;
+        * 12000;
 
     const float hue = robot::classifier.get_hue();
     const bool is_ring = robot::classifier.get_proximity() > 100;
@@ -55,7 +55,7 @@ void conveyor::tick() {
             team = 'R';
         }
         if (team != 'N' && team != robot::match::team) {
-            disable_time = pros::millis() + 40;
+            disable_time = pros::millis() + 80;
         }
     }
 

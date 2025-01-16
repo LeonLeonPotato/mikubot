@@ -14,7 +14,7 @@ namespace config {
 
 namespace config::keybinds {
     constexpr digital clamp = pros::E_CONTROLLER_DIGITAL_X;
-    constexpr digital doinker = pros::E_CONTROLLER_DIGITAL_A;
+    constexpr digital doinker = pros::E_CONTROLLER_DIGITAL_RIGHT;
 
     constexpr digital conveyor_up = pros::E_CONTROLLER_DIGITAL_L1;
     constexpr digital conveyor_down = pros::E_CONTROLLER_DIGITAL_L2;

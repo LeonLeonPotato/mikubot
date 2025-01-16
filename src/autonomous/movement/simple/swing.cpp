@@ -25,7 +25,7 @@ DEFINE_CANCELLABLE(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     const int start = pros::millis();
     SimpleResult last_tick;
-    while (fabsf(last_tick.angular_error) > params.angular_exit_threshold || last_tick.linear_error > params.linear_exit_threshold) {
+    while (last_tick.linear_error > params.linear_exit_threshold) {
         if (cancel_ref) {
             last_tick.code = ExitCode::CANCELLED;
             break;
@@ -59,7 +59,7 @@ DEFINE_STANDARD(swing_to, PIDGroup, const Eigen::Vector2f& point)
 DEFINE_ASYNC(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     Future<SimpleResult> future;
-    pros::Task task([&point, &params, &pids, &future] () {
+    pros::Task task([point, params, pids, &future] () {
         future.set_value(swing_to_cancellable(
             point, params, pids, 
             future.get_state()->cancelled

@@ -6,21 +6,11 @@
 using namespace controls;
 
 static pros::task_t task = nullptr;
-static bool last = false;
-static bool toggle = false;
 
 void doinker::tick() {
-    const bool cur = robot::master.get_digital(config::keybinds::doinker);
-
-    if (cur && !last) toggle = !toggle;
-
-    if (toggle && !robot::doinker.is_extended()) {
-        robot::doinker.extend();
-    } else if (!toggle && robot::doinker.is_extended()) {
-        robot::doinker.retract();
+    if (robot::master.get_digital_new_press(config::keybinds::doinker)) {
+        robot::doinker.toggle();
     }
-
-    last = cur;
 }
 
 void doinker::run() {

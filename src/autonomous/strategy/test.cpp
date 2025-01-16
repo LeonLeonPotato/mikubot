@@ -1,6 +1,7 @@
 #include "autonomous/strategy/test.h"
 #include "autonomous/movement/simple/boomerang.h"
 #include "autonomous/movement/simple/forward.h"
+#include "autonomous/movement/simple/swing.h"
 #include "autonomous/movement/simple/turn.h"
 #include "autonomous/strategy/utils.h"
 #include "essential.h"
@@ -107,19 +108,26 @@ void test_strategy::run(void) {
     // go_back();
 
     // movement::simple::turn_towards(M_PI/2, {.exit_threshold=rad(1.0), .timeout=2000}, in_place_pid);
-    auto fut = movement::simple::boomerang_async({-50, 50}, 0, 0.5f, {.reversed = true, .linear_exit_threshold=2.0, .timeout=10000}, swing_group);
+    auto fut = movement::simple::swing_to_async({0, -25}, {.reversed = true, .linear_exit_threshold=2.0, .timeout=10000}, swing_group);
 
-    std::vector<std::pair<Eigen::Vector2f, float>> poses;
     while (!fut.available()) {
         printf("pos: %f, %f | angle: %f\n", robot::pos.x(), robot::pos.y(), robot::theta);
         pros::delay(20);
-        poses.push_back({robot::pos, robot::theta});
     }
 
-    std::cout << fut.get().debug_out() << std::endl;
+    printf("%sDone\n", PREFIX.c_str());
 
-    std::cout << "P = \\left[";
-    for (auto& p : poses)
+    robot::brake();
+    pros::delay(1000);
+
+    movement::simple::swing_to({0, 0}, {.reversed = false, .linear_exit_threshold=2.0, .timeout=10000}, swing_group);
+    printf("%sDone\n", PREFIX.c_str());
+    auto fut2 = movement::simple::boomerang_async({-50, -50}, -pi/2, 0.5f, {.reversed = true, .linear_exit_threshold=2.0, .timeout=10000}, swing_group);
+
+    while (!fut2.available()) {
+        printf("pos: %f, %f | angle: %f\n", robot::pos.x(), robot::pos.y(), robot::theta);
+        pros::delay(20);
+    }
 
     robot::brake();
 }

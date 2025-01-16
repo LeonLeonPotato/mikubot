@@ -13,18 +13,18 @@
 
 using namespace strategies;
 
-#define pi M_PI
 #define reset_all() robot::brake(); swing_group.reset(); linear_pid.reset(); in_place_pid.reset();
 
 constexpr float initial_offset_y = 32.0f;
 constexpr float initial_offset_x = 6.60 + 5.0;
+static float multiplier = 1.0;
 
 static void alliance_stake(void) {
     // Push middle rings out the way
     movement::simple::forward(initial_offset_y, { .reversed=true, .max_linear_speed=0.5f, .timeout=2000 }, linear_pid);
 
     // Turn to back the alliance stake
-    movement::simple::turn_towards({20, -initial_offset_y}, { .reversed=true, .timeout=1000 }, in_place_pid);
+    movement::simple::turn_towards({20 * multiplier, -initial_offset_y}, { .reversed=true, .timeout=1000 }, in_place_pid);
     
     movement::simple::forward(999, { .reversed=true, .max_linear_speed=0.5f, .timeout=600 }, linear_pid);
     
@@ -40,22 +40,26 @@ static void alliance_stake(void) {
 }
 
 static void get_the_mobile_goal(void) {
+    Eigen::Vector2f goal_pos {-50.4 * multiplier, 30};
+
     movement::simple::turn_towards(pi, {.reversed=false, .angular_exit_threshold=rad(5), .timeout=1500}, in_place_pid);
-    movement::simple::forward(50, {.reversed = true}, linear_pid);
-    robot::brake();
+    // movement::simple::forward(50, {.reversed = true}, linear_pid);
+    // robot::brake();
 
-    Eigen::Vector2f goal_pos {-50.4, 30};
-    movement::simple::turn_towards(goal_pos, {.reversed=true, .angular_exit_threshold=rad(0.5), .timeout=1500}, in_place_pid);
+    // Eigen::Vector2f goal_pos {-50.4, 30};
+    // movement::simple::turn_towards(goal_pos, {.reversed=true, .angular_exit_threshold=rad(0.5), .timeout=1500}, in_place_pid);
 
-    auto fut = movement::simple::forward(100, {.reversed=true, .max_linear_speed=0.6f, .timeout=2000}, linear_pid);
+    // auto fut = movement::simple::forward(100, {.reversed=true, .max_linear_speed=0.6f, .timeout=2000}, linear_pid);
 
+    movement::simple::boomerang(goal_pos, -pi/2 * multiplier, 0.5f, {.linear_exit_threshold=5.0f}, swing_group);
+    
     robot::clamp.extend();
 
     robot::brake();
 }
 
 static void get_first_ring(void) {
-    Eigen::Vector2f ring_pos {-55, 87};
+    Eigen::Vector2f ring_pos {-55 * multiplier, 87};
     // Look at the ring
     movement::simple::turn_towards(ring_pos, {.angular_exit_threshold = rad(2.5), .timeout = 1000}, in_place_pid);
     swing_group.reset();
@@ -76,6 +80,10 @@ static void get_first_ring(void) {
 
 void bcis::run(void) {
     std::cout << PREFIX << "Running BCIS strategy\n";
+
+    if (robot::match::side == 1) {
+        multiplier = -1.0;
+    }
     
     controls::wallmech::start_api_task();
 
