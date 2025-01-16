@@ -63,9 +63,10 @@ DEFINE_STANDARD(forward, controllers::PID&, const float cm)
 DEFINE_ASYNC(forward, controllers::PID&, const float cm)
 {
     Future<SimpleResult> future;
-    pros::Task task([&future, cm, &pids, &params] () {
+    pros::Task task([future, &params, pids, cm] () mutable {
         future.set_value(forward_cancellable(
-            cm, params, pids, future.get_state()->cancelled
+            cm, params, pids, 
+            future.get_state()->cancelled
         ));
     });
     return future;

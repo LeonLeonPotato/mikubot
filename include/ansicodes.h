@@ -21,3 +21,4 @@ constexpr std::string ANSI_CYAN = "\x1b[36m";
 constexpr std::string ANSI_WHITE = "\x1b[37m";
 
 static const auto PREFIX = ANSI_BOLD + ANSI_CYAN + "[Miku" + ANSI_GREEN + "bot] " + ANSI_RESET;
+static const auto CPREFIX = PREFIX.c_str();

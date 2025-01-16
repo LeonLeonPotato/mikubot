@@ -62,7 +62,6 @@ void autonomous(void) {
 
 	std::vector<std::pair<Eigen::Vector2f, float>> poses;
 	strategies::functions.at(strategies::chosen_strategy)();
-	
 
 	// autonrunner::destroy();
 }

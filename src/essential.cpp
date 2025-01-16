@@ -152,6 +152,8 @@ void robot::init(void) {
     pros::c::task_create(velocity_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "velocity");
 
     if (!config::SIM_MODE) {
+        robot::classifier.set_led_pwm(255);
+
         inertial.reset(true);
         left_motors.set_brake_mode_all(config::default_brake_mode);
         right_motors.set_brake_mode_all(config::default_brake_mode);

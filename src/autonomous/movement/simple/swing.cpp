@@ -59,7 +59,7 @@ DEFINE_STANDARD(swing_to, PIDGroup, const Eigen::Vector2f& point)
 DEFINE_ASYNC(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     Future<SimpleResult> future;
-    pros::Task task([point, params, pids, &future] () {
+    pros::Task task([future, &params, pids, &point] () mutable {
         future.set_value(swing_to_cancellable(
             point, params, pids, 
             future.get_state()->cancelled

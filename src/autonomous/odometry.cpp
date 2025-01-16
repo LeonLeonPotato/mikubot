@@ -58,7 +58,7 @@ static void run(void* args) {
 }
 
 static void simulated_odometry(void* args) {
-    const float gain = 13.01f / 1000;
+    const float gain = 10.01f / 1000;
     const float time_constant = 0.120339f;
 
     float lv = 0, rv = 0;

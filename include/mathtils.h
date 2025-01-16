@@ -2,9 +2,9 @@
 
 #include <cmath>
 
-static inline float minimum_mod_diff(float a, float b) {
-    float diff = fmodf(a - b + 180, 360) - 180;
-    return diff + (diff < -180) * 360;
+static inline float minimum_mod_diff(float a, float b, float mod) {
+    float diff = fmodf(a - b + mod/2, mod) - mod/2;
+    return diff + (diff < -mod/2) * mod;
 }
 
 static inline float sinc(float x) {

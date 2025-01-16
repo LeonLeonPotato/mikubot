@@ -12,20 +12,45 @@
 #define TILE 59.5f
 #define pi M_PI
 
-static controllers::PID linear_pid({.kp = 1.5 / 45, .ki = 0.1, .kd = 0.01f});
+static controllers::PID linear_pid({.kp = 1.0 / 45, .ki = 0.0, .kd = 0.002f});
+static controllers::PID linear_boomerang_pid({.kp = 2.0 / 45, .ki = 0.1, .kd = 0.01f});
+
 static controllers::PID angular_pid({.kp = 1.0, .ki = 1.0, .kd = 0.1});
+static controllers::PID angular_boomerang_pid({.kp = 5.0, .ki = 1.0, .kd = 0.1});
 static controllers::PID in_place_pid({.kp = 1.0, .ki = 0.0, .kd = 0.1});
 
-static const movement::PIDGroup path_group {linear_pid, angular_pid};
 static const movement::PIDGroup swing_group {linear_pid, angular_pid};
+static const movement::PIDGroup boomerang_group {linear_boomerang_pid, angular_boomerang_pid};
 
 static const pathing::ProfileParams profile_params {
     .start_v = 10,
     .end_v = 0,
-    .max_speed = 100, // true: around 150?
+    .max_speed = 100, // true: around 140?
     .accel = 200, // true: 427.376053809
     .decel = 200,
     .track_width = 39,
     .ds = 0.1,
     .resolution = 5000
 };
+
+static void print_poses(const std::vector<std::pair<Eigen::Vector2f, float>>& poses) {
+    std::cout << "P_p = \\left[";
+    for (int i = 0 ; i < poses.size(); i++) {
+        auto& pos = poses[i].first;
+        std::cout << "\\left(" << pos.x() << ",\\ " << pos.y() << "\\right)";
+        if (i != poses.size() - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "\\right]" << std::endl;
+
+    std::cout << "P_t = \\left[";
+    for (int i = 0 ; i < poses.size(); i++) {
+        auto& pos = poses[i].second;
+        std::cout << pos;
+        if (i != poses.size() - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << "\\right]" << std::endl;
+}

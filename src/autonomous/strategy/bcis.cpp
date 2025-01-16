@@ -6,6 +6,7 @@
 #include "autonomous/movement/simple/turn.h"
 #include "essential.h"
 #include "gui/debugscreen.h"
+#include "opcontrol/impl/conveyor.h"
 #include "opcontrol/impl/wallmech.h"
 #include "pros/rtos.hpp"
 #include "autonomous/strategy/utils.h"
@@ -13,91 +14,133 @@
 
 using namespace strategies;
 
-#define reset_all() robot::brake(); swing_group.reset(); linear_pid.reset(); in_place_pid.reset();
+using Vec = Eigen::Vector2f;
 
 constexpr float initial_offset_y = 32.0f;
 constexpr float initial_offset_x = 6.60 + 5.0;
-static float multiplier = 1.0;
 
 static void alliance_stake(void) {
     // Push middle rings out the way
-    movement::simple::forward(initial_offset_y, { .reversed=true, .max_linear_speed=0.5f, .timeout=2000 }, linear_pid);
+    movement::simple::forward(
+        initial_offset_y, 
+        { .reversed=true, .max_linear_speed=0.5f, .timeout=2000 }, 
+        linear_pid);
 
     // Turn to back the alliance stake
-    movement::simple::turn_towards({20 * multiplier, -initial_offset_y}, { .reversed=true, .timeout=1000 }, in_place_pid);
+    movement::simple::turn_towards(
+        {-20 * robot::match::side, -initial_offset_y}, 
+        { .reversed=true, .timeout=1000 }, 
+        in_place_pid);
     
-    movement::simple::forward(999, { .reversed=true, .max_linear_speed=0.5f, .timeout=600 }, linear_pid);
+    // Back up into alliance stake
+    movement::simple::forward(
+        999, 
+        { .reversed=true, .max_linear_speed=0.5f, .timeout=600 }, 
+        linear_pid);
     
-    movement::simple::forward(7, { .reversed=false, .linear_exit_threshold=0.1f, .max_linear_speed=1.0f, .timeout=1000 }, linear_pid);
+    // Move so we get some spacing
+    movement::simple::forward(
+        7, 
+        { .reversed=false, .linear_exit_threshold=0.1f, .max_linear_speed=1.0f, .timeout=1000 }, 
+        linear_pid);
+    
     robot::brake();
 
     // Run conveyor and score
-    robot::conveyor.move_voltage(12000);
+    controls::conveyor::exposed_set_color_sort(false);
+    controls::conveyor::exposed_desired_volt(12000);
     pros::delay(750);
-    robot::conveyor.move_voltage(0);
-
-    // We are at 8.5, -40.5
+    controls::conveyor::exposed_desired_volt(0);
+    controls::conveyor::exposed_set_color_sort(true);
 }
 
 static void get_the_mobile_goal(void) {
-    Eigen::Vector2f goal_pos {-50.4 * multiplier, 30};
+    // Goal pos and approach angle
+    Vec goal_pos {50.4 * robot::match::side, 30};
+    float angle = pi/2 * robot::match::side;
 
-    movement::simple::turn_towards(pi, {.reversed=false, .angular_exit_threshold=rad(5), .timeout=1500}, in_place_pid);
-    // movement::simple::forward(50, {.reversed = true}, linear_pid);
-    // robot::brake();
+    // Roughly turn so we dont swing wildly when boomeranging
+    movement::simple::turn_towards(
+        pi, 
+        {.reversed=false, .angular_exit_threshold=rad(5), .timeout=1500}, 
+        in_place_pid);
 
-    // Eigen::Vector2f goal_pos {-50.4, 30};
-    // movement::simple::turn_towards(goal_pos, {.reversed=true, .angular_exit_threshold=rad(0.5), .timeout=1500}, in_place_pid);
+    // Boomerang over there
+    movement::simple::boomerang(
+        goal_pos, 
+        angle, 
+        0.3f, 
+        {.reversed = true, .linear_exit_threshold=2.5f}, 
+        boomerang_group);
 
-    // auto fut = movement::simple::forward(100, {.reversed=true, .max_linear_speed=0.6f, .timeout=2000}, linear_pid);
-
-    movement::simple::boomerang(goal_pos, -pi/2 * multiplier, 0.5f, {.linear_exit_threshold=5.0f}, swing_group);
+    pros::delay(300);
     
+    // Clamp down
     robot::clamp.extend();
+
+    pros::delay(200);
 
     robot::brake();
 }
 
 static void get_first_ring(void) {
-    Eigen::Vector2f ring_pos {-55 * multiplier, 87};
+    // Ring pos
+    Vec ring_pos {55 * robot::match::side, 87};
+
     // Look at the ring
-    movement::simple::turn_towards(ring_pos, {.angular_exit_threshold = rad(2.5), .timeout = 1000}, in_place_pid);
-    swing_group.reset();
+    movement::simple::turn_towards(
+        ring_pos, 
+        {.angular_exit_threshold = rad(2.5), .timeout = 1000}, 
+        in_place_pid);
 
     // Async so we start moving before we activate conveyor to prevent bad stuff happening
-    auto future = movement::simple::forward_async(TILE * 1.5, {.max_linear_speed = 1.0f, .timeout = 3000}, linear_pid);
+    auto future = movement::simple::forward_async(
+        TILE, 
+        {.timeout = 3000}, 
+        linear_pid);
+
     pros::delay(200);
 
-    // Start conveyor
+    // Start conveyor and intake
     robot::intake.move_voltage(12000);
-    robot::conveyor.move_voltage(12000);
-    future.get(); // Wait to get there
+    controls::conveyor::exposed_desired_volt(12000);
 
-    // robot::intake.move_voltage(0);
-    // robot::conveyor.move_voltage(0);
+    future.wait(); // Wait to get there
+
+    robot::intake.move_voltage(0);
+    controls::conveyor::exposed_desired_volt(0);
+
     robot::brake();
 }
 
 void bcis::run(void) {
+    std::vector<std::pair<Eigen::Vector2f, float>> poses;
+    pros::Task logging_task([&] () {
+        while (true) {
+            printf("pos: %f, %f | angle: %f\n", robot::pos.x(), robot::pos.y(), robot::theta);
+            poses.push_back({
+                {robot::pos.x(), robot::pos.y()},
+                robot::theta
+            });
+            pros::delay(20);
+        }
+    });
+
     std::cout << PREFIX << "Running BCIS strategy\n";
 
-    if (robot::match::side == 1) {
-        multiplier = -1.0;
-    }
+    printf("%sMultiplier: %d", CPREFIX, robot::match::side);
     
     controls::wallmech::start_api_task();
+    controls::conveyor::start_api_task();
 
-    // Back up and score on the alliance stake
     alliance_stake();
     get_the_mobile_goal();
     get_first_ring();
-    // Boomerang to get the mobile goal
 
-    // movement::simple::boomerang({-50, -50}, -pi/2, 0.25f, {.reversed = true, .linear_exit_threshold=1.0f, .timeout=20000}, swing_group);
-    // debugscreen::debug_message += "Boomerang done\n";
-
-    reset_all();
-
+    robot::brake();
 
     std::cout << PREFIX << "BCIS strategy finished\n";
+
+    print_poses(poses);
+    logging_task.remove();
 }

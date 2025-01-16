@@ -12,14 +12,13 @@ static pros::task_t task = nullptr;
 static pros::task_t api_task = nullptr;
 static controllers::PID pid(0.02, 0.01, 0);
 
-float positions[3] = {0.0f, 45.9f, 175.9f};
+static float positions[3] = {0.0f, 45.9f, 175.9f};
 static int special_fire_thing = -1;
 
 static State set_state = State::RESTING;
 
 static void api_task_func(void* p) {
     while (true) {
-        pros::delay(10);
         if (set_state == State::OVERRIDE) {
             continue;
         }
@@ -43,6 +42,8 @@ static void api_task_func(void* p) {
             control = std::clamp(control, -1.0f, 1.0f);
             robot::wallmech.move_voltage((int) roundf(control * 12000));
         }
+
+        pros::delay(10);
     }
 }
 

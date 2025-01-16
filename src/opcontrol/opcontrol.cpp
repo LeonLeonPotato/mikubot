@@ -1,6 +1,9 @@
 #include "opcontrol/opcontrol.h"
 #include "essential.h"
 
+// TODO: OOP this
+// TODO: When OOPing this, add an API section
+
 const std::vector<std::function<void(void)>> controls::ticks = {
     driving::tick,
     intake::tick,

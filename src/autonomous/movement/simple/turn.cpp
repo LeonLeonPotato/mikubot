@@ -51,7 +51,7 @@ DEFINE_STANDARD(turn_towards, controllers::PID&, const float angle)
 DEFINE_ASYNC(turn_towards, controllers::PID&, const float angle)
 {
     Future<SimpleResult> future;
-    pros::Task task([&future, angle, &pids, &params]() {
+    pros::Task task([future, &params, pids, angle] () mutable {
         future.set_value(turn_towards_cancellable(
             angle, params, pids, 
             future.get_state()->cancelled

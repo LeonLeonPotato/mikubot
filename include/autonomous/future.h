@@ -32,7 +32,7 @@ class Future {
             state->available = true;
         }
 
-        bool wait(uint32_t timeout = TIMEOUT_MAX, int delay = 5) const {
+        bool wait(uint32_t timeout = TIMEOUT_MAX, int delay = 10) const {
             int start = pros::millis();
             while (!state->available && pros::millis() - start < timeout) {
                 pros::delay(delay);

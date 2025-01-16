@@ -107,7 +107,7 @@ DEFINE_ASYNC(boomerang, PIDGroup,
     const float lead)
 {
     Future<SimpleResult> future;
-    pros::Task task([&point, angle, lead, params, pids, &future] () {
+    pros::Task task([future, &params, pids, &point, angle, lead] () mutable {
         future.set_value(boomerang_cancellable(
             point, angle, lead, params, pids, 
             future.get_state()->cancelled
