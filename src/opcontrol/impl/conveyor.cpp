@@ -17,16 +17,21 @@ static int desired_voltage = 0;
 static bool color_sort_enabled = true;
 static int disable_time = -1;
 
+static float mod_diff(float a, float b) {
+    float diff = fmodf(a - b + 180, 360) - 180;
+    return diff + (diff < -180) * 360;
+}
+
 static void api_task_run(void* p) {
     while (true) {
         const float hue = robot::classifier.get_hue();
-        const bool is_ring = robot::classifier.get_proximity() > 100;
+        const bool is_ring = robot::classifier.get_proximity() > 240;
         char team = 'N';
 
-        if (is_ring) {
-            if (fabsf(minimum_mod_diff(hue, 220, 360)) < 60) {
+        if (is_ring && hue >= 0 && hue <= 360) {
+            if (fabsf(mod_diff(hue, 220)) < 30) {
                 team = 'B';
-            } else if (fabsf(minimum_mod_diff(hue, 0, 360)) < 60) {
+            } else if (fabsf(mod_diff(hue, 0)) < 30) {
                 team = 'R';
             }
             if (team != 'N' && team != robot::match::team) {
@@ -35,11 +40,11 @@ static void api_task_run(void* p) {
         }
 
         if (disable_time != -1) {
-            bool under = disable_time < pros::millis();
-            bool over = disable_time + disable_length >= pros::millis();
+            bool under = pros::millis() >= disable_time ;
+            bool over = pros::millis() <= disable_time + disable_length;
             if (under && over && color_sort_enabled) {
                 robot::conveyor.move_velocity(0);
-                return;
+                continue;
             } else if (!over) {
                 disable_time = -1;
             }
@@ -47,7 +52,7 @@ static void api_task_run(void* p) {
 
         robot::conveyor.move_voltage(desired_voltage);
 
-        pros::delay(10);
+        pros::delay(20);
     }
 }
 
@@ -64,8 +69,9 @@ bool conveyor::exposed_get_color_sort(void) {
 }
 
 void conveyor::start_api_task() {
-    if (api_task != nullptr) return;
-    api_task = pros::c::task_create(api_task_run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "conveyor_api");
+    if (api_task == nullptr) {
+        api_task = pros::c::task_create(api_task_run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "conveyor_api");
+    }
 }
 
 void conveyor::stop_api_task() {
@@ -75,8 +81,6 @@ void conveyor::stop_api_task() {
 }
 
 void conveyor::tick() {
-    start_api_task();
-
     if (robot::master.get_digital_new_press(config::keybinds::color_sort_toggle)) {
         color_sort_enabled = !color_sort_enabled;
         robot::master.rumble(".");

@@ -4,6 +4,7 @@
 #include "ansicodes.h"
 #include "gui/debugscreen.h"
 #include "Eigen/Dense"
+#include "opcontrol/impl/conveyor.h"
 #include "pros/misc.hpp"
 #include "pros/rtos.hpp"
 #include "telemetry.h" // IWYU pragma: keep
@@ -29,6 +30,9 @@ void initialize(void) {
 	robot::init();
 	driverinfo::init();
 	odometry::start_task();
+
+	controls::conveyor::start_api_task();
+	controls::wallmech::start_api_task();
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";

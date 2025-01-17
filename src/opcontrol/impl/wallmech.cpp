@@ -1,5 +1,6 @@
 #include "opcontrol/impl/wallmech.h"
 #include "autonomous/controllers/pid.h"
+#include "conveyor.h"
 #include "essential.h"
 #include "config.h"
 #include "api.h"
@@ -12,7 +13,7 @@ static pros::task_t task = nullptr;
 static pros::task_t api_task = nullptr;
 static controllers::PID pid(0.02, 0.01, 0);
 
-static float positions[3] = {0.0f, 45.9f, 175.9f};
+static float positions[3] = {0.0f, 45.9f, 175.9f, };
 static int special_fire_thing = -1;
 
 static State set_state = State::RESTING;
@@ -25,10 +26,10 @@ static void api_task_func(void* p) {
 
         if (special_fire_thing != -1) {
             if (pros::millis() < special_fire_thing) {
-                robot::conveyor.move_voltage(-6000);
+                controls::conveyor::exposed_desired_volt(-6000);
             } else {
                 special_fire_thing = -1;
-                robot::conveyor.move_voltage(0);
+                controls::conveyor::exposed_desired_volt(0);
             }
         }
 
@@ -43,7 +44,7 @@ static void api_task_func(void* p) {
             robot::wallmech.move_voltage((int) roundf(control * 12000));
         }
 
-        pros::delay(10);
+        pros::delay(20);
     }
 }
 
@@ -68,8 +69,6 @@ void wallmech::stop_api_task() {
 }
 
 void wallmech::tick() {
-    start_api_task();
-
     bool next_stage = robot::master.get_digital_new_press(config::keybinds::wallmech_next_stage);
     bool rest = robot::master.get_digital_new_press(config::keybinds::wallmech_rest);
 

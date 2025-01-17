@@ -1,5 +1,6 @@
 #include "bcis.h"
 #include "ansicodes.h"
+#include "autonomous/movement/base_movement.h"
 #include "autonomous/movement/simple/boomerang.h"
 #include "autonomous/movement/simple/forward.h"
 #include "autonomous/movement/simple/swing.h"
@@ -16,14 +17,19 @@ using namespace strategies;
 
 using Vec = Eigen::Vector2f;
 
-constexpr float initial_offset_y = 32.0f;
-constexpr float initial_offset_x = 6.60 + 5.0;
+constexpr float initial_offset_y = 37.0f;
+constexpr float initial_offset_x = 7 + 5.0;
 
 static void alliance_stake(void) {
     // Push middle rings out the way
     movement::simple::forward(
-        initial_offset_y, 
-        { .reversed=true, .max_linear_speed=0.5f, .timeout=2000 }, 
+        initial_offset_y + 10, 
+        { .reversed=true, .max_linear_speed=0.6f, .timeout=2000 }, 
+        linear_pid);
+
+    movement::simple::forward(
+        9, 
+        { .reversed=false, .max_linear_speed=0.8f, .timeout=1000 }, 
         linear_pid);
 
     // Turn to back the alliance stake
@@ -33,15 +39,15 @@ static void alliance_stake(void) {
         in_place_pid);
     
     // Back up into alliance stake
+
+    // movement::simple::swing_to(
+    //     {-15 * robot::match::side, -initial_offset_y}, 
+    //     {.reversed=true, .max_linear_speed=0.5f, .timeout=2000},
+    //     swing_group);
+
     movement::simple::forward(
-        999, 
-        { .reversed=true, .max_linear_speed=0.5f, .timeout=600 }, 
-        linear_pid);
-    
-    // Move so we get some spacing
-    movement::simple::forward(
-        7, 
-        { .reversed=false, .linear_exit_threshold=0.1f, .max_linear_speed=1.0f, .timeout=1000 }, 
+        9, 
+        { .reversed=true, .max_linear_speed=0.5f, .timeout=1000 }, 
         linear_pid);
     
     robot::brake();
@@ -49,7 +55,7 @@ static void alliance_stake(void) {
     // Run conveyor and score
     controls::conveyor::exposed_set_color_sort(false);
     controls::conveyor::exposed_desired_volt(12000);
-    pros::delay(750);
+    pros::delay(1000);
     controls::conveyor::exposed_desired_volt(0);
     controls::conveyor::exposed_set_color_sort(true);
 }
@@ -134,8 +140,8 @@ void bcis::run(void) {
     controls::conveyor::start_api_task();
 
     alliance_stake();
-    get_the_mobile_goal();
-    get_first_ring();
+    // get_the_mobile_goal();
+    // get_first_ring();
 
     robot::brake();
 
