@@ -44,6 +44,7 @@ static void api_task_run(void* p) {
             bool over = pros::millis() <= disable_time + disable_length;
             if (under && over && color_sort_enabled) {
                 robot::conveyor.move_velocity(0);
+                pros::delay(20);
                 continue;
             } else if (!over) {
                 disable_time = -1;

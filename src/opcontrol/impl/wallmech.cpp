@@ -21,6 +21,7 @@ static State set_state = State::RESTING;
 static void api_task_func(void* p) {
     while (true) {
         if (set_state == State::OVERRIDE) {
+            pros::delay(20);
             continue;
         }
 

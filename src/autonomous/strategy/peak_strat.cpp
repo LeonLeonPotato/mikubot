@@ -28,12 +28,10 @@ static void get_goal(void) {
     fut.wait();
     pros::delay(200);
     
-    fut = movement::simple::forward_async(
+    movement::simple::forward(
         15, 
-        {.reversed=false, .max_linear_speed=0.75f, .timeout=500}, 
+        {.reversed=false, .timeout=500}, 
         linear_pid);
-
-    fut.wait();
 
     robot::intake.move_voltage(12000);
     controls::conveyor::exposed_desired_volt(10000);
@@ -45,11 +43,13 @@ static void get_goal(void) {
 }
 
 static void get_ring(void) {
-    int xto = 60 * robot::match::side;
-    int yto = -83;
+    Eigen::Vector2f target {
+        60 * robot::match::side,
+        -83
+    };
 
     movement::simple::turn_towards(
-        {xto, yto}, 
+        target, 
         {
             .angular_exit_threshold=rad(2.5f), 
             .timeout=1000
@@ -88,7 +88,11 @@ static void get_ring(void) {
 }
 
 static void corner(void) {
-    Eigen::Vector2f target = {97 * robot::match::side, -28};
+    Eigen::Vector2f target = {
+        97 * robot::match::side, 
+        -28
+    };
+
     movement::simple::turn_towards(
         target,
         {
@@ -203,7 +207,6 @@ static void left_rings(void) {
 
     movement::simple::forward(TILE, {}, linear_pid);
 }
-
 
 void peak_strat::run(void) {
     std::cout << PREFIX << "Running peak strat\n";
