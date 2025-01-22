@@ -35,33 +35,76 @@ static void get_goal(void) {
 
     pros::delay(200);    
     robot::clamp.extend();
-    pros::delay(200);
+    pros::delay(100);
     
     movement::simple::forward(
-        15, 
+        5, 
         {.reversed=false, .timeout=500}, 
         linear_pid);
 
     start_conveyor();
-    pros::delay(750);
+    pros::delay(1000);
     stop_conveyor();
 }
 
 static void get_big_ring_stack(void) {
     Vec ring_close {
-        0 * robot::match::side,
-        0
+        35.58 * robot::match::side,
+        -118.48
     };
     Vec ring_far {
-        0 * robot::match::side,
-        0
+        52.736  * robot::match::side,
+        -119.56
     };
+
+    movement::simple::turn_towards(
+        ring_close, 
+        {
+            .angular_exit_threshold=rad(2.5f), 
+            .timeout=1000
+        },
+        in_place_pid);
+
+    start_conveyor();
+
+    movement::simple::forward(
+        robot::distance(ring_close), 
+        {
+            .linear_exit_threshold=2.0f, 
+            .timeout=1000
+        },
+        linear_pid);
+    
+    movement::simple::forward(
+        20, 
+        {
+            .reversed=true,
+            .linear_exit_threshold=2.0f, 
+            .timeout=1000
+        },
+        linear_pid);
+
+    movement::simple::turn_towards(
+        ring_far, 
+        {
+            .angular_exit_threshold=rad(2.5f), 
+            .timeout=1000
+        },
+        in_place_pid);
+
+    movement::simple::forward(
+        robot::distance(ring_far) + 10,
+        {
+            .linear_exit_threshold=2.0f, 
+            .timeout=1000
+        },
+        linear_pid);
 }
 
 static void get_single_ring(void) {
     Vec ring {
-        -60 * robot::match::side,
-        -83
+        48.75 * robot::match::side,
+        -80.96
     };
 
     movement::simple::turn_towards(
@@ -73,7 +116,7 @@ static void get_single_ring(void) {
         in_place_pid);
 
     auto fut = movement::simple::forward_async(
-        TILE * 1.3, 
+        TILE * 1.4,
         {
             .linear_exit_threshold=1.0f, 
             .timeout=2000
@@ -83,14 +126,15 @@ static void get_single_ring(void) {
     pros::delay(100);
     start_conveyor();
     fut.wait();
-    pros::delay(1000);
-    stop_conveyor();
+    pros::delay(2500);
 }
 
 static void goal_rush(void) {
+    robot::clamp.retract();
+
     Vec goal {
-        0 * robot::match::side,
-        0
+        35 * robot::match::side,
+        -118.48
     };
 
     movement::simple::turn_towards(
@@ -102,13 +146,13 @@ static void goal_rush(void) {
         in_place_pid);
 
     movement::simple::forward(
-        TILE, 
+        robot::distance(goal) - TILE/3, 
         {
             .linear_exit_threshold=1.0f, 
             .timeout=2000
         },
         linear_pid);
-    
+
     robot::doinker.extend();
     pros::delay(100);
 
@@ -159,6 +203,7 @@ void bcis::run(void) {
     get_single_ring();
     if ((robot::match::side == 1 && robot::match::team == 'B') || (robot::match::side == -1 && robot::match::team == 'R')) {
         goal_rush();
+        // will dq us
     }
 
     robot::brake();
