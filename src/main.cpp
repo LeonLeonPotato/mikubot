@@ -54,6 +54,7 @@ void competition_initialize(void) {
 	do {
 		pros::delay(50);
 	} while (autonselector::finished_selection == false);
+	pros::delay(50);
 
 	autonselector::destroy();
 
@@ -64,7 +65,6 @@ void autonomous(void) {
 	std::cout << PREFIX << "Running autonomous\n";
 	// autonrunner::init();
 
-	std::vector<std::pair<Eigen::Vector2f, float>> poses;
 	strategies::functions.at(strategies::chosen_strategy)();
 
 	// autonrunner::destroy();

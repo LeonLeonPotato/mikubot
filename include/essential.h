@@ -22,6 +22,16 @@ extern float theta, angular_velocity, angular_acceleration;
 extern int left_set_velocity, right_set_velocity;
 extern int left_set_voltage, right_set_voltage;
 
+/**
+ * @brief Computes the angular difference between the desired angle and the current angle.
+ *
+ * This function calculates the shortest angular difference between the desired angle and the current angle,
+ * optionally considering the direction (reversed or not).
+ *
+ * @param desired The desired angle in radians.
+ * @param reversed A boolean flag indicating whether to reverse the direction. Default is false.
+ * @return The angular difference in radians, adjusted to be within the range [-π, π].
+ */
 inline const float angular_diff(const float desired, bool reversed = false) {
     const float res = fmodf(desired - theta + (M_PI * (int) !reversed), M_TWOPI) - M_PI;
     return res + (res < -M_PI) * M_TWOPI;

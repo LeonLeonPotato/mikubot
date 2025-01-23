@@ -10,40 +10,21 @@ using namespace strategies;
 
 void test_strategy::run(void) {
     std::vector<std::pair<Eigen::Vector2f, float>> poses;
-    pros::Task logging_task([&] () {
-        while (true) {
-            printf("pos: %f, %f | angle: %f\n", robot::pos.x(), robot::pos.y(), robot::theta);
-            poses.push_back({
-                {robot::pos.x(), robot::pos.y()},
-                robot::theta
-            });
-            pros::delay(20);
-        }
-    });
+    pros::Task logging_task = get_logging_task(poses);
 
-    movement::simple::swing_to(
-        {0, -25}, 
-        {.reversed = true, .linear_exit_threshold=2.0, .timeout=10000}, 
-        swing_group);
-
-    robot::brake();
-    pros::delay(1000);
-
-    movement::simple::swing_to(
-        {0, 0}, 
-        {.linear_exit_threshold=2.0, .timeout=10000}, 
-        swing_group);
-
-    movement::simple::boomerang(
-        {-50, -50}, 
-        -pi/2, 
+    auto res = movement::simple::boomerang(
+        {50, 50}, 
+        pi/2, 
         0.5f, 
-        {.reversed = true, .linear_exit_threshold=2.0, .timeout=10000}, 
+        {.reversed = false, .linear_exit_threshold=2.0, .timeout=10000}, 
         boomerang_group);
 
     robot::brake();
 
-    print_poses(poses);
     logging_task.remove();
+    print_poses(poses);
+
+    pros::delay(20);
+    printf("Test strategy finished with status: \n%s\n", res.debug_out().c_str());
 }
 
