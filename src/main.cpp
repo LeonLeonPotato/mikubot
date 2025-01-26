@@ -34,12 +34,14 @@ void initialize(void) {
 	controls::conveyor::start_api_task();
 	controls::wallmech::start_api_task();
 
-	// if (!pros::competition::is_connected()) {
-	// 	std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
-	// 	if (!config::SIM_MODE) competition_initialize();
-	// 	if (!config::SIM_MODE) debugscreen::init();
-	// 	if (!config::SIM_MODE) autonomous();
-	// }
+	if (!pros::competition::is_connected()) {
+		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
+		if (!config::SIM_MODE) {
+			competition_initialize();
+			debugscreen::init();
+			autonomous();
+		}
+	}
 }
 
 void disabled(void) {

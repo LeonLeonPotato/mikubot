@@ -33,20 +33,20 @@ pros::adi::Pneumatics robot::doinker('b', false, false);
 pros::adi::Pneumatics robot::ejector('c', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
-pros::Motor robot::conveyor(-15, pros::MotorGearset::blue);
+pros::Motor robot::conveyor(0, pros::MotorGearset::blue);
 pros::Motor robot::intake(0);
 pros::Motor robot::wallmech(0); 
 pros::Rotation robot::wallmech_encoder(0);
 
-pros::Imu robot::inertial(16);
 pros::Optical robot::classifier(0);
-pros::Rotation robot::side_encoder(-17);
-pros::Rotation robot::back_encoder(5);
+pros::Imu robot::inertial(18);
+pros::Rotation robot::back_encoder(19);
+pros::Rotation robot::side_encoder(20);
 
 // pros::MotorGroup robot::left_motors({-11, -12, -13}, pros::MotorGearset::blue);
 // pros::MotorGroup robot::right_motors({1, 2, 3}, pros::MotorGearset::blue);
-pros::MotorGroup robot::left_motors({-18, -19, -20}, pros::MotorGearset::blue);
-pros::MotorGroup robot::right_motors({8, 9, 10}, pros::MotorGearset::blue);
+pros::MotorGroup robot::left_motors({1, -2, 3}, pros::MotorGearset::blue);
+pros::MotorGroup robot::right_motors({-10, 9, -8}, pros::MotorGearset::blue);
 
 int robot::max_speed(void) {
     if (config::SIM_MODE) return 600;
