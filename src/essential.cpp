@@ -1,14 +1,20 @@
 #include "essential.h"
-#include "autonomous/controllers/pid.h"
 #include "autonomous/controllers/velocity.h"
 #include "config.h"
+#include "hardware/motor.h"
 #include "pros/abstract_motor.hpp"
 #include "pros/rtos.h"
 
 using namespace robot;
 
-controllers::VelocityController robot::left_velo_controller(17.4021f, 2.8005f, 852.808f);
-controllers::VelocityController robot::right_velo_controller(17.4021f, 2.8005f, 760.359f);
+controllers::VelocityController robot::left_velo_controller({
+    17.4021f, 2.8005f, 852.808f, 
+    {0.0f, 0.0f, 0.0f}
+});
+controllers::VelocityController robot::right_velo_controller({
+    17.4021f, 2.8005f, 760.359f,
+    {0.0f, 0.0f, 0.0f}
+});
 
 bool state::braking = false;
 Eigen::Vector2f state::pos = Eigen::Vector2f::Zero();
@@ -33,46 +39,34 @@ pros::adi::Pneumatics robot::doinker('b', false, false);
 pros::adi::Pneumatics robot::ejector('c', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
-pros::Motor robot::conveyor(0, pros::MotorGearset::blue);
-pros::Motor robot::intake(0);
-pros::Motor robot::wallmech(0); 
+pros::Optical robot::classifier(0);
+hardware::Motor robot::conveyor(0, hardware::Gearset::BLUE, hardware::BrakeMode::BRAKE);
+hardware::Motor robot::intake(0, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD);
+hardware::Motor robot::wallmech(0, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD);
 pros::Rotation robot::wallmech_encoder(0);
 
-pros::Optical robot::classifier(0);
 pros::Imu robot::inertial(18);
 pros::Rotation robot::back_encoder(19);
 pros::Rotation robot::side_encoder(20);
 
 // pros::MotorGroup robot::left_motors({-11, -12, -13}, pros::MotorGearset::blue);
 // pros::MotorGroup robot::right_motors({1, 2, 3}, pros::MotorGearset::blue);
-pros::MotorGroup robot::left_motors({1, -2, 3}, pros::MotorGearset::blue);
-pros::MotorGroup robot::right_motors({-10, 9, -8}, pros::MotorGearset::blue);
-
-int robot::max_speed(void) {
-    if (config::SIM_MODE) return 600;
-    switch (left_motors.get_gearing()) {
-        case pros::MotorGears::blue:
-            return 600;
-            break;
-        case pros::MotorGears::green:
-            return 200;
-            break;
-        case pros::MotorGears::red:
-            return 100;
-            break;
-        default:
-            return 200;
-            break;
-    }
-}
+hardware::MotorGroup robot::left_motors({1, -2, 3}, 
+    hardware::Gearset::BLUE, 
+    hardware::BrakeMode::COAST, 
+    controllers::VelocityControllerArgs {
+        17.4021f, 2.8005f, 852.808f, 
+        {30.0f, 0.0f, 0.0f}});
+hardware::MotorGroup robot::right_motors({-10, 9, -8}, 
+    hardware::Gearset::BLUE, 
+    hardware::BrakeMode::COAST,
+    controllers::VelocityControllerArgs {
+        17.4021f, 2.8005f, 760.359f,
+        {30.0f, 0.0f, 0.0f}});
 
 void robot::volt(float left, float right) {
-    left_set_voltage = (int) (std::clamp(left, -1.0f, 1.0f) * 12000.0f);
-    right_set_voltage = (int) (std::clamp(right, -1.0f, 1.0f) * 12000.0f);
-    braking = false;
-
-    left_motors.move_voltage(left_set_voltage);
-    right_motors.move_voltage(right_set_voltage);
+    left_motors.set_desired_voltage(left);
+    right_motors.set_desired_voltage(right);
 }
 
 void robot::volt(int left, int right) {

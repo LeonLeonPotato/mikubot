@@ -4,6 +4,7 @@
 
 #include "Eigen/Dense"
 #include "autonomous/controllers/velocity.h"
+#include "hardware/motor.h"
 
 namespace robot {
 constexpr float TRACKING_WHEEL_RADIUS = 4.1275f;
@@ -61,18 +62,18 @@ extern pros::adi::Pneumatics doinker;
 extern pros::adi::Pneumatics ejector;
 extern pros::adi::Pneumatics clamp;
 
-extern pros::Motor conveyor;
-extern pros::Motor intake;
-extern pros::Motor wallmech;
+extern pros::Optical classifier;
+extern hardware::Motor conveyor;
+extern hardware::Motor intake;
+extern hardware::Motor wallmech;
 extern pros::Rotation wallmech_encoder;
 
 extern pros::IMU inertial;
-extern pros::Optical classifier;
 extern pros::Rotation side_encoder;
 extern pros::Rotation back_encoder;
 
-extern pros::MotorGroup left_motors;
-extern pros::MotorGroup right_motors;
+extern hardware::MotorGroup left_motors;
+extern hardware::MotorGroup right_motors;
 
 int max_speed(void);
 

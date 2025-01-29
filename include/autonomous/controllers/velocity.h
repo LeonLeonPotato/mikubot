@@ -8,19 +8,17 @@
 namespace controllers {
 struct VelocityControllerArgs {
     float kv, ka, kf;
+    PIDArgs pid_args;
 };
 
 class VelocityController {
-    public:
+    private:
         PID pid;
-        VelocityControllerArgs args;
-        
-        VelocityController(float kv, float ka, float kf,
-                            float kp, float ki, float kd) : args{kv, ka, kf}, pid{kp, ki, kd} { reset(); }
-        VelocityController(float kv, float ka, float kf) : args{kv, ka, kf}, pid({}) { reset(); }
-        VelocityController(const VelocityControllerArgs& args, const PIDArgs& pid_args) : args(args), pid{pid_args} { reset(); }
-        VelocityController(const VelocityControllerArgs& args) : args(args), pid({}) { reset(); };
-        VelocityController(const VelocityControllerArgs& args, PID pid) : args(args), pid(pid) { reset(); };
+        const VelocityControllerArgs args;
+    
+    public:        
+        VelocityController(const VelocityControllerArgs& args) 
+            : args(args), pid{args.pid_args} { reset(); }
 
         void reset(void) {
             pid.reset();
@@ -29,6 +27,14 @@ class VelocityController {
         float get(float current, float target, float accel = 0) {
             float ff = args.kv * target + args.ka * accel + args.kf * (target > 0 ? 1 : -1) * (target != 0);
             float fb = pid.get(target - current);
+            float unslewed = ff + fb;
+            return ff + fb;
+        }
+
+        float get_no_update(float current, float target, float accel = 0) const {
+            float ff = args.kv * target + args.ka * accel + args.kf * (target > 0 ? 1 : -1) * (target != 0);
+            float fb = pid.get();
+            float unslewed = ff + fb;
             return ff + fb;
         }
 
@@ -37,6 +43,7 @@ class VelocityController {
             return ff;
         }
 
+        // otherwise finds the steady state velocity for a voltage
         float reverse(float volt) const {
             if (fabsf(volt) < args.kf) return 0;
             return (volt - args.kf * (volt > 0 ? 1 : -1)) / args.kv;
