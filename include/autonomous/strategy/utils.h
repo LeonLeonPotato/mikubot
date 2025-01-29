@@ -61,9 +61,9 @@ static void print_poses(const std::vector<std::pair<Eigen::Vector2f, float>>& po
 
 #define get_logging_task(vec) pros::Task([&poses] () { \
     while (true) { \
-        printf("pos: %f, %f | angle: %f\n", robot::pos.x(), robot::pos.y(), robot::theta); \
+        printf("pos: %f, %f | angle: %f\n", robot::x(), robot::y(), robot::theta); \
         vec.push_back({ \
-            {robot::pos.x(), robot::pos.y()}, \
+            {robot::x(), robot::y()}, \
             robot::theta \
         }); \
         pros::delay(20); \

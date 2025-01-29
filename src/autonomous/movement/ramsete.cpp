@@ -16,7 +16,7 @@ static RamseteResult tick(
         const pathing::ProfilePoint& p = path.get_profile()[i];
         deriv = path(p.t, 1);
 
-        if (deriv.dot(p.pos - robot::pos) > 0) {
+        if (deriv.dot(p.pos - robot::pos()) > 0) {
             break;
         }
 
@@ -30,8 +30,8 @@ static RamseteResult tick(
 
     const pathing::ProfilePoint& p = path.get_profile()[i];
 
-    const float rotation_angle = robot::theta + params.reversed * M_PI;
-    Eigen::Vector2f crosstrack = (goal - robot::pos) / 100.0f;
+    const float rotation_angle = robot::theta() + params.reversed * M_PI;
+    Eigen::Vector2f crosstrack = (goal - robot::pos()) / 100.0f;
     Eigen::Vector2f crosstrack_local = Eigen::Rotation2Df(rotation_angle) * crosstrack;
     float angle_local = robot::angular_diff(p.heading, params.reversed);
     // printf("Deriv Theta: %f | Robot theta: %f | Angle local: %f\n", angle, robot::theta, angle_local);

@@ -3,6 +3,9 @@
 #include <cmath>
 #include <vector>
 
+#define deg(x) (x * 57.2957795131f)
+#define rad(x) (x * 0.0174532925199f)
+
 static inline float minimum_mod_diff(float a, float b, float mod) {
     float diff = fmodf(a - b + mod/2, mod) - mod/2;
     return diff + (diff < -mod/2) * mod;
@@ -26,4 +29,9 @@ static inline float average(const std::vector<T>& vec) {
         sum = t;
     }
     return static_cast<float>(sum / vec.size());
+}
+
+static inline float modfix(float x, float y) {
+    float result = fmodf(x, y);
+    return result + (result < 0) * y;
 }

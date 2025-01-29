@@ -112,16 +112,29 @@ class MotorGroup : public AbstractDevice {
 
         void brake(void);
         void set_brake_mode(BrakeMode mode);
-        void set_brake_mode(pros::motor_brake_mode_e mode);
-        BrakeMode get_brake_mode(void) const { return motors.empty() ? BrakeMode::COAST : motors[0]->get_brake_mode(); }
-        std::vector<BrakeMode> get_brake_modes(void) const;
+        void set_brake_mode(pros::motor_brake_mode_e mode) { set_brake_mode((BrakeMode) mode); }
+        BrakeMode get_brake_mode(void) const { return brake_mode; }
+        std::vector<BrakeMode> get_brake_modes_pros(void) const;
 
-        std::vector<int> get_ports(void) const;
-        const std::vector<Motor*>& get_motors(void) const { return motors; }
-        Motor& operator[](int index) { return *motors[index]; }
-        Motor& at(int index) { return *motors.at(index); }
+        Gearset get_gearset(void) const { return gearset; }
+        float get_max_speed(void) const { return static_cast<float>(gearset); }
 
         void set_slew_rate(float rate) { slew_rate = rate; }
         float get_slew_rate(void) const { return slew_rate; }
 };
+
+class Motor : public MotorGroup {
+    public:
+        explicit Motor(int port, 
+            Gearset gearset, 
+            BrakeMode brake_mode,
+            float slew_rate = 0)
+            : MotorGroup({port}, gearset, brake_mode, slew_rate) {}
+        explicit Motor(int port, 
+            Gearset gearset, 
+            BrakeMode brake_mode,
+            controllers::VelocityControllerArgs velo_controller_args,
+            float slew_rate = 0)
+            : MotorGroup({port}, gearset, brake_mode, velo_controller_args, slew_rate) {}
 };
+} // namespace hardware

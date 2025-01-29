@@ -15,7 +15,7 @@ DEFINE_TICK(swing_to, PIDGroup, const Eigen::Vector2f& point)
     if (params.reversed) speed = -speed;
     if (params.use_cosine_scaling) speed *= cosf(angle_diff);
     speed = std::clamp(speed, -params.max_linear_speed, params.max_linear_speed);
-    // printf("Speed: %f, Turn: %f, Angular: %f, Reversed: %d, Dist: %f, Pos: [%f, %f]\n", speed, turn, angle_diff, reversed, dist, robot::pos.x(), robot::pos.y());
+    // printf("Speed: %f, Turn: %f, Angular: %f, Reversed: %d, Dist: %f, Pos: [%f, %f]\n", speed, turn, angle_diff, reversed, dist, robot::pos().x(), robot::pos().y());
     robot::velo(speed + turn, speed - turn);
 
     return { ExitCode::SUCCESS, dist, angle_diff, 0 };

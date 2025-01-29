@@ -1,6 +1,6 @@
 #include "hardware/motor.h"
 #include "autonomous/controllers/velocity.h"
-#include "device.h"
+#include "hardware/device.h"
 #include "pros/apix.h"
 #include "pros/motors.h"
 #include "pros/rtos.h"
@@ -96,6 +96,13 @@ MotorGroup::MotorGroup (
     float slew_rate)
     : AbstractDevice(ports), gearset(gearset), brake_mode(brake_mode), slew_rate(slew_rate)
 {
+    for (const auto& p : ports) {
+        pros::c::motor_set_gearing(p, (pros::motor_gearset_e_t) gearset);
+    }
+
+    set_brake_mode(brake_mode);
+    set_position(0);
+
     char name[64] = {0};
     sprintf(name, "motor_group_internal_manager%d", ports[0]);
     internal_management_task = pros::c::task_create(
@@ -135,15 +142,26 @@ float MotorGroup::get_desired_voltage(void) const {
 float MotorGroup::get_desired_velocity(void) const {
     if (target_unit == OutputUnit::RPM) {
         return target_value;
-    } else {
+    } else if (velo_controller.has_value() && target_unit == OutputUnit::VOLTAGE) {
         return velo_controller->reverse(target_value);
+    } else {
+        double sum = 0; double z = 0;
+        for (const auto& p : ports) {
+            double val = pros::c::motor_get_target_velocity(p);
+            double y = val - z;
+            double t = sum + y;
+            z = (t - sum) - y;
+            sum = t;
+        }
+        return static_cast<float>(sum / ports.size());
     }
-    return 0;
+    __unreachable();
 }
 
 void MotorGroup::brake(void) {
     if (!poll_mutex()) return;
 
+    braking = true;
     for (const auto& p : ports) {
         pros::c::motor_brake(p);
     }
@@ -157,31 +175,21 @@ void MotorGroup::set_brake_mode(BrakeMode mode) {
     }
 }
 
-void MotorGroup::set_brake_mode(pros::motor_brake_mode_e mode) {
-    if (!acquire_mutex(0)) return;
-
-    for (auto& motor : motors) {
-        motor->set_brake_mode(mode);
-    }
-}
-
 #define DEFINE_VECTOR_FUNCS(nm, ns, type) \
     std::vector<type> MotorGroup::nm(void) const { \
         std::vector<type> ret; \
-        for (auto& motor : motors) ret.push_back(motor->ns()); \
+        for (const auto& p : ports) ret.push_back(static_cast<type>(pros::c::ns(p))); \
         return ret; \
     }
 
-DEFINE_VECTOR_FUNCS(get_raw_voltages, get_raw_voltage, float)
-DEFINE_VECTOR_FUNCS(get_raw_velocities, get_raw_velocity, float)
-DEFINE_VECTOR_FUNCS(get_filtered_velocities, get_filtered_velocity, float)
-DEFINE_VECTOR_FUNCS(get_efficiencies, get_efficiency, float)
-DEFINE_VECTOR_FUNCS(get_temperatures, get_temperature, float)
-DEFINE_VECTOR_FUNCS(get_currents, get_current, float)
-DEFINE_VECTOR_FUNCS(get_powers, get_power, float)
-DEFINE_VECTOR_FUNCS(get_torques, get_torque, float)
-DEFINE_VECTOR_FUNCS(get_positions, get_position, float)
-DEFINE_VECTOR_FUNCS(get_brake_modes, get_brake_mode, BrakeMode)
-DEFINE_VECTOR_FUNCS(get_ports, get_port, int)
+DEFINE_VECTOR_FUNCS(get_raw_voltages, motor_get_voltage, float)
+DEFINE_VECTOR_FUNCS(get_raw_velocities, motor_get_actual_velocity, float)
+DEFINE_VECTOR_FUNCS(get_efficiencies, motor_get_efficiency, float)
+DEFINE_VECTOR_FUNCS(get_temperatures, motor_get_temperature, float)
+DEFINE_VECTOR_FUNCS(get_currents, motor_get_current_draw, float)
+DEFINE_VECTOR_FUNCS(get_powers, motor_get_power, float)
+DEFINE_VECTOR_FUNCS(get_torques, motor_get_torque, float)
+DEFINE_VECTOR_FUNCS(get_positions, motor_get_position, float)
+DEFINE_VECTOR_FUNCS(get_brake_modes_pros, motor_get_brake_mode, BrakeMode)
 
 

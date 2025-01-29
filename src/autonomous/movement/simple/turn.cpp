@@ -64,24 +64,48 @@ DEFINE_ASYNC(turn_towards, controllers::PID&, const float angle)
 
 DEFINE_TICK(turn_towards, controllers::PID&, const Eigen::Vector2f& point)
 {
-    const float angle = atan2f(point(0) - robot::pos.x(), point(1) - robot::pos.y());
+    const float angle = atan2f(point(0) - robot::x(), point(1) - robot::y());
     return turn_towards_tick(angle, params, pids);
 }
 
 DEFINE_CANCELLABLE(turn_towards, controllers::PID&, const Eigen::Vector2f& point)
 {
-    const float angle = atan2(point(0) - robot::pos.x(), point(1) - robot::pos.y());
+    const float angle = atan2(point(0) - robot::x(), point(1) - robot::y());
     return turn_towards_cancellable(angle, params, pids, cancel_ref);
 }
 
 DEFINE_STANDARD(turn_towards, controllers::PID&, const Eigen::Vector2f& point)
 {
-    const float angle = atan2f(point(0) - robot::pos.x(), point(1) - robot::pos.y());
+    const float angle = atan2f(point(0) - robot::x(), point(1) - robot::y());
     return turn_towards(angle, params, pids);
 }
 
 DEFINE_ASYNC(turn_towards, controllers::PID&, const Eigen::Vector2f& point)
 {
-    const float angle = atan2f(point(0) - robot::pos.x(), point(1) - robot::pos.y());
+    const float angle = atan2f(point(0) - robot::x(), point(1) - robot::y());
+    return turn_towards_async(angle, params, pids);
+}
+
+DEFINE_TICK(turn_towards, controllers::PID&, const Pose& pose)
+{
+    const float angle = atan2(pose.x() - robot::x(), pose.y() - robot::y());
+    return turn_towards_tick(angle, params, pids);
+}
+
+DEFINE_CANCELLABLE(turn_towards, controllers::PID&, const Pose& pose)
+{
+    const float angle = atan2(pose.x() - robot::x(), pose.y() - robot::y());
+    return turn_towards_cancellable(angle, params, pids, cancel_ref);
+}
+
+DEFINE_STANDARD(turn_towards, controllers::PID&, const Pose& pose)
+{
+    const float angle = atan2(pose.x() - robot::x(), pose.y() - robot::y());
+    return turn_towards(angle, params, pids);
+}
+
+DEFINE_ASYNC(turn_towards, controllers::PID&, const Pose& pose)
+{
+    const float angle = atan2(pose.x() - robot::x(), pose.y() - robot::y());
     return turn_towards_async(angle, params, pids);
 }

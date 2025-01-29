@@ -17,7 +17,7 @@ static void update_text_task_func(void* p) {
     char st[512]; memset(st, 0, sizeof(st));
     while (true) {
         sprintf(st, "Robot pos: [%.2f, %.2f]   Robot angle: %.2f\n%s", 
-            robot::pos.x(), robot::pos.y(), robot::theta, debugscreen::debug_message.c_str());
+            robot::pos().x(), robot::pos().y(), robot::theta, debugscreen::debug_message.c_str());
         text->rename(st);
         pros::delay(50);
     }

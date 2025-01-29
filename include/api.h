@@ -22,9 +22,6 @@
 #define PROS_USE_SIMPLE_NAMES 
 #define PROS_USE_LITERALS 
 
-#define deg(x) (x * 57.2957795131f)
-#define rad(x) (x * 0.0174532925199f)
-
 #ifdef __cplusplus
 #include <cerrno>
 #include <cmath>

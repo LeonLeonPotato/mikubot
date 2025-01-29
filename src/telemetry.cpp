@@ -53,25 +53,16 @@ static void logging_task(void* args) {
         printf("[Telemetry] Log file opened\n");
         printf("[Telemetry] Log file: %s\n", filename.c_str());
 
-        fprintf(file, "time,x,y,theta,left_velocity,right_velocity,left_voltage,right_voltage,left_actual_velocity,right_actual_velocity,left_actual_voltage,right_actual_voltage,clamp,intake,conveyor\n");
+        fprintf(file, "time,x,y,theta\n");
         fflush(file);
     }
 
     int last_dump_time = pros::millis();
     while (true) {
         char buffer[256]; memset(buffer, 0, 256);
-        sprintf(buffer, "%lld,%f,%f,%f,%d,%d,%d,%d,%f,%f,%f,%f,%d,%f,%f\n",
+        sprintf(buffer, "%lld,%f,%f,%f\n",
             pros::micros(),
-            robot::pos.x(), robot::pos.y(), robot::theta,
-            robot::left_set_velocity, robot::right_set_velocity,
-            robot::left_set_voltage, robot::right_set_voltage,
-            average(robot::left_motors.get_actual_velocity_all()),
-            average(robot::right_motors.get_actual_velocity_all()),
-            average(robot::left_motors.get_voltage_all()),
-            average(robot::right_motors.get_voltage_all()),
-            (int) robot::clamp.is_extended(), 
-            robot::intake.get_actual_velocity(), 
-            robot::conveyor.get_actual_velocity()
+            robot::x(), robot::y(), robot::theta()
         );
 
         if (mode & TO_STDOUT) {

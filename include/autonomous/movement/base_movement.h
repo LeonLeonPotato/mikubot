@@ -97,22 +97,3 @@ struct PIDGroup {
     }
 };
 } // namespace movement
-
-namespace movement::utils {
-std::pair<float, float> compute_initial_t(
-    const pathing::BasePath& path, 
-    const float guesses,
-    const NumericalRecomputationParams& params);
-
-std::pair<float, float> compute_updated_t(
-    pathing::BasePath& path, 
-    const float t,
-    const NumericalRecomputationParams& params);
-
-void recompute_path(
-    pathing::BasePath& path, 
-    const path_solver_t path_solver,    
-    const int goal_i);
-
-void solve_path_default(pathing::BasePath& path);
-}

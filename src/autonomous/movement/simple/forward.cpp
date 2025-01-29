@@ -10,13 +10,13 @@ DEFINE_TICK(forward, controllers::PID&, const Eigen::Vector2f& line, const Eigen
 {
     const float reversed = 1 - 2*params.reversed;
     Eigen::Vector2f dir = Eigen::Vector2f {-normal.y(), normal.x()};
-    Eigen::Vector2f closest = line + dir * (robot::pos - line).dot(dir);
-    float dist = (closest - robot::pos).norm();
+    Eigen::Vector2f closest = line + dir * (robot::pos() - line).dot(dir);
+    float dist = (closest - robot::pos()).norm();
     float control = pids.get(dist) * reversed;
     control = std::clamp(control, -params.max_linear_speed, params.max_linear_speed);
     robot::velo(control, control);
 
-    float error_sign = 2*((line - robot::pos).dot(normal) >= 0) - 1;
+    float error_sign = 2*((line - robot::pos()).dot(normal) >= 0) - 1;
     return {ExitCode::SUCCESS, dist * error_sign, 0, 0};
 }
 
@@ -25,8 +25,8 @@ DEFINE_CANCELLABLE(forward, controllers::PID&, const float cm)
     const int start = pros::millis();
 
     const float reversed = 1 - 2*params.reversed;
-    const Eigen::Vector2f normal = Eigen::Vector2f {sinf(robot::theta), cosf(robot::theta)} * reversed;
-    const Eigen::Vector2f line = robot::pos + cm * normal;
+    const Eigen::Vector2f normal = Eigen::Vector2f {sinf(robot::theta()), cosf(robot::theta())} * reversed;
+    const Eigen::Vector2f line = robot::pos() + cm * normal;
 
     SimpleResult last_tick;
     while (last_tick.linear_error > params.linear_exit_threshold) {
