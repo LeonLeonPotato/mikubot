@@ -19,8 +19,7 @@ class Doinker : public Subsystem {
         }
 
         void tick(void) override;
-        void api_tick(void) override;
-        bool has_api(void) const override { return true; }
+        bool has_api(void) const override { return false; }
 
         static Doinker& get_instance(void) { return *instance; }
 };

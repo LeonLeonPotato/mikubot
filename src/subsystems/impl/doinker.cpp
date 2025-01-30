@@ -5,6 +5,8 @@
 
 using namespace subsystems;
 
+Doinker* Doinker::instance = nullptr;
+
 void Doinker::tick() {
     if (!poll_mutex()) return;
 

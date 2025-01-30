@@ -104,7 +104,7 @@ static void auton_selection_callback(lv_event_t* e) {
 
     clicked_button->set_font(fonts::roboto_regular_bold_16);
     auton_buttons[current_selected_idx].second->set_font(fonts::roboto_regular_16);
-    printf("[AutonSelector] Setting strategy to %s\n", strategies::names.at(clicked_strategy).c_str());
+    // printf("[AutonSelector] Setting strategy to %s\n", strategies::names.at(clicked_strategy).c_str());
     strategies::chosen_strategy = clicked_strategy;
 
     current_selected_idx = i;

@@ -26,7 +26,7 @@ static void task_func(void* args) {
 
 void driverinfo::init(void) {
     if (task != nullptr) return;
-    // task = pros::c::task_create(task_func, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
+    task = pros::c::task_create(task_func, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
 }
 
 void driverinfo::destroy(void) {

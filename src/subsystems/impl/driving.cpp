@@ -6,6 +6,8 @@
 
 using namespace subsystems;
 
+Driving* Driving::instance = nullptr;
+
 struct Scaling {
 	float dead_zone = 5.0f;
 	float speed_scale = 1.0f;
@@ -34,7 +36,10 @@ static void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 }
 
 void Driving::tick(void) {
-	if (!robot::chassis.poll_drive_mutex() || !poll_mutex()) return;
+	if (!poll_mutex()) return;
+	if (!robot::chassis.poll_drive_mutex()) {
+		robot::chassis.take_drive_mutex();
+	}
 
 	const int left_x = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
 	const int left_y = robot::master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);

@@ -4,6 +4,8 @@
 
 using namespace subsystems;
 
+Clamp* Clamp::instance = nullptr;
+
 void Clamp::tick(void) {
     if (!poll_mutex()) return;
 

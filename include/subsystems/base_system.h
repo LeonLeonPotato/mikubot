@@ -16,13 +16,13 @@ class Subsystem {
 
         pros::task_t api_task = nullptr;
         pros::task_t task = nullptr;
-        pros::mutex_t mutex = nullptr;
+        pros::mutex_t mutex = pros::c::mutex_create();
 
         int tick_delay = 10;
 
     public:
         virtual bool has_api(void) const = 0;
-        virtual void api_tick(void) {}
+        virtual void api_tick(void) { return; }
         virtual void tick(void) = 0;
 
         void run(void) {
@@ -41,7 +41,7 @@ class Subsystem {
 
         void start_task(void) {
             if (task != nullptr) return;
-            // task = pros::c::task_create(task_fn, this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Subsystem Task");
+            task = pros::c::task_create(task_fn, this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Subsystem Task");
         }
         void stop_task(void) {
             if (task == nullptr) return;
@@ -59,7 +59,7 @@ class Subsystem {
         
         void start_api_task(void) {
             if (api_task != nullptr) return;
-            // api_task = pros::c::task_create(api_task_fn, this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Subsystem API Task");
+            api_task = pros::c::task_create(api_task_fn, this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Subsystem API Task");
         }
         void stop_api_task(void) {
             if (api_task == nullptr) return;
@@ -70,7 +70,7 @@ class Subsystem {
         void set_tick_delay(int delay) { tick_delay = delay; }
         int get_tick_delay(void) const { return tick_delay; }
 
-        bool take_mutex(uint32_t timeout = TIMEOUT_MAX) { return pros::c::mutex_take(mutex, timeout); }
+        bool take_mutex(uint32_t timeout = TIMEOUT_MAX) { if (poll_mutex()) return true; else return pros::c::mutex_take(mutex, timeout); }
         void give_mutex(void) { pros::c::mutex_give(mutex); }
         bool poll_mutex(void) const {
             return pros::c::mutex_get_owner(mutex) == pros::c::task_get_current();

@@ -37,12 +37,6 @@ static void initialize_log_file(void) {
     file = fopen(filename.c_str(), "w");
 }
 
-template <typename T>
-static float average(const std::vector<T>& v) {
-    if (v.empty()) return 0;
-    return std::reduce(v.begin(), v.end()) / (float) v.size();
-}
-
 static void logging_task(void* args) {
     bool will_log_file = (mode & TO_FILE) >> 1;
 
@@ -95,7 +89,7 @@ void telemetry::start_task(void) {
     if (file == nullptr) initialize_log_file();
 
     if (task == nullptr) {
-        // task = pros::c::task_create(logging_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Telemetry");
+        task = pros::c::task_create(logging_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Telemetry");
     }
 }
 

@@ -36,8 +36,8 @@ class DiffDriveChassis {
             odometry(Pose(0, 0, 0), track_width, linear_mult, tracking_wheel_radius, lateral_tracking_wheel_offset, horizontal_tracking_wheel_offset,
                 left_motors, right_motors, imu, side_encoder, back_encoder) 
             {
-                // imu.calibrate();
-                // odometry.start_task();
+                imu.calibrate();
+                odometry.start_task();
             }
 
         bool take_drive_mutex(uint32_t timeout = TIMEOUT_MAX) {

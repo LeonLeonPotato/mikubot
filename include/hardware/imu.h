@@ -41,7 +41,7 @@ class IMUGroup : public AbstractDevice {
             return modfix(average(absolutes), 360);
         }
 
-        float get_rotation(void) const {
+        float get_rotation_avgerage(void) const {
             if (ports.size() == 0) return 0;
             std::vector<double> vec;
             for (int i = 1; i < ports.size(); i++) {
@@ -49,6 +49,14 @@ class IMUGroup : public AbstractDevice {
             }
 
             return average(vec);
+        }
+
+        std::vector<float> get_rotations(void) const {
+            std::vector<float> ret;
+            for (const auto& p : ports) {
+                ret.push_back(pros::c::imu_get_rotation(p));
+            }
+            return ret;
         }
 };
 

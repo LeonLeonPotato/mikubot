@@ -81,7 +81,7 @@ class MotorGroup : public AbstractDevice {
             typename = std::enable_if_t<std::is_arithmetic<T>::value>,
             typename = std::enable_if_t<std::is_arithmetic<U>::value>>
         void set_desired_velocity(T rpm, U accel = 0) {
-            if (!acquire_mutex(0)) return;
+            if (!poll_mutex()) return;
 
             target_unit = OutputUnit::RPM;
             target_value = std::clamp(static_cast<float>(rpm), 

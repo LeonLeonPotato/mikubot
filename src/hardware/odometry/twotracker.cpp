@@ -7,7 +7,8 @@ void TwoTrackerOdometry::run_task(void) {
     long long ltime = pros::millis();
     float ll = rad(side_encoder.get_position() / 100.0f);
     float lh = rad(back_encoder.get_position() / 100.0f);
-    float ltheta = rad(imu.get_rotation());
+    std::vector<float> lthetas = imu.get_rotations();
+    for (auto& ltheta : lthetas) ltheta = rad(ltheta);
 
     pros::delay(10);
     while (true) {
@@ -16,10 +17,12 @@ void TwoTrackerOdometry::run_task(void) {
         double dt = (pros::millis() - ltime) / 1e3f;
         ltime = pros::millis();
 
-        float ctheta = rad(imu.get_rotation());
-        tracking_pose.set_theta(ctheta);
-        float dtheta = ctheta - ltheta;
-        ltheta = tracking_pose.get_theta();
+        std::vector<float> cthetas = imu.get_rotations();
+        for (int i = 0; i < cthetas.size(); i++) cthetas[i] = rad(cthetas[i]) - lthetas[i];
+        float dtheta = average(cthetas);
+        tracking_pose.set_theta(tracking_pose.get_theta() + dtheta);
+        float ctheta = tracking_pose.get_theta();
+        lthetas = cthetas;
 
         float cl = rad(side_encoder.get_position() / 100.0);
         float ch = rad(back_encoder.get_position() / 100.0);

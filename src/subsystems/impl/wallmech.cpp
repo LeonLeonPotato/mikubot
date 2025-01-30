@@ -9,6 +9,7 @@
 using namespace subsystems;
 using State = WallMech::State;
 
+WallMech* WallMech::instance = nullptr;
 float WallMech::positions[3] = {0.0f, 45.9f, 175.9f};
 
 void WallMech::api_tick(void) {

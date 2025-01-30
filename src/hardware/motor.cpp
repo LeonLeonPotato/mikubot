@@ -105,10 +105,10 @@ MotorGroup::MotorGroup (
 
     char name[64] = {0};
     sprintf(name, "motor_group_internal_manager%d", ports[0]);
-    // internal_management_task = pros::c::task_create(
-    //     internal_management_func_motor_group, 
-    //     this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, 
-    //     name);
+    internal_management_task = pros::c::task_create(
+        internal_management_func_motor_group, 
+        this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, 
+        name);
 }
 
 MotorGroup::MotorGroup (

@@ -16,31 +16,34 @@ pros::adi::Pneumatics robot::doinker('b', false, false);
 pros::adi::Pneumatics robot::ejector('c', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
-pros::Optical robot::classifier(0);
+pros::Optical robot::classifier(1);
 hardware::Motor robot::conveyor {4, hardware::Gearset::BLUE, hardware::BrakeMode::BRAKE};
-hardware::Motor robot::intake {5, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD};
 hardware::Motor robot::wallmech {6, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD};
-pros::Rotation robot::wallmech_encoder(0);
+pros::Rotation robot::wallmech_encoder(2);
 
-hardware::IMUGroup robot::inertial {{18}};
+hardware::IMUGroup robot::inertial {{18, 17}};
 pros::Rotation robot::back_encoder(19);
 pros::Rotation robot::side_encoder(20);
 
-hardware::MotorGroup robot::left_motors {{1, -2, 3}, 
+hardware::MotorGroup robot::left_motors {
+    {1, -2, 3},
     hardware::Gearset::BLUE, 
     hardware::BrakeMode::COAST, 
     {
-        17.4021f, 2.8005f, 852.808f, 
-        {30.0f, 0.0f, 0.0f}
-    }
+        17.4021f, 2.8005f, 0.0f, 
+        {35.0f, 0.0f, 0.0f}
+    },
+    60000.0f
 };
-hardware::MotorGroup robot::right_motors {{-10, 9, -8}, 
+hardware::MotorGroup robot::right_motors {
+    {-10, 9, -8},
     hardware::Gearset::BLUE, 
     hardware::BrakeMode::COAST,
     {
-        17.4021f, 2.8005f, 760.359f,
-        {30.0f, 0.0f, 0.0f}
-    }
+        17.4021f, 2.8005f, 0.0f,
+        {35.0f, 0.0f, 0.0f}
+    },
+    60000.0f
 };
 
 hardware::DiffDriveChassis robot::chassis {
@@ -57,7 +60,7 @@ extern "C" {
 
 void robot::init(void) {
     robot::classifier.set_led_pwm(255);
-    // vexDeviceOpticalIntegrationTimeSet(vexDeviceGetByIndex(robot::classifier.get_port()), 20);
+    vexDeviceOpticalIntegrationTimeSet(vexDeviceGetByIndex(robot::classifier.get_port()), 20);
 
     wallmech_encoder.set_position(0);
 

@@ -23,7 +23,6 @@ extern pros::adi::Pneumatics clamp;
 
 extern pros::Optical classifier;
 extern hardware::Motor conveyor;
-extern hardware::Motor intake;
 extern hardware::Motor wallmech;
 extern pros::Rotation wallmech_encoder;
 
