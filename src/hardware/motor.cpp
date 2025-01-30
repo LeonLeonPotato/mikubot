@@ -105,17 +105,17 @@ MotorGroup::MotorGroup (
 
     char name[64] = {0};
     sprintf(name, "motor_group_internal_manager%d", ports[0]);
-    internal_management_task = pros::c::task_create(
-        internal_management_func_motor_group, 
-        this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, 
-        name);
+    // internal_management_task = pros::c::task_create(
+    //     internal_management_func_motor_group, 
+    //     this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, 
+    //     name);
 }
 
 MotorGroup::MotorGroup (
     const std::vector<int>& ports, 
     Gearset gearset, 
     BrakeMode brake_mode,
-    controllers::VelocityControllerArgs velo_controller_args,
+    const controllers::VelocityControllerArgs& velo_controller_args,
     float slew_rate)
     : MotorGroup(ports, gearset, brake_mode, slew_rate)
 {
@@ -156,6 +156,18 @@ float MotorGroup::get_desired_velocity(void) const {
         return static_cast<float>(sum / ports.size());
     }
     __unreachable();
+}
+
+void MotorGroup::set_position(float position) const {
+    for (const auto& p : ports) {
+        pros::c::motor_set_zero_position(p, pros::c::motor_get_position(p) - position);
+    }
+}
+
+void MotorGroup::tare_position(void) const {
+    for (const auto& p : ports) {
+        pros::c::motor_set_zero_position(p, pros::c::motor_get_position(p));
+    }
 }
 
 void MotorGroup::brake(void) {

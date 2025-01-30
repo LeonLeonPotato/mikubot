@@ -95,7 +95,7 @@ void telemetry::start_task(void) {
     if (file == nullptr) initialize_log_file();
 
     if (task == nullptr) {
-        task = pros::c::task_create(logging_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Telemetry");
+        // task = pros::c::task_create(logging_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Telemetry");
     }
 }
 

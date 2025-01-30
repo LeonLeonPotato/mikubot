@@ -18,15 +18,15 @@ class BaseOdometry {
         pros::mutex_t tracking_pose_mutex;
         Pose tracking_pose;
 
-        BaseOdometry(void) : tracking_pose_mutex(pros::c::mutex_create()), tracking_pose(0, 0, 0) {}
-        BaseOdometry(const Pose& start_pose) : tracking_pose_mutex(pros::c::mutex_create()), tracking_pose(start_pose) {}
+        BaseOdometry(void) : tracking_pose(0, 0, 0) {}
+        BaseOdometry(const Pose& start_pose) : tracking_pose(start_pose) {}
 
         virtual void run_task(void) = 0;
 
     public:
         void start_task(void) {
             if (task != nullptr) return;
-            task = pros::c::task_create(instance_caller_func, this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "odometry");
+            // task = pros::c::task_create(instance_caller_func, this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "odometry");
         }
         
         void stop_task(void) {

@@ -4,12 +4,11 @@
 #include "ansicodes.h"
 #include "gui/debugscreen.h"
 #include "Eigen/Dense"
-#include "opcontrol/impl/conveyor.h"
+#include "subsystems.h"
 #include "pros/misc.hpp"
 #include "pros/rtos.hpp"
 #include "telemetry.h" // IWYU pragma: keep
 
-#include "autonomous/odometry.h"
 #include "autonomous/strategies.h"
 
 #include "gui/autonselector.h"
@@ -17,7 +16,6 @@
 #include "gui/funnymiku.h"
 #include "gui/driverinfo.h"
 
-#include "opcontrol/opcontrol.h"
 #include <cmath>
 #include <iostream>
 
@@ -29,10 +27,12 @@ void initialize(void) {
 
 	robot::init();
 	driverinfo::init();
-	odometry::start_task();
 
-	controls::conveyor::start_api_task();
-	controls::wallmech::start_api_task();
+	for (auto& subsystem : subsystems::subsystems) {
+		if (subsystem->has_api()) {
+			subsystem->start_api_task();
+		}
+	}
 
 	if (!pros::competition::is_connected()) {
 		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
@@ -77,9 +77,13 @@ void opcontrol(void) {
 	if (!config::SIM_MODE) autonrunner::destroy();
 	if (!config::SIM_MODE) autonselector::destroy();
 
+	for (auto& subsystem : subsystems::subsystems) {
+		subsystem->take_mutex();
+	}
+
 	while (true && !config::SIM_MODE) {
-		for (auto& func : controls::ticks) {
-			func();
+		for (auto& subsystem : subsystems::subsystems) {
+			subsystem->tick();
 		}
 		pros::delay(10);
 	}

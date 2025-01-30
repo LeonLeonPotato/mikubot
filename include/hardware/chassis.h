@@ -36,8 +36,8 @@ class DiffDriveChassis {
             odometry(Pose(0, 0, 0), track_width, linear_mult, tracking_wheel_radius, lateral_tracking_wheel_offset, horizontal_tracking_wheel_offset,
                 left_motors, right_motors, imu, side_encoder, back_encoder) 
             {
-                imu.calibrate();
-                odometry.start_task();
+                // imu.calibrate();
+                // odometry.start_task();
             }
 
         bool take_drive_mutex(uint32_t timeout = TIMEOUT_MAX) {
@@ -46,6 +46,9 @@ class DiffDriveChassis {
         void give_drive_mutex(void) {
             left_motors.release_mutex();
             right_motors.release_mutex();
+        }
+        bool poll_drive_mutex(void) const {
+            return left_motors.poll_mutex() && right_motors.poll_mutex();
         }
 
         bool take_imu_mutex(uint32_t timeout = TIMEOUT_MAX) {
@@ -64,13 +67,14 @@ class DiffDriveChassis {
         }
 
         void set_velocity(float left, float right, float left_accel = 0, float right_accel = 0) {
-            left_motors.set_desired_velocity(left, left_accel);
-            right_motors.set_desired_velocity(right, right_accel);
+            float max_speed = this->max_speed();
+            left_motors.set_desired_velocity(left * max_speed, left_accel);
+            right_motors.set_desired_velocity(right * max_speed, right_accel);
         }
 
         void set_voltage(float left, float right) {
-            left_motors.set_desired_voltage(left);
-            right_motors.set_desired_voltage(right);
+            left_motors.set_desired_voltage(left * 12000.0f);
+            right_motors.set_desired_voltage(right * 12000.0f);
         }
 
         void set_brake_mode(BrakeMode mode) {
@@ -81,6 +85,10 @@ class DiffDriveChassis {
         void brake(void) {
             left_motors.brake();
             right_motors.brake();
+        }
+
+        float max_speed(void) {
+            return std::min(left_motors.get_max_speed(), right_motors.get_max_speed());
         }
 
         Pose get_pose(void) const { return odometry.get_pose(); }

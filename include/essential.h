@@ -61,9 +61,7 @@ inline float distance(const Pose& pose) {
     return chassis.distance(pose);
 }
 
-inline float max_speed(void) {
-    return std::min(left_motors.get_max_speed(), right_motors.get_max_speed());
-}
+inline float max_speed(void) { return chassis.max_speed(); }
 
 inline Pose get_pose(void) { return chassis.get_pose(); }
 inline Eigen::Vector2f get_pos(void) { return chassis.get_pos(); }

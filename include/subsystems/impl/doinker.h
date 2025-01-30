@@ -1,10 +1,27 @@
 #pragma once
 
-namespace controls::doinker {
-void run(void);
-void tick(void);
-void start_task(void);
-void pause(void);
-void resume(void);
-void stop_task(void);
+#include "subsystems/base_system.h" // IWYU pragma: export
+
+namespace subsystems {
+class Doinker : public Subsystem {
+    private:
+        static Doinker* instance;
+
+    public:
+        Doinker() {
+            if (instance != nullptr) {
+                throw std::runtime_error("Cannot create multiple instances of Doinker");
+            }
+            instance = this;
+        }
+        ~Doinker() {
+            instance = nullptr;
+        }
+
+        void tick(void) override;
+        void api_tick(void) override;
+        bool has_api(void) const override { return true; }
+
+        static Doinker& get_instance(void) { return *instance; }
+};
 } // namespace controls::doinker

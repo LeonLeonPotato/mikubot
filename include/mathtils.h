@@ -22,7 +22,7 @@ static inline float average(const std::vector<T>& vec) {
 
     // https://en.wikipedia.org/wiki/Kahan_summation_algorithm
     double sum = 0; double z = 0;
-    for (auto& val : vec) {
+    for (const auto& val : vec) {
         double y = val - z;
         double t = sum + y;
         z = (t - sum) - y;

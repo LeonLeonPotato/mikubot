@@ -13,8 +13,7 @@ void test_strategy::run(void) {
     pros::Task logging_task = get_logging_task(poses);
 
     auto res = movement::simple::boomerang(
-        {50, 50}, 
-        pi/2, 
+        {50, 50, pi/2}, 
         0.5f, 
         {.reversed = false, .linear_exit_threshold=2.0, .timeout=10000}, 
         boomerang_group);

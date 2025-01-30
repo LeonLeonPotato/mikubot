@@ -11,6 +11,8 @@
 #include <vector>
 
 namespace hardware {
+void internal_management_func_motor_group(void* args);
+
 enum class Gearset {
     RED = 100,
     GREEN = 200,
@@ -29,7 +31,7 @@ enum class OutputUnit {
 };
 
 class MotorGroup : public AbstractDevice {
-    friend void internal_management_func_motor_group(void* _unused_args);
+    friend void internal_management_func_motor_group(void* args);
 
     private:
         Gearset gearset;
@@ -57,7 +59,7 @@ class MotorGroup : public AbstractDevice {
         MotorGroup(const std::vector<int>& ports, 
             Gearset gearset, 
             BrakeMode brake_mode,
-            controllers::VelocityControllerArgs velo_controller_args,
+            const controllers::VelocityControllerArgs& velo_controller_args,
             float slew_rate = 0);
 
         ~MotorGroup();

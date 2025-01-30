@@ -3,47 +3,34 @@
 #include "essential.h"
 #include "pros/misc.hpp"
 
-static bool initialized = false;
-static pros::task_t task;
-
-static double compute_average(std::vector<double> vec) {
-    double s = 0;
-    for (auto& i : vec) s += i;
-    return s / vec.size();
-}
+static pros::task_t task = nullptr;
 
 static void task_func(void* args) {
     while (true) {
-        auto left_temps = robot::left_motors.get_temperature_all();
-        auto right_temps = robot::right_motors.get_temperature_all();
-        auto average_left_t = (int) round(compute_average(left_temps));
-        auto average_right_t = (int) round(compute_average(right_temps));
+        float left_temps = robot::left_motors.get_temperature_average();
+        float right_temps = robot::right_motors.get_temperature_average();
 
-        char buf_temps[64]; memset(buf_temps, 0, sizeof(buf_temps));
-        snprintf(buf_temps, sizeof(buf_temps), "Temps: %d | %d", average_left_t, average_right_t);
+        char buf_temps[64] = {0};
+        snprintf(buf_temps, sizeof(buf_temps), "Temps: %d | %d", (int) round(left_temps), (int) round(right_temps));
         robot::master.set_text(1, 0, buf_temps); 
-        pros::delay(150);
+        pros::delay(110);
 
         auto battery = pros::battery::get_capacity();
 
-        char buf_battery[64]; memset(buf_battery, 0, sizeof(buf_battery));
+        char buf_battery[64] = {0};
         snprintf(buf_battery, sizeof(buf_battery), "Power: %.1f PCT", battery);
         robot::master.set_text(2, 0, buf_battery);
-        pros::delay(150);
+        pros::delay(110);
     }
 }
 
 void driverinfo::init(void) {
-    if (initialized) return;
-    initialized = true;
-
-    task = pros::c::task_create(task_func, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
-
+    if (task != nullptr) return;
+    // task = pros::c::task_create(task_func, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "");
 }
 
 void driverinfo::destroy(void) {
-    if (!initialized) return;
-    initialized = false;
-
+    if (task == nullptr) return;
     pros::c::task_delete(task);
+    task = nullptr;
 }

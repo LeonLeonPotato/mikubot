@@ -1,4 +1,4 @@
-#include "opcontrol/impl/wallmech.h"
+#include "subsystems/impl/wallmech.h"
 #include "autonomous/controllers/pid.h"
 #include "conveyor.h"
 #include "essential.h"
@@ -6,70 +6,47 @@
 #include "api.h"
 #include "pros/rtos.hpp"
 
-using namespace controls;
-using State = wallmech::State;
+using namespace subsystems;
+using State = WallMech::State;
 
-static pros::task_t task = nullptr;
-static pros::task_t api_task = nullptr;
-static controllers::PID pid(0.02, 0.01, 0);
+float WallMech::positions[3] = {0.0f, 45.9f, 175.9f};
 
-static float positions[3] = {0.0f, 45.9f, 175.9f, };
-static int special_fire_thing = -1;
+void WallMech::api_tick(void) {
+    if (set_state == State::OVERRIDE) {
+        robot::wallmech.release_mutex();
+        return;
+    } else if (!robot::wallmech.poll_mutex()) {
+        robot::wallmech.acquire_mutex();
+    }
 
-static State set_state = State::RESTING;
+    if (special_fire_thing != -1) {
+        if (!Conveyor::get_instance().poll_mutex()) Conveyor::get_instance().take_mutex();
 
-static void api_task_func(void* p) {
-    while (true) {
-        if (set_state == State::OVERRIDE) {
-            pros::delay(20);
-            continue;
-        }
-
-        if (special_fire_thing != -1) {
-            if (pros::millis() < special_fire_thing) {
-                controls::conveyor::exposed_desired_volt(-6000);
-            } else {
-                special_fire_thing = -1;
-                controls::conveyor::exposed_desired_volt(0);
-            }
-        }
-
-        const auto& desired = positions[(int) set_state];
-        const auto current = robot::wallmech_encoder.get_position() / 100.0f;
-
-        if (std::abs(desired - current) < 2.5f) {
-            robot::wallmech.brake();
+        if (pros::millis() < special_fire_thing) {
+            Conveyor::get_instance().set_desired_voltage(-6000);
         } else {
-            float control = pid.get(desired - current);
-            control = std::clamp(control, -1.0f, 1.0f);
-            robot::wallmech.move_voltage((int) roundf(control * 12000));
+            special_fire_thing = -1;
+            Conveyor::get_instance().set_desired_voltage(0);
         }
+    } else if (Conveyor::get_instance().poll_mutex()) {
+        Conveyor::get_instance().give_mutex();
+    }
 
-        pros::delay(20);
+    const auto& desired = positions[(int) set_state];
+    const auto current = robot::wallmech_encoder.get_position() / 100.0f;
+
+    if (std::abs(desired - current) < 2.5f) {
+        robot::wallmech.brake();
+    } else {
+        float control = pid.get(desired - current);
+        control = std::clamp(control, -1.0f, 1.0f);
+        robot::wallmech.set_desired_voltage(control * 12000);
     }
 }
 
-void wallmech::exposed_go_to_state(State state) {
-    set_state = state;
+void WallMech::tick(void) {
+    if (!poll_mutex()) return;
 
-    if (set_state == State::FIRING) {
-        special_fire_thing = pros::millis() + 100;
-    }
-}
-
-void wallmech::start_api_task() {
-    if (api_task == nullptr) {
-        api_task = pros::c::task_create(api_task_func, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "wallmech_api");
-    }
-}
-
-void wallmech::stop_api_task() {
-    if (api_task == nullptr) return;
-    pros::c::task_delete(api_task);
-    api_task = nullptr;
-}
-
-void wallmech::tick() {
     bool next_stage = robot::master.get_digital_new_press(config::keybinds::wallmech_next_stage);
     bool rest = robot::master.get_digital_new_press(config::keybinds::wallmech_rest);
 
@@ -78,6 +55,7 @@ void wallmech::tick() {
         set_state = State::OVERRIDE;
     } else if (set_state == State::OVERRIDE && (next_stage || rest)) 
     {
+        robot::wallmech.release_mutex();
         set_state = State::RESTING;
     }
 
@@ -106,45 +84,25 @@ void wallmech::tick() {
             break;
         }
         case State::OVERRIDE: {
+            robot::wallmech.acquire_mutex();
+
             const int speed = (robot::master.get_digital(config::keybinds::wallmech_up) 
                 - robot::master.get_digital(config::keybinds::wallmech_down)) 
                 * 12000;
 
             if (speed == 0) robot::wallmech.brake();
-            else robot::wallmech.move_voltage(speed);
+            else robot::wallmech.set_desired_voltage(speed);
             break;
         }
     }
 }
 
-void wallmech::run() {
-    while (true) {
-        tick();
-        pros::delay(20);
+void WallMech::exposed_go_to_state(State state) {
+    if (!poll_mutex()) return;
+
+    set_state = state;
+
+    if (set_state == State::FIRING) {
+        special_fire_thing = pros::millis() + 100;
     }
-}
-
-static void local_run(void* p) {
-    wallmech::run();
-}
-
-void wallmech::start_task() {
-    if (task != nullptr) return;
-    task = pros::c::task_create(local_run, NULL, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "wallmech");
-}
-
-void wallmech::pause() {
-    if (task == nullptr) return;
-    pros::c::task_suspend(task);
-}
-
-void wallmech::resume() {
-    if (task == nullptr) return;
-    pros::c::task_resume(task);
-}
-
-void wallmech::stop_task() {
-    if (task == nullptr) return;
-    pros::c::task_delete(task);
-    task = nullptr;
 }

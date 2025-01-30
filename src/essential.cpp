@@ -17,34 +17,47 @@ pros::adi::Pneumatics robot::ejector('c', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
 pros::Optical robot::classifier(0);
-hardware::Motor robot::conveyor(0, hardware::Gearset::BLUE, hardware::BrakeMode::BRAKE);
-hardware::Motor robot::intake(0, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD);
-hardware::Motor robot::wallmech(0, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD);
+hardware::Motor robot::conveyor {4, hardware::Gearset::BLUE, hardware::BrakeMode::BRAKE};
+hardware::Motor robot::intake {5, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD};
+hardware::Motor robot::wallmech {6, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD};
 pros::Rotation robot::wallmech_encoder(0);
 
-hardware::IMUGroup robot::inertial({18});
+hardware::IMUGroup robot::inertial {{18}};
 pros::Rotation robot::back_encoder(19);
 pros::Rotation robot::side_encoder(20);
 
-hardware::MotorGroup robot::left_motors({1, -2, 3}, 
+hardware::MotorGroup robot::left_motors {{1, -2, 3}, 
     hardware::Gearset::BLUE, 
     hardware::BrakeMode::COAST, 
     {
         17.4021f, 2.8005f, 852.808f, 
         {30.0f, 0.0f, 0.0f}
     }
-);
-hardware::MotorGroup robot::right_motors({-10, 9, -8}, 
+};
+hardware::MotorGroup robot::right_motors {{-10, 9, -8}, 
     hardware::Gearset::BLUE, 
     hardware::BrakeMode::COAST,
     {
         17.4021f, 2.8005f, 760.359f,
         {30.0f, 0.0f, 0.0f}
     }
-);
+};
+
+hardware::DiffDriveChassis robot::chassis {
+    left_motors, right_motors, inertial, side_encoder, back_encoder,
+    DRIVETRAIN_WIDTH, DRIVETRAIN_LINEAR_MULT, TRACKING_WHEEL_RADIUS,
+    LATERAL_TRACKING_WHEEL_OFFSET, HORIZONTAL_TRACKING_WHEEL_OFFSET
+};
+
+// Thank fuck Miniongolf on discord
+extern "C" {
+    void vexDeviceOpticalIntegrationTimeSet(void* device, double timeMs);
+    void* vexDeviceGetByIndex(int32_t index);
+}
 
 void robot::init(void) {
     robot::classifier.set_led_pwm(255);
+    // vexDeviceOpticalIntegrationTimeSet(vexDeviceGetByIndex(robot::classifier.get_port()), 20);
 
     wallmech_encoder.set_position(0);
 

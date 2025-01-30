@@ -12,15 +12,15 @@ AbstractDevice::AbstractDevice(const std::vector<int>& ports)
     : ports(ports), mutexes(std::vector<pros::mutex_t>(ports.size())) {
     char msg[128] = {0};
     for (int i = 0; i < ports.size(); i++) {
-        const auto& p = ports[i];
+        const auto p = abs(ports[i]);
         if (p < 1 || p > 21) {
             sprintf(msg, "Creation of smart port device with invalid port number %d (Expected port between 1-21)", p);
-            throw std::invalid_argument(msg);
+            //throw std::invalid_argument(msg);
         }
 
         if (used_ports[p]) {
             sprintf(msg, "Creation of smart port device with already used port %d", p);
-            throw std::invalid_argument(msg);
+           // throw std::invalid_argument(msg);
         }
 
         used_ports[p] = true;
@@ -30,7 +30,7 @@ AbstractDevice::AbstractDevice(const std::vector<int>& ports)
 
 AbstractDevice::~AbstractDevice() {
     for (int i = 0; i < ports.size(); i++) {
-        used_ports[ports[i]] = false;
+        used_ports[abs(ports[i])] = false;
         pros::c::mutex_delete(mutexes[i]);
     }
 }
