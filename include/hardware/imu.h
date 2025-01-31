@@ -15,14 +15,16 @@ class IMUGroup : public AbstractDevice {
             if (!poll_mutex()) return;
 
             for (const auto& p : ports) {
-                pros::c::imu_reset(p);
+                bool calibrating = (pros::c::imu_get_status(p) & pros::E_IMU_STATUS_CALIBRATING) != 0;
+                if (!calibrating) pros::c::imu_reset(p);
             }
 
             if (blocking) {
                 while (true) {
                     bool done = true;
                     for (const auto& p : ports) {
-                        done = done && ((pros::c::imu_get_status(p) & pros::E_IMU_STATUS_CALIBRATING) == 0);
+                        bool calibrating = (pros::c::imu_get_status(p) & pros::E_IMU_STATUS_CALIBRATING) != 0;
+                        done = done && (!calibrating);
                     }
                     if (done) break;
                     pros::c::delay(10);

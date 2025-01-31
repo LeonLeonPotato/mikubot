@@ -22,32 +22,32 @@ hardware::Motor robot::wallmech {6, hardware::Gearset::BLUE, hardware::BrakeMode
 pros::Rotation robot::wallmech_encoder(2);
 
 hardware::IMUGroup robot::inertial {{18, 17}};
-pros::Rotation robot::back_encoder(19);
-pros::Rotation robot::side_encoder(20);
+pros::Rotation robot::horizontal_encoder(-19);
+pros::Rotation robot::lateral_encoder(20);
 
 hardware::MotorGroup robot::left_motors {
     {1, -2, 3},
     hardware::Gearset::BLUE, 
     hardware::BrakeMode::COAST, 
     {
-        17.4021f, 2.8005f, 0.0f, 
-        {35.0f, 0.0f, 0.0f}
+        17.06875f, 2.8005f, 571.0516f, 
+        {20.0f, 0.0f, 0.0f}
     },
-    60000.0f
+    0.0f
 };
 hardware::MotorGroup robot::right_motors {
     {-10, 9, -8},
     hardware::Gearset::BLUE, 
     hardware::BrakeMode::COAST,
     {
-        17.4021f, 2.8005f, 0.0f,
-        {35.0f, 0.0f, 0.0f}
+        17.21498f, 2.8005f, 699.1533f,
+        {20.0f, 0.0f, 0.0f}
     },
-    60000.0f
+    0.0f
 };
 
 hardware::DiffDriveChassis robot::chassis {
-    left_motors, right_motors, inertial, side_encoder, back_encoder,
+    left_motors, right_motors, inertial, lateral_encoder, horizontal_encoder,
     DRIVETRAIN_WIDTH, DRIVETRAIN_LINEAR_MULT, TRACKING_WHEEL_RADIUS,
     LATERAL_TRACKING_WHEEL_OFFSET, HORIZONTAL_TRACKING_WHEEL_OFFSET
 };
@@ -59,6 +59,8 @@ extern "C" {
 }
 
 void robot::init(void) {
+    chassis.start_tracking_first_time();
+
     robot::classifier.set_led_pwm(255);
     vexDeviceOpticalIntegrationTimeSet(vexDeviceGetByIndex(robot::classifier.get_port()), 20);
 

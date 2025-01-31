@@ -20,8 +20,10 @@ void hardware::internal_management_func_motor_group(void *args) {
     while (true) {
         long long current_time = pros::micros();
         float dt = (current_time - last_time) / 1e6f;
+        last_time = current_time;
 
         if (group->braking) {
+            group->set_value = 0;
             pros::delay(10);
             continue;
         }
@@ -97,7 +99,14 @@ MotorGroup::MotorGroup (
     : AbstractDevice(ports), gearset(gearset), brake_mode(brake_mode), slew_rate(slew_rate)
 {
     for (const auto& p : ports) {
-        pros::c::motor_set_gearing(p, (pros::motor_gearset_e_t) gearset);
+        if (gearset == Gearset::BLUE) {
+            pros::c::motor_set_gearing(p, pros::E_MOTOR_GEARSET_06);
+        } else if (gearset == Gearset::GREEN) {
+            pros::c::motor_set_gearing(p, pros::E_MOTOR_GEARSET_18);
+        } else if (gearset == Gearset::RED) {
+            pros::c::motor_set_gearing(p, pros::E_MOTOR_GEARSET_36);
+        }
+        pros::c::motor_set_encoder_units(p, pros::E_MOTOR_ENCODER_DEGREES);
     }
 
     set_brake_mode(brake_mode);

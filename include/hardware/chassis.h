@@ -18,27 +18,32 @@ class DiffDriveChassis {
         MotorGroup& right_motors;
 
         IMUGroup& imu;
-        pros::Rotation& side_encoder;
-        pros::Rotation& back_encoder;
+        pros::Rotation& lateral_encoder;
+        pros::Rotation& horizontal_encoder;
 
         TwoTrackerOdometry odometry;
 
     public:
         DiffDriveChassis(
             MotorGroup& left_motors, MotorGroup& right_motors, 
-            IMUGroup& imu, pros::Rotation& side_encoder, pros::Rotation& back_encoder,
+            IMUGroup& imu, pros::Rotation& lateral_encoder, pros::Rotation& horizontal_encoder,
             float track_width, float linear_mult, float tracking_wheel_radius,
             float lateral_tracking_wheel_offset, float horizontal_tracking_wheel_offset
         ) : left_motors(left_motors), right_motors(right_motors),
-            imu(imu), side_encoder(side_encoder), back_encoder(back_encoder),
+            imu(imu), lateral_encoder(lateral_encoder), horizontal_encoder(horizontal_encoder),
             track_width(track_width), linear_mult(linear_mult), tracking_wheel_radius(tracking_wheel_radius),
             lateral_tracking_wheel_offset(lateral_tracking_wheel_offset), horizontal_tracking_wheel_offset(horizontal_tracking_wheel_offset),
             odometry(Pose(0, 0, 0), track_width, linear_mult, tracking_wheel_radius, lateral_tracking_wheel_offset, horizontal_tracking_wheel_offset,
-                left_motors, right_motors, imu, side_encoder, back_encoder) 
+                left_motors, right_motors, imu, lateral_encoder, horizontal_encoder) 
             {
-                imu.calibrate();
-                odometry.start_task();
             }
+
+        void start_tracking_first_time(void) {
+            imu.acquire_mutex();
+            imu.calibrate();
+            imu.release_mutex();
+            odometry.start_task();
+        }
 
         bool take_drive_mutex(uint32_t timeout = TIMEOUT_MAX) {
             return left_motors.acquire_mutex(timeout) && right_motors.acquire_mutex(timeout);
@@ -113,8 +118,8 @@ class DiffDriveChassis {
         const MotorGroup& get_left_motors(void) const { return left_motors; }
         const MotorGroup& get_right_motors(void) const { return right_motors; }
         const IMUGroup& get_imu(void) const { return imu; }
-        const pros::Rotation& get_side_encoder(void) const { return side_encoder; }
-        const pros::Rotation& get_back_encoder(void) const { return back_encoder; }
+        const pros::Rotation& get_lateral_encoder(void) const { return lateral_encoder; }
+        const pros::Rotation& get_horizontal_encoder(void) const { return horizontal_encoder; }
         float get_track_width(void) const { return track_width; }
         float get_linear_mult(void) const { return linear_mult; }
         float get_tracking_wheel_radius(void) const { return tracking_wheel_radius; }

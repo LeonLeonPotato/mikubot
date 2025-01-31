@@ -11,13 +11,13 @@ DEFINE_TICK(forward, controllers::PID&, const Eigen::Vector2f& line, const Eigen
     const float reversed = 1 - 2*params.reversed;
     Eigen::Vector2f dir = Eigen::Vector2f {-normal.y(), normal.x()};
     Eigen::Vector2f closest = line + dir * (robot::pos() - line).dot(dir);
-    float dist = (closest - robot::pos()).norm();
+    float error_sign = 2*((line - robot::pos()).dot(normal) >= 0) - 1;
+    float dist = (closest - robot::pos()).norm() * error_sign;
     float control = pids.get(dist) * reversed;
     control = std::clamp(control, -params.max_linear_speed, params.max_linear_speed);
     robot::velo(control, control);
 
-    float error_sign = 2*((line - robot::pos()).dot(normal) >= 0) - 1;
-    return {ExitCode::SUCCESS, dist * error_sign, 0, 0};
+    return {ExitCode::SUCCESS, dist, 0, 0};
 }
 
 DEFINE_CANCELLABLE(forward, controllers::PID&, const float cm)
@@ -29,7 +29,7 @@ DEFINE_CANCELLABLE(forward, controllers::PID&, const float cm)
     const Eigen::Vector2f line = robot::pos() + cm * normal;
 
     SimpleResult last_tick;
-    while (last_tick.linear_error > params.linear_exit_threshold) {
+    while (fabsf(last_tick.linear_error) > params.linear_exit_threshold) {
         if (cancel_ref) {
             last_tick.code = ExitCode::CANCELLED;
             break;

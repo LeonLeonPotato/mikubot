@@ -18,10 +18,11 @@ DEFINE_TICK(boomerang, PIDGroup,
     Eigen::Rotation2D<float> rot(robot::theta());
     Eigen::Vector2f error = rot * (carrot - robot::pos()) / 100.0f;
 
-    if (true_target_dist < 10) {
-        float scale = true_target_dist / 10;
-        theta_error = scale * theta_error + (1 - scale) * robot::angular_diff(pose.theta(), params.reversed);
-    }
+    // if (true_target_dist < 2.54*7.5) {
+    //     float scale = true_target_dist / (2.54*7.5);
+    //     theta_error = robot::angular_diff(pose.theta(), params.reversed);
+    //     error = rot * (pose.pos() - robot::pos()) / 100.0f;
+    // }
 
     debugscreen::debug_message = "Carrot: [" + std::to_string(carrot.x()) + ", " + std::to_string(carrot.y()) + "]\n";
     debugscreen::debug_message += "Angle diff: " + std::to_string(theta_error) + "\n";
@@ -36,11 +37,12 @@ DEFINE_TICK(boomerang, PIDGroup,
 
     // // printf("%s%f, %f\n", PREFIX.c_str(), speed, turn);
     // robot::velo(speed + turn, speed - turn);
-    float klat = 0.5f;
+    float klat = 0.0f;
 
     float vd = pids.linear.get(error.norm() * (cosf(theta_error) > 0 ? 1 : -1) * 100.0f);
     float omega = pids.angular.get(theta_error) + klat * vd * error.y() * sinc(theta_error);
     float v = vd * fabsf(cosf(theta_error));
+    v = std::clamp(v, -params.max_linear_speed, params.max_linear_speed);
 
     if (params.reversed) v = -v;
 
@@ -49,7 +51,14 @@ DEFINE_TICK(boomerang, PIDGroup,
     debugscreen::debug_message += "V: " + std::to_string(v) + "\n";
     debugscreen::debug_message += "Error: " + std::to_string(error.x()) + ", " + std::to_string(error.y()) + "\n";
 
-    robot::velo(v + omega, v - omega);
+    float left = v - omega;
+    float right = v + omega;
+    // auto max_abs_val = std::max(std::abs(left), std::abs(right));
+    // if (max_abs_val > 1) {
+    //     left /= max_abs_val;
+    //     right /= max_abs_val;
+    // }
+    robot::velo(left, right);
 
     return { ExitCode::SUCCESS, true_target_dist, theta_error, 0 };
 }

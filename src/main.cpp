@@ -1,4 +1,6 @@
 #include "main.h"
+#include "autonomous/movement/simple/turn.h"
+#include "autonomous/strategy/utils.h"
 #include "config.h"
 #include "essential.h"
 #include "ansicodes.h"
@@ -27,6 +29,7 @@ void initialize(void) {
 
 	robot::init();
 	driverinfo::init();
+	// telemetry::start_task();
 
 	for (auto& subsystem : subsystems::subsystems) {
 		if (subsystem->has_api()) {
@@ -70,6 +73,44 @@ void autonomous(void) {
 	strategies::functions.at(strategies::chosen_strategy)();
 
 	// autonrunner::destroy();
+}
+
+void collect_pid_data(void) {
+	robot::chassis.take_drive_mutex();
+
+	std::vector<std::pair<float, float>> points;
+
+	robot::velo(-0.5, 0.5);
+
+	long long start = pros::micros();
+	while ((pros::micros() - start) / 1e6f < 5) {
+		float pos = robot::theta();
+		points.push_back({(pros::micros() - start) / 1e6f, pos});
+		pros::delay(10);
+	}
+
+	robot::velo(0, 0);
+
+	std::cout << PREFIX << "Data collection finished\n";
+
+	std::cout << "X = \\left[";
+	for (int i = 0; i < points.size(); i++) {
+		auto point = points[i];
+		std::cout << "\\left(" << point.first << ",\\ " << point.second << "\\right)";
+		if (i != points.size() - 1) {
+			std::cout << ", ";
+		}
+
+		if (i % 5 == 0) {
+			std::cout << "\n";
+			std::cout.flush();
+			pros::delay(100);
+		}
+	}
+
+	std::cout << "\\right]\n";
+
+	robot::chassis.give_drive_mutex();
 }
 
 void opcontrol(void) {

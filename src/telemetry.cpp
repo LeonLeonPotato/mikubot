@@ -6,7 +6,7 @@
 
 using namespace telemetry;
 
-volatile int telemetry::delay = 10;
+volatile int telemetry::delay = 25;
 
 static pros::task_t task = nullptr;
 static volatile int mode = TO_STDOUT;
@@ -53,7 +53,7 @@ static void logging_task(void* args) {
 
     int last_dump_time = pros::millis();
     while (true) {
-        char buffer[256]; memset(buffer, 0, 256);
+        char buffer[256] = {0};
         sprintf(buffer, "%lld,%f,%f,%f\n",
             pros::micros(),
             robot::x(), robot::y(), robot::theta()
