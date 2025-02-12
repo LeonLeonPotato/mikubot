@@ -4,6 +4,7 @@
 #include "mathtils.h"
 #include "pros/imu.h"
 #include <cmath>
+#include "Eigen/Dense"
 
 namespace hardware {
 class IMUGroup : public AbstractDevice {
@@ -57,6 +58,14 @@ class IMUGroup : public AbstractDevice {
             std::vector<float> ret;
             for (const auto& p : ports) {
                 ret.push_back(pros::c::imu_get_rotation(p));
+            }
+            return ret;
+        }
+
+        Eigen::VectorXf get_rotations_eigen(void) const {
+            Eigen::VectorXf ret(ports.size());
+            for (int i = 0; i < ports.size(); i++) {
+                ret(i) = pros::c::imu_get_rotation(ports[i]);
             }
             return ret;
         }

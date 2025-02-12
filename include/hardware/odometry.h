@@ -4,7 +4,7 @@
 #include "pros/rtos.h"
 #include "pose.h"
 
-namespace odometry {
+namespace hardware::odometry {
 class BaseOdometry {
     private:
         static void instance_caller_func(void* args) {
@@ -17,9 +17,10 @@ class BaseOdometry {
         bool tracking_pose_updated = false;
         pros::mutex_t tracking_pose_mutex = pros::c::mutex_create();
         Pose tracking_pose;
+        Pose tracking_velocity;
 
-        BaseOdometry(void) : tracking_pose(0, 0, 0) {}
-        BaseOdometry(const Pose& start_pose) : tracking_pose(start_pose) {}
+        BaseOdometry(void) : tracking_pose(0, 0, 0), tracking_velocity(0, 0, 0) {}
+        BaseOdometry(const Pose& start_pose) : tracking_pose(start_pose), tracking_velocity(0, 0, 0) {}
 
         virtual void run_task(void) = 0;
 
@@ -64,6 +65,10 @@ class BaseOdometry {
 
         Pose get_pose(void) const {
             return tracking_pose;
+        }
+
+        Pose get_velocity(void) const {
+            return tracking_velocity;
         }
 };
 }

@@ -80,7 +80,7 @@ class MotorGroup : public AbstractDevice {
         template <typename T, typename U, 
             typename = std::enable_if_t<std::is_arithmetic<T>::value>,
             typename = std::enable_if_t<std::is_arithmetic<U>::value>>
-        void set_desired_velocity(T rpm, U accel = 0) {
+        void set_desired_velocity(T rpm, U accel) {
             if (!poll_mutex()) return;
 
             target_unit = OutputUnit::RPM;
@@ -88,6 +88,19 @@ class MotorGroup : public AbstractDevice {
                 -static_cast<float>(gearset), 
                 static_cast<float>(gearset));
             target_accel_if_velocity_target = static_cast<float>(accel);
+            braking = false;
+        }
+
+        template <typename T, 
+            typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+        void set_desired_velocity(T rpm) {
+            if (!poll_mutex()) return;
+
+            target_unit = OutputUnit::RPM;
+            target_value = std::clamp(static_cast<float>(rpm), 
+                -static_cast<float>(gearset), 
+                static_cast<float>(gearset));
+            target_accel_if_velocity_target = static_cast<float>(0);
             braking = false;
         }
         float get_desired_velocity(void) const;

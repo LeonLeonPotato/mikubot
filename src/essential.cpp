@@ -23,7 +23,7 @@ pros::Rotation robot::wallmech_encoder(2);
 
 hardware::IMUGroup robot::inertial {{18, 17}};
 pros::Rotation robot::horizontal_encoder(-19);
-pros::Rotation robot::lateral_encoder(20);
+pros::Rotation robot::forwards_encoder(20);
 
 hardware::MotorGroup robot::left_motors {
     {1, -2, 3},
@@ -47,9 +47,9 @@ hardware::MotorGroup robot::right_motors {
 };
 
 hardware::DiffDriveChassis robot::chassis {
-    left_motors, right_motors, inertial, lateral_encoder, horizontal_encoder,
+    left_motors, right_motors, inertial, forwards_encoder, horizontal_encoder,
     DRIVETRAIN_WIDTH, DRIVETRAIN_LINEAR_MULT, TRACKING_WHEEL_RADIUS,
-    LATERAL_TRACKING_WHEEL_OFFSET, HORIZONTAL_TRACKING_WHEEL_OFFSET
+    FORWARDS_TRACKING_WHEEL_OFFSET, HORIZONTAL_TRACKING_WHEEL_OFFSET
 };
 
 // Thank fuck Miniongolf on discord
