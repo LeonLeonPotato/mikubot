@@ -32,7 +32,7 @@ static void leon_mode(int left_x, int left_y, int right_x, int right_y) {
 	const float forward = forward_scale.compute(left_y);
 	const float turn = turnging_scale.compute(right_x);
 	
-	robot::velo(forward - turn, forward + turn);
+	robot::velo(forward + turn, forward - turn);
 }
 
 void Driving::tick(void) {

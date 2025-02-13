@@ -6,7 +6,7 @@
 
 using namespace telemetry;
 
-volatile int telemetry::delay = 25;
+volatile int telemetry::delay = 20;
 
 static pros::task_t task = nullptr;
 static volatile int mode = TO_STDOUT;
@@ -47,16 +47,18 @@ static void logging_task(void* args) {
         printf("[Telemetry] Log file opened\n");
         printf("[Telemetry] Log file: %s\n", filename.c_str());
 
-        fprintf(file, "time,x,y,theta\n");
+        fprintf(file, "time,x,y,theta,lv,rv\n");
         fflush(file);
     }
 
     int last_dump_time = pros::millis();
     while (true) {
         char buffer[256] = {0};
-        sprintf(buffer, "%lld,%f,%f,%f\n",
+        sprintf(buffer, "%lld,%f,%f,%f,%f,%f\n",
             pros::micros(),
-            robot::x(), robot::y(), robot::theta()
+            robot::x(), robot::y(), robot::theta(),
+            robot::left_motors.get_raw_velocity_average(),
+            robot::right_motors.get_raw_velocity_average()
         );
 
         if (mode & TO_STDOUT) {

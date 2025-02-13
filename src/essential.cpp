@@ -17,33 +17,33 @@ pros::adi::Pneumatics robot::ejector('c', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
 pros::Optical robot::classifier(1);
-hardware::Motor robot::conveyor {4, hardware::Gearset::BLUE, hardware::BrakeMode::BRAKE};
+hardware::Motor robot::conveyor {8, hardware::Gearset::BLUE, hardware::BrakeMode::BRAKE};
 hardware::Motor robot::wallmech {6, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD};
 pros::Rotation robot::wallmech_encoder(2);
 
-hardware::IMUGroup robot::inertial {{18, 17}};
+hardware::IMUGroup robot::inertial {{9, 10}};
 pros::Rotation robot::horizontal_encoder(-19);
 pros::Rotation robot::forwards_encoder(20);
 
 hardware::MotorGroup robot::left_motors {
-    {1, -2, 3},
+    {-1, 19, -20},
     hardware::Gearset::BLUE, 
-    hardware::BrakeMode::COAST, 
+    hardware::BrakeMode::COAST,
     {
         17.06875f, 2.8005f, 571.0516f, 
         {20.0f, 0.0f, 0.0f}
     },
-    0.0f
+    3000'000.0f
 };
 hardware::MotorGroup robot::right_motors {
-    {-10, 9, -8},
+    {15, 16, -17},
     hardware::Gearset::BLUE, 
     hardware::BrakeMode::COAST,
     {
         17.21498f, 2.8005f, 699.1533f,
         {20.0f, 0.0f, 0.0f}
     },
-    0.0f
+    3000'000.0f
 };
 
 hardware::DiffDriveChassis robot::chassis {

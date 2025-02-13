@@ -27,7 +27,7 @@ void initialize(void) {
 	if (config::SIM_MODE) pros::c::serctl(SERCTL_DISABLE_COBS, nullptr);
 	std::cout << PREFIX << "Initializing robot\n";
 
-	// robot::init();
+	robot::init();
 	driverinfo::init();
 	// telemetry::start_task();
 
@@ -114,7 +114,7 @@ static void collect_pid_data(void) {
 }
 
 static void test_motor_groups(void) {
-	static hardware::MotorGroup test_group (
+	hardware::MotorGroup test_group (
 		{19},
 		hardware::Gearset::BLUE,
 		hardware::BrakeMode::BRAKE,
@@ -145,7 +145,7 @@ void opcontrol(void) {
 	if (!config::SIM_MODE) autonrunner::destroy();
 	if (!config::SIM_MODE) autonselector::destroy();
 
-	test_motor_groups();
+	// test_motor_groups();
 
 	for (auto& subsystem : subsystems::subsystems) {
 		subsystem->take_mutex();
