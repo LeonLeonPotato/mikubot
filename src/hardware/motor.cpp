@@ -136,6 +136,14 @@ MotorGroup::~MotorGroup() {
     pros::c::task_delete(internal_management_task);
 }
 
+bool MotorGroup::is_connected(void) const {
+    for (const auto& p : ports) {
+        if (pros::c::get_plugged_type(p) != pros::c::E_DEVICE_MOTOR) 
+            return false;
+    }
+    return true;
+}
+
 float MotorGroup::get_desired_voltage(void) const {
     if (target_unit == OutputUnit::VOLTAGE) {
         return target_value;

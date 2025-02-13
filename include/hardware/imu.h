@@ -2,7 +2,9 @@
 
 #include "device.h"
 #include "mathtils.h"
+#include "pros/device.h"
 #include "pros/imu.h"
+#include "pros/imu.hpp"
 #include <cmath>
 
 namespace hardware {
@@ -10,6 +12,14 @@ class IMUGroup : public AbstractDevice {
     public:
         IMUGroup(const std::vector<int>& ports)
             : AbstractDevice(ports) {}
+
+        bool is_connected(void) const override {
+            for (const auto& p : ports) {
+                if (pros::c::get_plugged_type(p) != pros::c::E_DEVICE_IMU) 
+                    return false;
+            }
+            return true;
+        }
 
         void calibrate(bool blocking = true) {
             if (!poll_mutex()) return;

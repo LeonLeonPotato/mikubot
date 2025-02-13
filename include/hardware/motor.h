@@ -64,6 +64,8 @@ class MotorGroup : public AbstractDevice {
 
         ~MotorGroup();
 
+        bool is_connected(void) const override;
+
         template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
         void set_desired_voltage(T voltage) {
             if (!poll_mutex()) return;

@@ -2,6 +2,10 @@
 
 using namespace hardware;
 
+static inline bool is_fucked(float x) {
+    return isnan(x) || isinf(x);
+}
+
 void TwoTrackerOdometry::run_task(void) {
     long long iterations = 0;
     long long ltime = pros::millis();

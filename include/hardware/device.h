@@ -19,6 +19,8 @@ class AbstractDevice {
         bool poll_mutex(void) const;
         void release_mutex(void);
 
+        virtual bool is_connected(void) const = 0;
+
         const std::vector<int>& get_ports(void) const { return ports; }
         const std::vector<pros::mutex_t>& get_mutexes(void) const { return mutexes; }
 
