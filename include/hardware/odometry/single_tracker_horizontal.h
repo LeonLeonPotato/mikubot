@@ -6,8 +6,8 @@
 #include "mathtils.h"
 #include "pros/rotation.hpp"
 
-namespace hardware::odometry {
-class TwoTrackerOdometry : public BaseOdometry {
+namespace hardware {
+class HorizontalTrackerOdometry : public odometry::BaseOdometry {
     private:
         float track_width;
         float linear_mult;
@@ -26,7 +26,7 @@ class TwoTrackerOdometry : public BaseOdometry {
         void run_task(void) override;
 
     public:
-        TwoTrackerOdometry(const Pose& start_pose,
+        HorizontalTrackerOdometry(const Pose& start_pose,
             float track_width, float linear_mult, float tracking_wheel_radius,
             float forwards_tracking_wheel_offset, float horizontal_tracking_wheel_offset,
             const MotorGroup& left_motors, const MotorGroup& right_motors,

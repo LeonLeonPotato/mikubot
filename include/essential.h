@@ -11,7 +11,7 @@
 namespace robot {
 constexpr float TRACKING_WHEEL_RADIUS = 2.54f;
 constexpr float DRIVETRAIN_LINEAR_MULT = 4.1275f * 0.75f;
-constexpr float LATERAL_TRACKING_WHEEL_OFFSET = -3.58571f + 0.703f;
+constexpr float FORWARDS_TRACKING_WHEEL_OFFSET = -3.58571f + 0.703f;
 constexpr float HORIZONTAL_TRACKING_WHEEL_OFFSET = 0.46471f - 0.33933f;
 constexpr float DRIVETRAIN_WIDTH = 30.29204f;
 
@@ -28,7 +28,7 @@ extern pros::Rotation wallmech_encoder;
 
 extern hardware::IMUGroup inertial;
 extern pros::Rotation horizontal_encoder;
-extern pros::Rotation lateral_encoder;
+extern pros::Rotation forwards_encoder;
 
 extern hardware::MotorGroup left_motors;
 extern hardware::MotorGroup right_motors;

@@ -24,7 +24,7 @@ void hardware::internal_management_func_motor_group(void *args) {
 
         if (group->braking) {
             group->set_value = 0;
-            pros::delay(10);
+            pros::delay(1);
             continue;
         }
 
@@ -67,7 +67,7 @@ void hardware::internal_management_func_motor_group(void *args) {
                 }
 
                 // As below this point is handling for voltage-based output, we will do an early return
-                pros::delay(10);
+                pros::delay(1);
                 continue;
             }
         }
@@ -87,7 +87,7 @@ void hardware::internal_management_func_motor_group(void *args) {
             pros::c::motor_move_voltage(p, group->set_value);
         }
 
-        pros::delay(10);
+        pros::delay(1);
     }
 }
 
@@ -116,7 +116,7 @@ MotorGroup::MotorGroup (
     sprintf(name, "motor_group_internal_manager%d", ports[0]);
     internal_management_task = pros::c::task_create(
         internal_management_func_motor_group, 
-        this, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, 
+        this, TASK_PRIORITY_MIN, TASK_STACK_DEPTH_MIN, 
         name);
 }
 

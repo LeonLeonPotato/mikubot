@@ -58,7 +58,7 @@ bool AbstractDevice::poll_mutex(void) const {
 
 void AbstractDevice::release_mutex() {
     for (const auto& m : mutexes) {
-        pros::c::mutex_give(m);
+        if (pros::c::mutex_get_owner(m) == pros::c::task_get_current()) pros::c::mutex_give(m);
     }
 }
 }

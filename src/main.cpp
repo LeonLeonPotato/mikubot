@@ -27,7 +27,7 @@ void initialize(void) {
 	if (config::SIM_MODE) pros::c::serctl(SERCTL_DISABLE_COBS, nullptr);
 	std::cout << PREFIX << "Initializing robot\n";
 
-	robot::init();
+	// robot::init();
 	driverinfo::init();
 	// telemetry::start_task();
 
@@ -37,14 +37,14 @@ void initialize(void) {
 		}
 	}
 
-	if (!pros::competition::is_connected()) {
-		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
-		if (!config::SIM_MODE) {
-			competition_initialize();
-			debugscreen::init();
-			autonomous();
-		}
-	}
+	// if (!pros::competition::is_connected()) {
+	// 	std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
+	// 	if (!config::SIM_MODE) {
+	// 		competition_initialize();
+	// 		debugscreen::init();
+	// 		autonomous();
+	// 	}
+	// }
 }
 
 void disabled(void) {
@@ -75,7 +75,7 @@ void autonomous(void) {
 	// autonrunner::destroy();
 }
 
-void collect_pid_data(void) {
+static void collect_pid_data(void) {
 	robot::chassis.take_drive_mutex();
 
 	std::vector<std::pair<float, float>> points;
@@ -113,10 +113,39 @@ void collect_pid_data(void) {
 	robot::chassis.give_drive_mutex();
 }
 
+static void test_motor_groups(void) {
+	static hardware::MotorGroup test_group (
+		{19},
+		hardware::Gearset::BLUE,
+		hardware::BrakeMode::BRAKE,
+		0.0f
+	);
+	pros::Rotation test_encoder(-18);
+	test_encoder.set_data_rate(5);
+
+	test_group.acquire_mutex();
+
+	constexpr float volt = 12000;
+	test_group.set_desired_voltage(volt);
+
+	long long start = pros::micros();
+	for (int i = 0; i < 100; i++) {
+		float time = (pros::micros() - start) / 1e6f;
+		float velo = test_group.get_raw_velocity_average();
+		printf("%f,%f\n", time, velo);
+		pros::delay(10);
+	}
+
+	test_group.brake();
+	test_group.release_mutex();
+}
+
 void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
 	if (!config::SIM_MODE) autonrunner::destroy();
 	if (!config::SIM_MODE) autonselector::destroy();
+
+	test_motor_groups();
 
 	for (auto& subsystem : subsystems::subsystems) {
 		subsystem->take_mutex();
