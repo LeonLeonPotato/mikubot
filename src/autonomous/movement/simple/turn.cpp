@@ -9,7 +9,7 @@ DEFINE_TICK(turn_towards, controllers::PID&, const float angle)
 {
     const float diff = robot::angular_diff(angle, params.reversed);
     const float ctrl = pids.get(diff);
-    robot::velo(-ctrl, ctrl);
+    robot::velo(ctrl, -ctrl);
     return { ExitCode::SUCCESS, 0, diff, 0 };
 }
 

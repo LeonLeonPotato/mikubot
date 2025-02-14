@@ -29,7 +29,7 @@ void initialize(void) {
 
 	robot::init();
 	driverinfo::init();
-	// telemetry::start_task();
+	telemetry::start_task();
 
 	for (auto& subsystem : subsystems::subsystems) {
 		if (subsystem->has_api()) {
@@ -113,31 +113,16 @@ static void collect_pid_data(void) {
 	robot::chassis.give_drive_mutex();
 }
 
-static void test_motor_groups(void) {
-	hardware::MotorGroup test_group (
-		{19},
-		hardware::Gearset::BLUE,
-		hardware::BrakeMode::BRAKE,
-		0.0f
-	);
-	pros::Rotation test_encoder(-18);
-	test_encoder.set_data_rate(5);
-
-	test_group.acquire_mutex();
-
-	constexpr float volt = 12000;
-	test_group.set_desired_voltage(volt);
-
-	long long start = pros::micros();
-	for (int i = 0; i < 100; i++) {
-		float time = (pros::micros() - start) / 1e6f;
-		float velo = test_group.get_raw_velocity_average();
-		printf("%f,%f\n", time, velo);
-		pros::delay(10);
+static void collect_drivetrain_data(void) {
+	robot::chassis.take_drive_mutex();
+	
+	for (float volt = 1; volt <= 12; volt += 1.5) {
+		printf("%sSetting voltage to %f\n", CPREFIX, volt);
+		printf("%sPress enter to continue\n", CPREFIX);
+		std::cin.get();
+		robot::chassis.set_voltage(volt, volt);
+		
 	}
-
-	test_group.brake();
-	test_group.release_mutex();
 }
 
 void opcontrol(void) {

@@ -51,8 +51,8 @@ DEFINE_TICK(boomerang, PIDGroup,
     debugscreen::debug_message += "V: " + std::to_string(v) + "\n";
     debugscreen::debug_message += "Error: " + std::to_string(error.x()) + ", " + std::to_string(error.y()) + "\n";
 
-    float left = v - omega;
-    float right = v + omega;
+    float left = v + omega;
+    float right = v - omega;
     // auto max_abs_val = std::max(std::abs(left), std::abs(right));
     // if (max_abs_val > 1) {
     //     left /= max_abs_val;

@@ -43,7 +43,6 @@ void Conveyor::api_tick(void) {
         // }
 
         robot::conveyor.set_desired_voltage(desired_voltage);
-        printf("Conveyor voltage: %d\n", desired_voltage);
 
         pros::delay(20);
     }
@@ -57,7 +56,6 @@ void Conveyor::tick(void) {
         robot::master.get_digital(config::keybinds::conveyor_down)
     );
 
-    printf("Speed: %d\n", speed);
     set_desired_voltage(speed);
 
     if (robot::master.get_digital_new_press(config::keybinds::color_sort_toggle)) {

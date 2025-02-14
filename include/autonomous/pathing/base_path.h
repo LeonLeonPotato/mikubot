@@ -34,7 +34,8 @@ struct ProfilePoint {
     float s, t;
     float curvature;
     float left_v, center_v, right_v;
-    float angular_v;
+    float left_a, center_a, right_a;
+    float angular_v, angular_a;
 };
 
 struct ProfileParams {

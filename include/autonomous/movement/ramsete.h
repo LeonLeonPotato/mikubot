@@ -5,6 +5,7 @@
 #include "autonomous/pathing/base_path.h"
 #include "autonomous/controllers.h"
 #include "autonomous/future.h"
+#include <string>
 
 namespace movement::ramsete {
 struct RamseteParamsPOD {
@@ -25,6 +26,12 @@ RamseteResult follow_path_cancellable(
     const RamseteParams& params
 );
 
+RamseteResult follow_poses_recording_cancellable(
+    volatile bool& cancel_ref, 
+    const std::string& filename,
+    const RamseteParams& params
+);
+
 RamseteResult follow_path_cancellable(
     volatile bool& cancel_ref, 
     pathing::BasePath& path,
@@ -39,11 +46,28 @@ RamseteResult follow_path(Args&&... args) {
 }
 
 template <typename... Args>
+RamseteResult follow_poses_recording(Args&&... args) {
+    const bool cancel = false;
+    return follow_poses_recording_cancellable((volatile bool&) cancel, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
 Future<RamseteResult> follow_path_async(Args&&... args) {
     Future<RamseteResult> ret;
     pros::Task task {[&ret, &args...]() {
         ret.set_value(std::move(
             follow_path_cancellable(ret.get_state()->cancelled, std::forward<Args>(args)...)
+        ));
+    }};
+    return ret;
+}
+
+template <typename... Args>
+Future<RamseteResult> follow_poses_recording_async(Args&&... args) {
+    Future<RamseteResult> ret;
+    pros::Task task {[&ret, &args...]() {
+        ret.set_value(std::move(
+            follow_poses_recording_cancellable(ret.get_state()->cancelled, std::forward<Args>(args)...)
         ));
     }};
     return ret;

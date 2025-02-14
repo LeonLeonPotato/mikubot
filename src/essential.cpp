@@ -22,8 +22,8 @@ hardware::Motor robot::wallmech {6, hardware::Gearset::BLUE, hardware::BrakeMode
 pros::Rotation robot::wallmech_encoder(2);
 
 hardware::IMUGroup robot::inertial {{9, 10}};
-pros::Rotation robot::horizontal_encoder(-19);
-pros::Rotation robot::forwards_encoder(20);
+pros::Rotation robot::horizontal_encoder(-13);
+pros::Rotation robot::forwards_encoder(18);
 
 hardware::MotorGroup robot::left_motors {
     {-1, 19, -20},
@@ -59,6 +59,8 @@ extern "C" {
 }
 
 void robot::init(void) {
+    horizontal_encoder.set_position(0);
+    forwards_encoder.set_position(0);
     chassis.start_tracking_first_time();
 
     robot::classifier.set_led_pwm(255);
