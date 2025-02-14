@@ -11,7 +11,7 @@ void TwoTrackerOdometry::run_task(void) {
     long long ltime = pros::millis();
     float ll = rad(side_encoder.get_position() / 100.0f);
     float lh = rad(back_encoder.get_position() / 100.0f);
-    auto lthetas = imu.get_rotations_eigen();
+    Eigen::VectorXf lthetas = imu.get_rotations_eigen();
 
     float l_left = left_motors.get_position_average() * linear_mult;
     float l_right = right_motors.get_position_average() * linear_mult;
@@ -23,8 +23,8 @@ void TwoTrackerOdometry::run_task(void) {
         double dt = (pros::millis() - ltime) / 1e3f;
         ltime = pros::millis();
 
-        auto cthetas = imu.get_rotations_eigen();
-        auto dthetas = cthetas - lthetas;
+        Eigen::VectorXf cthetas = imu.get_rotations_eigen();
+        Eigen::VectorXf dthetas = cthetas - lthetas;
         lthetas = cthetas;
 
         auto c_left = left_motors.get_position_average() * linear_mult;
@@ -36,6 +36,7 @@ void TwoTrackerOdometry::run_task(void) {
 
         float dtheta = rad(dthetas.sum() / dthetas.size());
         if (isnan(dtheta) || isinf(dtheta) || (fabs(dtheta) > 999999)) {
+            printf("dtheta is fucked\n");
             dtheta = (d_left - d_right) / track_width;
         }
 
@@ -51,6 +52,7 @@ void TwoTrackerOdometry::run_task(void) {
         lh = ch;
 
         if (isnan(travel_forwards) || isinf(travel_forwards) || (fabs(travel_forwards) > 999999)) {
+            printf("travel_forwards is fucked\n");
             travel_forwards = (d_left + d_right) / 2;
             if (dtheta != 0) {
                 float constant = 2 * sin(dtheta / 2);
@@ -66,6 +68,9 @@ void TwoTrackerOdometry::run_task(void) {
         }
 
         float av_theta = ctheta - dtheta / 2;
+        // printf("dtheta: %f", dtheta);
+        
+        // printf("ctheta: %f, dtheta: %f, av_theta: %f\n", ctheta, dtheta, av_theta);
 
         Eigen::Vector2f travel = {
             travel_forwards * sinf(av_theta) - travel_horizontal * cosf(av_theta),
@@ -74,6 +79,7 @@ void TwoTrackerOdometry::run_task(void) {
         if (isnan(travel(0)) || isnan(travel(1)) || isinf(travel(0)) 
             || isinf(travel(1)) || (fabs(travel(0)) > 999999) || (fabs(travel(1)) > 999999)) 
         {
+            printf("travel is fucked\n");
             travel = {0, 0};
         }
 

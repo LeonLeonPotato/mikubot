@@ -31,7 +31,7 @@ void hardware::internal_management_func_motor_group(void *args) {
         // Ok this code is a little confusing so i will annotate it
         // Initially we assume target is in volts
         float target = group->target_value;
-        float slew_range = group->slew_rate > 0 ? (group->slew_rate * dt) : infinityf();
+        float slew_range = group->slew_rate > 0 ? (group->slew_rate * dt) : 99999999.9f;
 
         if (group->target_unit == OutputUnit::RPM) { 
             if (group->velo_controller.has_value()) {
@@ -82,6 +82,7 @@ void hardware::internal_management_func_motor_group(void *args) {
         group->set_unit = OutputUnit::VOLTAGE;
         group->set_value = std::clamp(target, group->set_value - slew_range, group->set_value + slew_range);
         group->set_value = std::clamp(group->set_value, -12000.0f, 12000.0f);
+        // printf("Set value:")
 
         for (const auto& p : group->ports) {
             pros::c::motor_move_voltage(p, group->set_value);

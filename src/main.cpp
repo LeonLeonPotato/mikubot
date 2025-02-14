@@ -29,7 +29,7 @@ void initialize(void) {
 
 	robot::init();
 	driverinfo::init();
-	telemetry::start_task();
+	// telemetry::start_task();
 
 	for (auto& subsystem : subsystems::subsystems) {
 		if (subsystem->has_api()) {
@@ -120,9 +120,75 @@ static void collect_drivetrain_data(void) {
 		printf("%sSetting voltage to %f\n", CPREFIX, volt);
 		printf("%sPress enter to continue\n", CPREFIX);
 		std::cin.get();
-		robot::chassis.set_voltage(volt, volt);
+		robot::chassis.set_voltage(volt / 12, volt / 12);
 		
+		std::vector<std::pair<float, float>> data;
+
+		long long start = pros::micros();
+		for (int i = 0; i < 100; i++) {
+			data.push_back({(pros::micros() - start) / 1e6f, robot::right_motors.get_raw_velocity_average()});
+			pros::delay(10);
+		}
+		robot::chassis.brake();
+
+		printf("%sData collection finished\n", CPREFIX);
+
+		printf("X = \\left[");
+		for (int i = 0; i < data.size(); i++) {
+			auto point = data[i];
+			printf("\\left(%f,\\ %f\\right)", point.first, point.second);
+			if (i != data.size() - 1) {
+				printf(",");
+			}
+
+			if (i % 5 == 0) {
+				printf("\n");
+				fflush(stdout);
+				pros::delay(100);
+			}
+		}
+		printf("\\right]\n");
 	}
+}
+
+static void collect_odom_centering_data(void) {
+	robot::chassis.take_drive_mutex();
+
+	printf("%sStarting data collection\n", CPREFIX);
+	printf("%sPress enter to continue\n", CPREFIX);
+	std::cin.get();
+
+
+	std::vector<std::pair<float, float>> data;
+	robot::chassis.set_velocity(0.2, -0.2);
+	
+	long long start = pros::micros();
+	for (int i = 0; i < 500; i++) {
+		data.push_back({
+			robot::x(),
+			robot::y()
+		});
+		pros::delay(10);
+	}
+	robot::chassis.brake();
+
+	printf("%sData collection finished\n", CPREFIX);
+
+	printf("X = \\left[");
+	for (int i = 0; i < data.size(); i++) {
+		auto point = data[i];
+		printf("\\left(%f,\\ %f\\right)", point.first, point.second);
+		if (i != data.size() - 1) {
+			printf(",");
+		}
+
+		if (i % 5 == 0) {
+			printf("\n");
+			fflush(stdout);
+			pros::delay(100);
+		}
+	}
+	printf("\\right]\n");
 }
 
 void opcontrol(void) {
@@ -130,7 +196,17 @@ void opcontrol(void) {
 	if (!config::SIM_MODE) autonrunner::destroy();
 	if (!config::SIM_MODE) autonselector::destroy();
 
+	debugscreen::init();
+	// autonomous();
+	strategies::test_strategy::run();
+
 	// test_motor_groups();
+
+	// robot::chassis.take_drive_mutex();
+	// pros::delay(1000);
+	// robot::chassis.give_drive_mutex();
+
+	// collect_odom_centering_data();
 
 	for (auto& subsystem : subsystems::subsystems) {
 		subsystem->take_mutex();

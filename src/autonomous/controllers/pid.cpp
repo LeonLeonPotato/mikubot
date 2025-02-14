@@ -11,7 +11,7 @@ void PID::register_error(const float error) {
 
     if (!registered) {
         last_error = error;
-        last_time = cur_time;
+        last_time = cur_time - 1;
         registered = true;
     } else {
         if (fabs(error) > args.disable_integral_limit || (args.sign_switch_reset && error * last_error < 0)) {

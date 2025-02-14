@@ -27,14 +27,12 @@ class VelocityController {
         float get(float current, float target, float accel = 0) {
             float ff = args.kv * target + args.ka * accel + args.kf * (target > 0 ? 1 : -1) * (target != 0);
             float fb = pid.get(target - current);
-            float unslewed = ff + fb;
             return ff + fb;
         }
 
         float get_no_update(float current, float target, float accel = 0) const {
             float ff = args.kv * target + args.ka * accel + args.kf * (target > 0 ? 1 : -1) * (target != 0);
             float fb = pid.get();
-            float unslewed = ff + fb;
             return ff + fb;
         }
 

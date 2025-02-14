@@ -18,11 +18,11 @@ DEFINE_TICK(boomerang, PIDGroup,
     Eigen::Rotation2D<float> rot(robot::theta());
     Eigen::Vector2f error = rot * (carrot - robot::pos()) / 100.0f;
 
-    // if (true_target_dist < 2.54*7.5) {
-    //     float scale = true_target_dist / (2.54*7.5);
-    //     theta_error = robot::angular_diff(pose.theta(), params.reversed);
-    //     error = rot * (pose.pos() - robot::pos()) / 100.0f;
-    // }
+    if (true_target_dist < 7.5) {
+        float scale = true_target_dist / (2.54*7.5);
+        theta_error = robot::angular_diff(pose.theta(), params.reversed);
+        error = rot * (pose.pos() - robot::pos()) / 100.0f;
+    }
 
     debugscreen::debug_message = "Carrot: [" + std::to_string(carrot.x()) + ", " + std::to_string(carrot.y()) + "]\n";
     debugscreen::debug_message += "Angle diff: " + std::to_string(theta_error) + "\n";

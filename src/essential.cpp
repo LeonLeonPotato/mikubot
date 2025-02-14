@@ -30,20 +30,20 @@ hardware::MotorGroup robot::left_motors {
     hardware::Gearset::BLUE, 
     hardware::BrakeMode::COAST,
     {
-        17.06875f, 2.8005f, 571.0516f, 
+        17.3484f, 3.2039f, 718.3290f, 
         {20.0f, 0.0f, 0.0f}
     },
-    3000'000.0f
+    0.0f
 };
 hardware::MotorGroup robot::right_motors {
     {15, 16, -17},
     hardware::Gearset::BLUE, 
     hardware::BrakeMode::COAST,
     {
-        17.21498f, 2.8005f, 699.1533f,
+        17.5927f, 3.1545f, 782.050f,
         {20.0f, 0.0f, 0.0f}
     },
-    3000'000.0f
+    0.0f
 };
 
 hardware::DiffDriveChassis robot::chassis {

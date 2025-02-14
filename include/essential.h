@@ -11,8 +11,10 @@
 namespace robot {
 constexpr float TRACKING_WHEEL_RADIUS = 2.54f;
 constexpr float DRIVETRAIN_LINEAR_MULT = 4.1275f * 0.75f;
-constexpr float FORWARDS_TRACKING_WHEEL_OFFSET = -3.58571f + 0.703f;
-constexpr float HORIZONTAL_TRACKING_WHEEL_OFFSET = 0.46471f - 0.33933f;
+// constexpr float FORWARDS_TRACKING_WHEEL_OFFSET = -3.58571f + 0.703f;
+// constexpr float HORIZONTAL_TRACKING_WHEEL_OFFSET = 0.46471f - 0.33933f;
+constexpr float FORWARDS_TRACKING_WHEEL_OFFSET = -3.95925f;
+constexpr float HORIZONTAL_TRACKING_WHEEL_OFFSET = 2.79406f;
 constexpr float DRIVETRAIN_WIDTH = 30.29204f;
 
 extern pros::Controller master;
