@@ -18,8 +18,8 @@ pros::adi::Pneumatics robot::clamp('a', false, false);
 
 pros::Optical robot::classifier(1);
 hardware::Motor robot::conveyor {8, hardware::Gearset::BLUE, hardware::BrakeMode::BRAKE};
-hardware::Motor robot::wallmech {6, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD};
-pros::Rotation robot::wallmech_encoder(2);
+hardware::Motor robot::wallmech {-7, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD};
+pros::Rotation robot::wallmech_encoder(-6);
 
 hardware::IMUGroup robot::inertial {{9, 10}};
 pros::Rotation robot::horizontal_encoder(-13);

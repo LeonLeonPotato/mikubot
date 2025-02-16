@@ -10,7 +10,7 @@
 
 // One VEX tile in cm
 #define TILE 60.0f
-#define pi M_PI
+#define pi ((float) M_PI)
 
 static controllers::PID linear_pid({.kp = 0.022, .ki = 0.06, .kd = 0.003, .disable_integral_limit = 20});
 static controllers::PID linear_boomerang_pid({.kp = 0.022, .ki = 0.1, .kd = 0.003, .disable_integral_limit = 20});
