@@ -1,4 +1,5 @@
 #include "main.h"
+#include "autodiff/reverse/var/var.hpp"
 #include "autonomous/movement/simple/turn.h"
 #include "autonomous/strategy/utils.h"
 #include "config.h"
@@ -230,12 +231,71 @@ static void test(void) {
 	printf("\\right]\n");
 }
 
+#include "nlopt/nlopt.hpp"
+#include "autodiff/reverse/var.hpp"
+
+// Define the objective function
+autodiff::var objective_function(const std::vector<autodiff::var>& x) {
+	return pow(x[0] * x[0] + x[1] * x[1] - 1, 3) - x[0] * x[0] * x[1] * x[1] * x[1] + x[0];
+}
+
+// Wrap the autodiff function to match the nlopt interface
+double nlopt_objective_function(unsigned int n, const double* x, double* grad) {
+    // Convert the input x to autodiff variables
+    std::vector<autodiff::var> x_ad{x[0], x[1]};
+	autodiff::var f = objective_function(x_ad);
+
+	auto [d0, d1] = autodiff::derivatives(f, autodiff::wrt(x_ad[0], x_ad[1]));
+
+	grad[0] = d0;
+	grad[1] = d1;
+
+	printf("Val: %f, Grad: %f, %f\n", autodiff::val(f), d0, d1);
+
+	// Return the value of the function
+
+	return autodiff::val(f);
+}
+
+int asdasdasd() {
+    // Create an optimization problem object
+    nlopt::opt opt(nlopt::LD_LBFGS, 2);  // LD_MMA is a chosen optimization algorithm, 1 means 1 variable
+
+    // Set the objective function
+    opt.set_min_objective(nlopt_objective_function);
+
+    // Set the lower and upper bounds for the variable
+    std::vector<double> lb {-4, -4};  // Lower bound for x is 0
+    std::vector<double> ub {4, 4};  // Upper bound for x is 5
+    opt.set_lower_bounds(lb);
+    opt.set_upper_bounds(ub);
+
+    // Set stopping criteria (optional)
+    // opt.set_xtol_rel();  // Relative tolerance on the x values
+
+    // Initial guess (for x)
+    std::vector<double> x(2, 3);  // Start at x = 0.0
+
+    // Perform the optimization
+    double minf;  // To hold the minimum value
+    nlopt::result result = opt.optimize(x, minf);
+
+    // Output the result
+    std::cout << "Result: " << result << std::endl;
+    std::cout << "Minimum value of the function: " << minf << std::endl;
+    std::cout << "Optimal x: " << x[0] << " " << x[1] << std::endl;
+
+    return 0;
+}
+
 void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
 	if (!config::SIM_MODE) autonrunner::destroy();
 	if (!config::SIM_MODE) autonselector::destroy();
 
-	test();
+	// test();
+
+	asdasdasd();
 
 	// test_motor_groups();
 
