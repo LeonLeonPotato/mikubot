@@ -31,8 +31,8 @@ static const pathing::ProfileParams profile_params {
     .accel = 200, // true: 427.376053809
     .decel = 200,
     .track_width = 39,
-    .ds = 0.1,
-    .resolution = 5000
+    .friction_coeff = 0.5,
+    .ds = 0.1
 };
 
 static void print_poses(const std::vector<Pose>& poses) {

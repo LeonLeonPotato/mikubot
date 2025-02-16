@@ -29,22 +29,26 @@ struct Condition {
 
 struct ProfilePoint {
     Eigen::Vector2f pos;
+    Eigen::Vector2f deriv;
     float heading;
     
-    float s, t;
+    float distance;
+    float path_param;
+    float real_time;
+
     float curvature;
-    float left_v, center_v, right_v;
-    float left_a, center_a, right_a;
+    float center_v, center_a;
     float angular_v, angular_a;
 };
 
 struct ProfileParams {
     float start_v, end_v;
-    float  max_speed;
+    float max_speed;
     float accel, decel;
     float track_width;
-    float ds = 0.1;
-    int resolution = 10000;
+    float friction_coeff;
+
+    float ds;
 };
 
 class BasePath {

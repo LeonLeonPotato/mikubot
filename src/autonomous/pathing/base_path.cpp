@@ -1,6 +1,7 @@
 #include "autonomous/pathing/base_path.h"
 #include "ansicodes.h"
 #include "pros/rtos.hpp"
+#include <cmath>
 #include <iostream>
 
 using namespace pathing;
@@ -42,106 +43,85 @@ void BasePath::solve_lengths(int resolution) {
     }
 }
 
+static float max_speed(const ProfileParams& params, float curve) {
+    float max_turn_speed = ((2 * params.max_speed / params.track_width) * params.max_speed) 
+        / (fabsf(curve) * params.max_speed + (2 * params.max_speed / params.track_width));
+    if (fabsf(curve) < 1e-3) {
+        return max_turn_speed;
+    }
+    float max_slip_speed = sqrtf(params.friction_coeff * (1 / fabsf(curve)) * 981);
+    return fminf(max_slip_speed, max_turn_speed);
+}
+
 void BasePath::profile_path(const ProfileParams& params) {
-    lengths.clear();
-    lengths.resize(params.resolution + 1);
-    lengths[0] = 0;
-
-    // auto start_t = pros::micros();
-    // Eigen::Matrix2Xf res(2, params.resolution+1);
-    // compute(Eigen::VectorXf::LinSpaced(params.resolution+1, 0, maxt()), res);
-    // printf("[2D MP] Computed path in %lld us\n", pros::micros() - start_t);
-
-    int start_t = pros::millis();
-    Eigen::MatrixX2f res(params.resolution+1, 2);
-    full_sample(
-        params.resolution+1, 
-        res, 
-    0);
-    int diff = pros::millis() - start_t;
-
-    std::cout << PREFIX << "Computed path in " << diff << " ms\n";
-
-    start_t = pros::millis();
-    Eigen::ArrayXf differences = 
-        (res.block(1, 0, params.resolution, 2)
-            - res.block(0, 0, params.resolution, 2))
-                .rowwise().norm();
-    std::cout << PREFIX << "Computed differences in " << pros::millis() - start_t << " ms\n";
-
     profile.clear();
-    profile.reserve(2500);
-    profile.emplace_back(compute(0), angle(0), 0, 0, curvature(0), 0, params.start_v, 0);
+    profile.reserve(5000);
 
-    start_t = pros::millis();
+    Eigen::Vector2f deriv = compute(0, 1);
+    float curve = curvature(0);
+    profile.push_back(ProfilePoint {compute(0), deriv, atan2f(deriv[0], deriv[1]), 0, 0, 0, curve, params.start_v, 0, params.start_v * curve, 0});
 
-    int i = 1, j = 0;
-    float s = params.ds;
-    while (i < params.resolution) {
-        for (; i <= params.resolution; i++) {
-            lengths[i] = lengths[i - 1] + differences[i - 1];
-            if (lengths[i] >= s) break;
-        }
-        if (i > params.resolution) i = params.resolution;
-        const float ds = lengths[i] - lengths[j];
+    while (profile.back().path_param <= maxt()) {
+        auto& last = profile.back();
 
-        const float time_param = (float) i / params.resolution * maxt();
+        float pathtime = last.path_param + params.ds / last.deriv.norm();
+        float curve = curvature(pathtime);
+        float angular_vel = curve * last.center_v;
+        float angular_accel = (angular_vel - last.angular_v) * (last.center_v / params.ds);
 
-        const Eigen::Vector2f d0 = compute(time_param, 0);
-        const Eigen::Vector2f d1 = compute(time_param, 1);
-        const Eigen::Vector2f d2 = compute(time_param, 2);
+        float max_accel = params.accel - fabsf(angular_accel * params.track_width / 2);
+        max_accel = fmaxf(0.01, max_accel);
 
-        const float curve = (d1(0) * d2(1) - d1(1) * d2(0)) / ((d1(0) * d1(0) + d1(1) * d1(1)) * 
-            sqrtf(d1(0) * d1(0) + d1(1) * d1(1)) + 1e-6);
-        const float scale = 1 + fabsf(curve) * params.track_width / 2.0f;
-        const float ecv = profile.back().center_v * scale;
-        const float cv = std::clamp(
-            sqrtf(ecv*ecv + 2*params.accel*ds), 
-            -params.max_speed, 
-            params.max_speed
-        ) / scale;
+        float vel = fminf(max_speed(params, curve), sqrtf(last.center_v * last.center_v + 2 * max_accel * params.ds));
+        float dist = last.distance + params.ds;
 
-        profile.emplace_back(d0, atan2f(d1(0), d1(1)), lengths[i], time_param, curve, 0, cv, 0, 0);
-        s += params.ds;
-        j = i;
+        Eigen::Vector2f d = compute(pathtime, 1);
+        profile.push_back(
+            {compute(pathtime), d, atan2f(d[0], d[1]), dist, pathtime, 0, curve, vel, 0, angular_vel, 0}
+        );
     }
 
-    // float __scale = profile.back().curvature * params.track_width / 2.0f;
-    // profile.back().center_v = params.end_v;
-    // profile.back().left_v = std::clamp(params.end_v * (1 - __scale), -params.max_speed, params.max_speed);
-    // profile.back().right_v = std::clamp(params.end_v * (1 + __scale), -params.max_speed, params.max_speed);
-    // profile.back().angular_v = (profile.back().left_v - profile.back().right_v) / 2.0f;
     profile.back().center_v = params.end_v;
-    profile.back().left_v = params.end_v;
-    profile.back().right_v = params.end_v;
-    profile.back().angular_v = 0;
 
     for (int i = profile.size() - 2; i > 0; i--) {
-        const ProfilePoint& lp = profile[i + 1];
-        ProfilePoint& p = profile[i];
+        auto& lst = profile[i + 1];
+        auto& cur = profile[i];
+        auto& nxt = profile[i-1];
 
-        const float scale = p.curvature * params.track_width / 2.0f;
-        const float ds = lp.s - p.s;
-        const float ecv = lp.center_v * (1 + fabsf(scale));
-        const float cv = std::clamp(
-            sqrtf(ecv*ecv + 2*params.decel*ds), 
-            -params.max_speed, 
-            params.max_speed
-        ) / (1 + fabsf(scale));
+        float angular_accel = (nxt.angular_v - cur.angular_v) * (cur.center_v / params.ds);
+        float max_accel = params.decel - fabsf(angular_accel * params.track_width / 2);
+        max_accel = fmaxf(0.01, max_accel);
+        float vel = fminf(max_speed(params, cur.curvature), sqrtf(lst.center_v * lst.center_v + 2 * max_accel * params.ds));
 
-        p.center_v = fminf(cv, p.center_v);
-        p.left_v = std::clamp(p.center_v * (1 + scale), -params.max_speed, params.max_speed);
-        p.right_v = std::clamp(p.center_v * (1 - scale), -params.max_speed, params.max_speed);
-        p.angular_v = (p.left_v - p.right_v) / 2.0f;
+        cur.center_v = fminf(cur.center_v, vel);
+        cur.angular_v = cur.curvature * cur.center_v;
+        cur.angular_a = (lst.angular_v - cur.angular_v) * (lst.center_v / params.ds);
+        cur.center_a = (lst.center_v - cur.center_v) * (lst.center_v / params.ds);
     }
 
-    diff = pros::millis() - start_t;
-    std::cout << PREFIX << "Computed profile in " << diff << " ms\n";
+    for (int i = 0; i < profile.size() - 1; i++) {
+        auto& cur = profile[i];
+        auto& nxt = profile[i+1];
+
+        float reciprocal_dt = cur.center_v / params.ds;
+        if (std::isnan(reciprocal_dt)) {
+            reciprocal_dt = 0;
+        }
+        
+
+        cur.center_a = (nxt.center_v - cur.center_v) * (cur.center_v / dt);
+        cur.angular_a = (nxt.angular_v - cur.angular_v) * (cur.center_v / dt);
+    }
+
+    profile.front().center_v = params.start_v;
+    profile.front().angular_v = profile[1].angular_v;
+    profile.front().center_a = (profile[1].center_v - profile.front().center_v) * (profile[1].center_v / params.ds);
+    profile.front().angular_a = (profile[1].angular_v - profile.front().angular_v) * (profile[1].center_v / params.ds);
 }
 
 ProfilePoint BasePath::profile_point(const float s) const {
     int i = std::lower_bound(profile.begin(), profile.end(), s, [](const ProfilePoint& p, const float s) {
-        return p.s < s;
+        return p.distance < s;
     }) - profile.begin();
     return profile[i];
 }

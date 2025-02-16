@@ -20,7 +20,7 @@ static RamseteResult tick(
     Eigen::Vector2f goal; Eigen::Vector2f deriv;
     while (true) {
         const pathing::ProfilePoint& p = path.get_profile()[i];
-        deriv = path(p.t, 1);
+        deriv = path(p.real_time, 1);
 
         if (deriv.dot(p.pos - robot::pos()) > 0) {
             break;
@@ -138,53 +138,53 @@ static std::vector<std::string> split_string(const std::string& str, char delimi
     return tokens;
 }
 
-static std::vector<pathing::ProfilePoint> create_from_poses(
-    const std::string& filename
-) {
-    FILE* file = fopen(filename.c_str(), "r");
-    if (!file) return {};
-    std::vector<pathing::ProfilePoint> profile;
+// static std::vector<pathing::ProfilePoint> create_from_poses(
+//     const std::string& filename
+// ) {
+//     FILE* file = fopen(filename.c_str(), "r");
+//     if (!file) return {};
+//     std::vector<pathing::ProfilePoint> profile;
 
-    std::string header(512, '\0');
-    fgets(header.data(), header.size(), file);
+//     std::string header(512, '\0');
+//     fgets(header.data(), header.size(), file);
 
-    char buffer[512];
-    int i = 0;
-    while (fgets(buffer, sizeof(buffer), file)) {
-        if (buffer[0] == '\n') continue;
-        pathing::ProfilePoint point;
-        std::vector<std::string> tokens = split_string(buffer, ',');
-        point.t = std::stoll(tokens[0]) / 1e6f;
-        point.pos = Eigen::Vector2f(
-            std::stof(tokens[1]), 
-            std::stof(tokens[2])
-        );
-        point.heading = std::stof(tokens[3]);
-        point.left_v = std::stof(tokens[4]);
-        point.right_v = std::stof(tokens[5]);
+//     char buffer[512];
+//     int i = 0;
+//     while (fgets(buffer, sizeof(buffer), file)) {
+//         if (buffer[0] == '\n') continue;
+//         pathing::ProfilePoint point;
+//         std::vector<std::string> tokens = split_string(buffer, ',');
+//         point.t = std::stoll(tokens[0]) / 1e6f;
+//         point.pos = Eigen::Vector2f(
+//             std::stof(tokens[1]), 
+//             std::stof(tokens[2])
+//         );
+//         point.heading = std::stof(tokens[3]);
+//         point.left_v = std::stof(tokens[4]);
+//         point.right_v = std::stof(tokens[5]);
         
-        point.center_v = (point.left_v + point.right_v) / 2.0f;
-        point.angular_v = (point.right_v - point.left_v) / robot::DRIVETRAIN_WIDTH;
+//         point.center_v = (point.left_v + point.right_v) / 2.0f;
+//         point.angular_v = (point.right_v - point.left_v) / robot::DRIVETRAIN_WIDTH;
 
-        if (i != 0) {
-            pathing::ProfilePoint& lp = profile[i-1];
-            float dt = point.t - profile[i-1].t;
-            lp.left_a = (point.left_v - profile[i-1].left_v) / dt;
-            lp.right_a = (point.right_v - profile[i-1].right_v) / dt;
-            lp.angular_a = (point.angular_v - profile[i-1].angular_v) / dt;
-            lp.center_a = (point.center_v - profile[i-1].center_v) / dt;
-        }
-        point.left_a = 0;
-        point.right_a = 0;
-        point.angular_a = 0;
-        point.center_a = 0;
+//         if (i != 0) {
+//             pathing::ProfilePoint& lp = profile[i-1];
+//             float dt = point.t - profile[i-1].t;
+//             lp.left_a = (point.left_v - profile[i-1].left_v) / dt;
+//             lp.right_a = (point.right_v - profile[i-1].right_v) / dt;
+//             lp.angular_a = (point.angular_v - profile[i-1].angular_v) / dt;
+//             lp.center_a = (point.center_v - profile[i-1].center_v) / dt;
+//         }
+//         point.left_a = 0;
+//         point.right_a = 0;
+//         point.angular_a = 0;
+//         point.center_a = 0;
 
-        profile.push_back(point);
-        i++;
-    }
+//         profile.push_back(point);
+//         i++;
+//     }
 
-    return profile;
-}
+//     return profile;
+// }
 
 RamseteResult ramsete::follow_path_cancellable(    
     volatile bool& cancel_ref, 
@@ -224,7 +224,7 @@ RamseteResult ramsete::follow_poses_recording_cancellable(
     const RamseteParams& params)
 {
     const int start = pros::millis();
-    std::vector<pathing::ProfilePoint> profile = create_from_poses(filename);
+    std::vector<pathing::ProfilePoint> profile;
 
     RamseteResult last_tick {.i = 1};
     while ((profile.back().pos - robot::pos()).norm() > params.linear_exit_threshold || last_tick.i != profile.size()-1) {

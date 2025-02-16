@@ -27,8 +27,8 @@ void initialize(void) {
 	if (config::SIM_MODE) pros::c::serctl(SERCTL_DISABLE_COBS, nullptr);
 	std::cout << PREFIX << "Initializing robot\n";
 
-	robot::init();
-	driverinfo::init();
+	// robot::init();
+	// driverinfo::init();
 	// telemetry::start_task();
 
 	for (auto& subsystem : subsystems::subsystems) {
@@ -191,14 +191,47 @@ static void collect_odom_centering_data(void) {
 	printf("\\right]\n");
 }
 
+static void test(void) {
+	pathing::CubicSpline cubic {
+		{{0, 0}, {50, 50}, {100, 0}}
+	};
+
+	cubic.solve_coeffs(pathing::CubicSpline::natural_conditions, pathing::CubicSpline::natural_conditions);
+	cubic.profile_path({
+		.start_v = 0.001, .end_v = 0.001,
+		.max_speed = 10,
+		.accel = 1,
+		.decel = 0.5,
+		.track_width = robot::DRIVETRAIN_WIDTH,
+		.friction_coeff = 0.5,
+		.ds = 0.5
+	});
+
+	auto& profile = cubic.get_profile();
+
+	printf("X = \\left[");
+	for (int i = 0; i < profile.size(); i++) {
+		auto point = profile[i];
+		printf("\\left(%f,\\ %f\\right)", point.real_time, point.center_v);
+		if (i != profile.size() - 1) {
+			printf(",");
+		}
+
+		if (i % 5 == 0) {
+			printf("\n");
+			fflush(stdout);
+			pros::delay(100);
+		}
+	}
+	printf("\\right]\n");
+}
+
 void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
 	if (!config::SIM_MODE) autonrunner::destroy();
 	if (!config::SIM_MODE) autonselector::destroy();
 
-	debugscreen::init();
-	// autonomous();
-	strategies::test_strategy::run();
+	test();
 
 	// test_motor_groups();
 
