@@ -95,22 +95,26 @@ void BasePath::profile_path(const ProfileParams& params) {
 
         cur.center_v = fminf(cur.center_v, vel);
         cur.angular_v = cur.curvature * cur.center_v;
-        cur.angular_a = (lst.angular_v - cur.angular_v) * (lst.center_v / params.ds);
-        cur.center_a = (lst.center_v - cur.center_v) * (lst.center_v / params.ds);
     }
 
-    for (int i = 0; i < profile.size() - 1; i++) {
+    for (int i = 1; i < profile.size(); i++) {
+        auto& lst = profile[i-1];
         auto& cur = profile[i];
-        auto& nxt = profile[i+1];
 
-        float reciprocal_dt = cur.center_v / params.ds;
-        if (std::isnan(reciprocal_dt)) {
-            reciprocal_dt = 0;
+        float dt = params.ds / lst.center_v;
+        if (std::isnan(dt) || fabsf(dt) > 10) {
+            dt = params.ds / cur.center_v; // whatever approx lol
+            if (std::isnan(dt) || fabsf(dt) > 1e2) {
+                dt = 0.1;
+            }
         }
-        
+        cur.real_time = lst.real_time + dt;
+        cur.distance = lst.distance + params.ds;
+        if (i == profile.size() - 1) continue;
 
-        cur.center_a = (nxt.center_v - cur.center_v) * (cur.center_v / dt);
-        cur.angular_a = (nxt.angular_v - cur.angular_v) * (cur.center_v / dt);
+        auto& nxt = profile[i+1];
+        cur.center_a = (nxt.center_v - cur.center_v) * (cur.center_v / params.ds);
+        cur.angular_a = (nxt.angular_v - cur.angular_v) * (cur.center_v / params.ds);
     }
 
     profile.front().center_v = params.start_v;

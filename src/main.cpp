@@ -195,10 +195,12 @@ static void collect_odom_centering_data(void) {
 
 static void test(void) {
 	pathing::CubicSpline cubic {
-		{{0, 0}, {50, 50}, {100, 0}}
+		{{0, 0}, {50, 50}, {10, 0}}
 	};
 
 	cubic.solve_coeffs(pathing::CubicSpline::natural_conditions, pathing::CubicSpline::natural_conditions);
+	std::cout << cubic.debug_out() << std::endl;
+
 	cubic.profile_path({
 		.start_v = 0.001, .end_v = 0.001,
 		.max_speed = 10,
@@ -206,7 +208,7 @@ static void test(void) {
 		.decel = 0.5,
 		.track_width = robot::DRIVETRAIN_WIDTH,
 		.friction_coeff = 0.5,
-		.ds = 0.5
+		.ds = 0.1
 	});
 
 	auto& profile = cubic.get_profile();

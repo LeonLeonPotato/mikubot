@@ -35,7 +35,6 @@ void WallMech::api_tick(void) {
 
     const auto& desired = positions[(int) set_state];
     const auto current = robot::wallmech_encoder.get_position() / 100.0f;
-    printf("Desired: %f, Current: %f\n", desired, current);
 
     if (std::abs(desired - current) < 2.5f) {
         robot::wallmech.brake();

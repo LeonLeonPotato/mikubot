@@ -645,7 +645,7 @@
       }
     },
     "upload_options": {
-      "after": "screen",
+      "after": "run",
       "description": "Im thinking miku miku oo ee oo",
       "icon": "pros",
       "slot": 1

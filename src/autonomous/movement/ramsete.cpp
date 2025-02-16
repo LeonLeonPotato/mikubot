@@ -58,8 +58,8 @@ static RamseteResult tick(
     // printf("Terms: %f, %f, %f, %f\n", angular, gain*angle_local, params.beta * p.center_v * sinf(angle_local), params.beta * crosstrack_local.x());
 
     const float max_rads_per_second = robot::max_speed() * M_TWOPI / 60.0f;
-    float motor_v = (v / robot::DRIVETRAIN_LINEAR_MULT) / max_rads_per_second;
-    float motor_w = (w / robot::DRIVETRAIN_LINEAR_MULT) / max_rads_per_second;
+    float motor_v = (v / robot::chassis.get_linear_mult()) / max_rads_per_second;
+    float motor_w = (w / robot::chassis.get_linear_mult()) / max_rads_per_second;
     if (params.reversed) motor_v *= -1;
     motor_v = std::clamp(motor_v, -params.max_linear_speed, params.max_linear_speed);
 
