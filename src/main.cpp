@@ -37,14 +37,16 @@ void initialize(void) {
 		}
 	}
 
-	// if (!pros::competition::is_connected()) {
-	// 	std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
-	// 	if (!config::SIM_MODE) {
-	// 		competition_initialize();
-	// 		debugscreen::init();
-	// 		autonomous();
-	// 	}
-	// }
+	if (!pros::competition::is_connected()) {
+		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
+		if (!config::SIM_MODE) {
+			// competition_initialize();
+			robot::match::team = 'B';
+			pros::delay(100);
+			debugscreen::init();
+			// autonomous();
+		}
+	}
 }
 
 void disabled(void) {

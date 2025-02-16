@@ -10,7 +10,7 @@ using namespace subsystems;
 using State = WallMech::State;
 
 WallMech* WallMech::instance = nullptr;
-float WallMech::positions[3] = {0.0f, 45.9f, 175.9f};
+float WallMech::positions[3] = {0.0f, 53.0f, 170.0f};
 
 void WallMech::api_tick(void) {
     if (set_state == State::OVERRIDE) {
@@ -21,7 +21,7 @@ void WallMech::api_tick(void) {
     }
 
     if (special_fire_thing != -1) {
-        if (!Conveyor::get_instance().poll_mutex()) Conveyor::get_instance().take_mutex();
+        if (!Conveyor::get_instance().poll_mutex()) Conveyor::get_instance().take_mutex(0);
 
         if (pros::millis() < special_fire_thing) {
             Conveyor::get_instance().set_desired_voltage(-6000);
@@ -35,6 +35,7 @@ void WallMech::api_tick(void) {
 
     const auto& desired = positions[(int) set_state];
     const auto current = robot::wallmech_encoder.get_position() / 100.0f;
+    printf("Desired: %f, Current: %f\n", desired, current);
 
     if (std::abs(desired - current) < 2.5f) {
         robot::wallmech.brake();

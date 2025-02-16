@@ -10,13 +10,13 @@
 
 // One VEX tile in cm
 #define TILE 60.0f
-#define pi M_PI
+#define pi ((float) M_PI)
 
-static controllers::PID linear_pid({.kp = 0.02, .ki = 0.007, .kd = 0.003});
-static controllers::PID linear_boomerang_pid({.kp = 0.00162946708084, .ki = 0.0137868457641, .kd = 0.0000372158252298});
+static controllers::PID linear_pid({.kp = 0.022, .ki = 0.06, .kd = 0.003, .disable_integral_limit = 20});
+static controllers::PID linear_boomerang_pid({.kp = 0.022, .ki = 0.1, .kd = 0.003, .disable_integral_limit = 20});
 
 static controllers::PID angular_pid({.kp = 1.0f, .ki = 0.00, .kd = 0.040625f});
-static controllers::PID angular_boomerang_pid({.kp = 0.0369241673546*10, .ki = 0.265749949547, .kd = 0.00120207358});
+static controllers::PID angular_boomerang_pid({.kp = 1.0f, .ki = 0.00, .kd = 0.040625f});
 
 static controllers::PID in_place_pid({.kp = 1.0f, .ki = 0.00, .kd = 0.040625f});
 // static controllers::PID in_place_pid({.kp = 0.0369241673546, .ki = 0.265749949547, .kd = 0.00120207358});
