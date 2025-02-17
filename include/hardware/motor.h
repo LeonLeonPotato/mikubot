@@ -34,6 +34,14 @@ class MotorGroup : public AbstractDevice {
     friend void internal_management_func_motor_group(void* args);
 
     private:
+        struct KF {
+            float estimate_mean, estimate_cov;
+
+            float process_cov;
+            float measurement_cov_offset;
+            float measurement_cov_factor;
+        } kf {.estimate_mean = 0, .estimate_cov = 0, .process_cov = 5, .measurement_cov_offset = 5, .measurement_cov_factor = 0.000125403};
+
         Gearset gearset;
         BrakeMode brake_mode;
         float slew_rate;
@@ -108,8 +116,7 @@ class MotorGroup : public AbstractDevice {
         float get_desired_velocity(void) const;
         float get_raw_velocity_average(void) const { return average(get_raw_velocities()); }
         std::vector<float> get_raw_velocities(void) const;
-        float get_filtered_velocity(void) const { return average(get_filtered_velocities()); }
-        std::vector<float> get_filtered_velocities(void) const;
+        float get_filtered_velocity(void) const { return kf.estimate_mean; }
 
         float get_efficiency_average(void) const { return average(get_efficiencies()); }
         std::vector<float> get_efficiencies(void) const;

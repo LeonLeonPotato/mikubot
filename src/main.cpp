@@ -26,29 +26,44 @@
 
 #include "pros/apix.h" // IWYU pragma: keep
 
+static bool real;
+
 void initialize(void) {
 	if (config::SIM_MODE) pros::c::serctl(SERCTL_DISABLE_COBS, nullptr);
 	std::cout << PREFIX << "Initializing robot\n";
 
-	robot::init();
-	driverinfo::init();
-	// telemetry::start_task();
-
-	for (auto& subsystem : subsystems::subsystems) {
-		if (subsystem->has_api()) {
-			subsystem->start_api_task();
+	int connected = 0;
+	for (int port = 1; port <= 21; port++) {
+		if (pros::c::get_plugged_type(port) != pros::c::E_DEVICE_NONE) {
+			connected++;
 		}
 	}
+	real = connected > 10;
+	if (real) {
+		printf("%sRobot %sprobably is not%s a raw brain (connected to %d devices)\n", 
+			CPREFIX, ANSI_CYAN.c_str(), ANSI_RESET.c_str(), connected);
+		robot::init();
+		driverinfo::init();
 
-	if (!pros::competition::is_connected()) {
-		std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
-		if (!config::SIM_MODE) {
-			// competition_initialize();
-			robot::match::team = 'R';
-			// pros::delay(100);
-			debugscreen::init();
-			autonomous();
+		for (auto& subsystem : subsystems::subsystems) {
+			if (subsystem->has_api()) {
+				subsystem->start_api_task();
+			}
 		}
+	
+		if (!pros::competition::is_connected()) {
+			std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
+			if (!config::SIM_MODE) {
+				// competition_initialize();
+				robot::match::team = 'R';
+				// pros::delay(100);
+				// debugscreen::init();
+				// autonomous();
+			}
+		}
+	} else {
+		printf("%sRobot %sprobably is%s a raw brain (connected to %d devices)\n", 
+			CPREFIX, ANSI_RED.c_str(), ANSI_RESET.c_str(), connected);
 	}
 }
 
@@ -233,154 +248,72 @@ static void test(void) {
 	printf("\\right]\n");
 }
 
-#include "nlopt/nlopt.hpp"
-#include "autodiff/reverse/var.hpp"
+static void test_motors(void) {
+	hardware::Motor test_motor (
+		2, hardware::Gearset::GREEN, hardware::BrakeMode::BRAKE,
+		{
+			.kv = 48.933, .ka = 2.300, .kf = 143.6,
+			.pid_args = {.kp = 0, .ki = 0, .kd = 0}
+		},
+		0.0f);
+	test_motor.acquire_mutex();
 
-using var = autodiff::Variable<double>;
+	std::vector<std::pair<float, float>> data;
+	std::vector<float> times;
 
-struct RobotParams {
-	float track_width;
-	float gain, tc;
-	float dt;
-} robot_params = {0.3, 0.517, 0.16, 0.05};
-constexpr int N = 5;
-float max_scale = std::pow(2, N);
+	auto start = pros::micros();
+	while (true) {
+		times.push_back((pros::micros() - start) / 1e6);
+		test_motor.set_desired_velocity(sin(times.back() * 5) * 200, 1000 * cos(times.back() * 5));
+		data.push_back({
+			test_motor.get_raw_velocity_average(),
+			test_motor.get_filtered_velocity()
+		});
+		pros::delay(10);
 
-// Define the objective function
-var objective_function(const std::vector<var>& x) {
-	var rx = 0.0, ry = 0.0, theta = 0.0, vl = 0.0, vr = 0.0;
-	var cost = 0.0;
-	for (int i = 0; i < 2*N; i += 2) {
-		vl += (robot_params.gain * x[i] - vl) / robot_params.tc * robot_params.dt;
-		vr += (robot_params.gain * x[i+1] - vr) / robot_params.tc * robot_params.dt;
-		var v = (vl + vr) / 2.0;
-		var w = (vl - vr) / robot_params.track_width;
-		var dtheta = w * robot_params.dt, travel = v * robot_params.dt;
-		var half = dtheta / 2.0;
-		var s = sinc(half);
-		rx += travel * s * sin(theta + half);
-		ry += travel * s * cos(theta + half);
-		theta += dtheta;
-	
-		cost += (pow(rx - 5, 2) + pow(ry - 10, 2)) * (1 + i) / N;
+		if (times.size() > 100) break;
 	}
-	printf("Cost: %f\n", autodiff::val(cost));
-	return cost;
-}
+	test_motor.brake();
 
-void verify(const std::vector<var>& x) {
-	var rx = 0.0, ry = 0.0, theta = 0.0, vl = 0.0, vr = 0.0;
-	var cost = 0.0;
-	for (int i = 0; i < N; i++) {
-		vl += (robot_params.gain * x[2*i] - vl) / robot_params.tc * robot_params.dt;
-		vr += (robot_params.gain * x[2*i+1] - vr) / robot_params.tc * robot_params.dt;
-		var v = (vl + vr) / 2.0;
-		var w = (vl - vr) / robot_params.track_width;
-		var dtheta = w * robot_params.dt, travel = v * robot_params.dt;
-		var half = dtheta / 2.0;
-		var s = sinc(half);
-		rx += travel * s * sin(theta + half);
-		ry += travel * s * cos(theta + half);
-		theta += dtheta;
-		printf("Time step %d: pos = [%f, %f, %f]\n",
-			i, autodiff::val(rx), autodiff::val(ry), autodiff::val(theta));
-		
+	std::cout << "X = \\left[";
+	for (int i = 0; i < times.size(); i++) {
+		std::cout << "\\left(" << times[i] << ",\\ " << data[i].first << "\\right)";
+		if (i != times.size() - 1) {
+			std::cout << ", ";
+		}
 
-		cost += (pow(rx - 50, 2) + pow(ry - 50, 2)) * (1 + i) / (2*N);
+		if (i % 5 == 0) {
+			std::cout << "\n";
+			std::cout.flush();
+			pros::delay(100);
+		}
 	}
-}
+	std::cout << "\\right]\n";
 
-// Helper function that takes a vector and an index sequence
-template <typename Func, typename Vector, std::size_t... Indices>
-auto get_derivatives_with_indices(Func&& f, const Vector& x_ad, std::index_sequence<Indices...>) {
-    return autodiff::derivatives(f, autodiff::wrt(x_ad[Indices]...));
-}
+	std::cout << "Y = \\left[";
+	for (int i = 0; i < times.size(); i++) {
+		std::cout << "\\left(" << times[i] << ",\\ " << data[i].second << "\\right)";
+		if (i != times.size() - 1) {
+			std::cout << ", ";
+		}
 
-// Wrapper function to make it easier to use
-template <typename Func, typename Vector>
-auto get_derivatives(Func&& f, const Vector& x_ad) {
-    return get_derivatives_with_indices(
-        std::forward<Func>(f), x_ad, std::make_index_sequence<2*N>{}
-    );
-}
-
-// Wrap the autodiff function to match the nlopt interface
-double nlopt_objective_function(unsigned int n, const double* x, double* grad, void* data) {
-    // Convert the input x to autodiff variables
-    std::vector<var> x_ad;
-	for (int i = 0; i < n; i++) {
-		x_ad.push_back((float) x[i]);
+		if (i % 5 == 0) {
+			std::cout << "\n";
+			std::cout.flush();
+			pros::delay(100);
+		}
 	}
-	var f = objective_function(x_ad);
-
-	auto grad_ad = get_derivatives(f, x_ad);
-
-	// Copy the gradient to the output grad
-	for (int i = 0; i < n; i++) {
-		grad[i] = autodiff::val(grad_ad[i]);
-	}
-
-	// Return the value of the function
-
-	return autodiff::val(f);
-}
-
-int asdasdasd() {
-    // Create an optimization problem object
-    nlopt::opt opt(nlopt::GD_MLSL, 2*N);  // LD_MMA is a chosen optimization algorithm, 1 means 1 variable
-
-    // Set the objective function
-    opt.set_min_objective(nlopt_objective_function, nullptr);
-
-    // Set the lower and upper bounds for the variable
-    std::vector<double> lb(2*N, -12);  // Lower bound for x is 0
-    std::vector<double> ub(2*N, 12);  // Upper bound for x is 5
-    opt.set_lower_bounds(lb);
-    opt.set_upper_bounds(ub);
-	opt.set_ftol_rel(0.01);
-
-    // std::vector<double> x {
-	// 	12, 4,
-	// 	-2, 4,
-	// 	6, 4
-	// };
-
-	std::vector<double> x(2*N, rand() % 12);
-	printf("Guess X[0]: %f\n", x[0]);
-
-    // Perform the optimization
-	long long start = pros::millis();
-    double minf;  // To hold the minimum value
-    nlopt::result result = opt.optimize(x, minf);
-	long long end = pros::millis();
-	printf("Time taken: %lld\n", end - start);
-
-    // Output the result
-    std::cout << "Result: " << result << std::endl;
-    std::cout << "Minimum value of the function: " << minf << std::endl;
-	for (int i = 0; i < 2*N; i++) {
-		std::cout << "x[" << i << "] = " << x[i] << std::endl;
-	}
-
-	// Test the result
-	std::vector<var> x_ad;
-	for (int i = 0; i < 2*N; i++) {
-		x_ad.push_back(x[i]);
-	}
-	verify(x_ad);
-	
-
-    return 0;
+	std::cout << "\\right]\n";
 }
 
 void opcontrol(void) {
 	std::cout << PREFIX << "Operator control started\n";
-	if (!config::SIM_MODE) autonrunner::destroy();
-	if (!config::SIM_MODE) autonselector::destroy();
+	if (!config::SIM_MODE && real) autonrunner::destroy();
+	if (!config::SIM_MODE && real) autonselector::destroy();
+
+	test_motors();
 
 	// test();
-
-	// asdasdasd();
 
 	// test_motor_groups();
 

@@ -24,7 +24,7 @@ void hardware::internal_management_func_motor_group(void *args) {
 
         if (group->braking) {
             group->set_value = 0;
-            pros::delay(1);
+            pros::delay(10);
             continue;
         }
 
@@ -67,7 +67,7 @@ void hardware::internal_management_func_motor_group(void *args) {
                 }
 
                 // As below this point is handling for voltage-based output, we will do an early return
-                pros::delay(1);
+                pros::delay(10);
                 continue;
             }
         }
@@ -88,7 +88,27 @@ void hardware::internal_management_func_motor_group(void *args) {
             pros::c::motor_move_voltage(p, group->set_value);
         }
 
-        pros::delay(1);
+        if (group->velo_controller.has_value()) {
+            auto& args = group->velo_controller->get_args();
+            float eff_volt = (group->set_value - args.kf * (group->set_value > 0 ? 1 : -1));
+            if (eff_volt * group->set_value < 0) eff_volt = 0;
+
+            float B = (1 / args.ka) * dt, A = 1 - (args.kv / args.ka) * dt; // (1 / (tc / gain)) * dt, 1 - (1 / tc) * dt
+            float state_estimate_prior = group->kf.estimate_mean * A + eff_volt * B;
+            float state_cov_prior = A * A * group->kf.estimate_cov + group->kf.process_cov;
+            float reading = group->get_raw_velocity_average();
+            float innovation = reading - group->kf.estimate_mean;
+            float measurement_cov = group->kf.measurement_cov_factor * reading * reading + group->kf.measurement_cov_offset;
+            if (group->ports.size() == 1) {
+                std::cout << group->kf.estimate_cov << std::endl;
+            }
+            float innovation_cov = group->kf.estimate_cov + measurement_cov * static_cast<float>(group->gearset) / 200.0f;
+            float gain = state_cov_prior / (innovation_cov);
+            group->kf.estimate_mean = state_estimate_prior + gain * innovation;
+            group->kf.estimate_cov = (1 - gain) * state_cov_prior;
+        }
+
+        pros::delay(10);
     }
 }
 
