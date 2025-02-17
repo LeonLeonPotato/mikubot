@@ -11,9 +11,10 @@ static inline float minimum_mod_diff(float a, float b, float mod) {
     return diff + (diff < -mod/2) * mod;
 }
 
-static inline float sinc(float x) {
-    if (fabsf(x) < 1e-3) return 1 - (x*x/6.0f) + (x*x*x*x/120.0f);
-    return sinf(x) / x;
+template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+static inline T sinc(T x) {
+    if (std::abs(x) < 1e-3) return 1 - (x*x/6.0f) + (x*x*x*x/120.0f);
+    return std::sin(x) / x;
 }
 
 template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>

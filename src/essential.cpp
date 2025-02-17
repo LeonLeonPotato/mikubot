@@ -16,7 +16,7 @@ pros::adi::Pneumatics robot::doinker('b', false, false);
 pros::adi::Pneumatics robot::ejector('c', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
-pros::Optical robot::classifier(1);
+pros::Optical robot::classifier(14);
 hardware::Motor robot::conveyor {8, hardware::Gearset::BLUE, hardware::BrakeMode::BRAKE};
 hardware::Motor robot::wallmech {-7, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD};
 pros::Rotation robot::wallmech_encoder(-6);
@@ -64,7 +64,7 @@ void robot::init(void) {
     chassis.start_tracking_first_time();
 
     robot::classifier.set_led_pwm(255);
-    vexDeviceOpticalIntegrationTimeSet(vexDeviceGetByIndex(robot::classifier.get_port()), 20);
+    vexDeviceOpticalIntegrationTimeSet(vexDeviceGetByIndex(robot::classifier.get_port()), 10);
 
     wallmech_encoder.set_position(0);
 

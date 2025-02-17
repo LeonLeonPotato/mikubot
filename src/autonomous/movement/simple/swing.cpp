@@ -60,10 +60,12 @@ DEFINE_ASYNC(swing_to, PIDGroup, const Eigen::Vector2f& point)
 {
     Future<SimpleResult> future;
     pros::Task task([future, &params, pids, &point] () mutable {
+        robot::chassis.take_drive_mutex();
         future.set_value(swing_to_cancellable(
             point, params, pids, 
             future.get_state()->cancelled
         ));
+        robot::chassis.give_drive_mutex();
     });
     return future;
 }

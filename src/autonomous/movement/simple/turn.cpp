@@ -52,10 +52,12 @@ DEFINE_ASYNC(turn_towards, controllers::PID&, const float angle)
 {
     Future<SimpleResult> future;
     pros::Task task([future, &params, pids, angle] () mutable {
+        robot::chassis.take_drive_mutex();
         future.set_value(turn_towards_cancellable(
             angle, params, pids, 
             future.get_state()->cancelled
         ));
+        robot::chassis.give_drive_mutex();
     });
     return future;
 }

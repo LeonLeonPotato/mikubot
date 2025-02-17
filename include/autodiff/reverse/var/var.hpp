@@ -1352,6 +1352,9 @@ template<typename T, typename U, Requires<isArithmetic<U>> = true> ExprPtr<T> op
 // TRIGONOMETRIC FUNCTIONS (DEFINED FOR ARGUMENTS OF TYPE Variable)
 //------------------------------------------------------------------------------
 template<typename T> ExprPtr<T> sin(const Variable<T>& x) { return sin(x.expr); }
+template<typename T> ExprPtr<T> sinc(const Variable<T>& x) {
+    return condition(abs(x) < static_cast<T>(1e-3), static_cast<T>(1.0) - static_cast<T>(1.0) / static_cast<T>(6.0) * x * x, sin(x) / x);
+}
 template<typename T> ExprPtr<T> cos(const Variable<T>& x) { return cos(x.expr); }
 template<typename T> ExprPtr<T> tan(const Variable<T>& x) { return tan(x.expr); }
 template<typename T> ExprPtr<T> asin(const Variable<T>& x) { return asin(x.expr); }
@@ -1441,6 +1444,12 @@ template<typename... Args>
 auto wrt(Args&&... args)
 {
     return Wrt<Args&&...>{ std::forward_as_tuple(std::forward<Args>(args)...) };
+}
+
+template <typename T>
+auto wrt(std::tuple<T> args)
+{
+    return Wrt<T>{ args };
 }
 
 /// Return the derivatives of a dependent variable y with respect given independent variables.

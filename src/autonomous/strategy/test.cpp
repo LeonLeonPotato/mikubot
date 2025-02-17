@@ -47,8 +47,8 @@ static void part1_ring_side(void) {
     );
 
     auto res5 = movement::simple::boomerang(
-        {-77 * mult, 26, -pi/2 * mult}, 
-        0.6f, 
+        {-80 * mult, 35, -pi/2 * mult}, 
+        0.7f, 
         {.reversed=true, .linear_exit_threshold=4.0, .angular_exit_threshold=999, .timeout=3000}, 
         boomerang_group);
 
@@ -56,31 +56,37 @@ static void part1_ring_side(void) {
     pros::delay(100);
 
     auto res6 = movement::simple::turn_towards(
-        -pi/3 * mult,
+        0,
         {.angular_exit_threshold = -1, .timeout = 800},
         in_place_pid
     );
 
     auto res7 = movement::simple::boomerang(
-        {-125 * mult, 60, 0},
-        0.3f,
-        {.linear_exit_threshold=5.0, .angular_exit_threshold=999, .max_linear_speed=1.0f, .timeout=3000},
+        {-125 * mult, 60, -pi/4 * mult},
+        0.5f,
+        {.linear_exit_threshold=5.0, .angular_exit_threshold=999, .timeout=3000},
         swing_group
+    );
+
+    auto res71 = movement::simple::turn_towards(
+        0,
+        {.angular_exit_threshold=-1, .timeout=500},
+        in_place_pid
     );
 
     robot::brake();
     pros::delay(500);
 
-    auto res71 = movement::simple::forward(
+    auto res72 = movement::simple::forward(
         25,
         {.linear_exit_threshold=0.3, .timeout=3000},
         linear_pid
     );
 
     pros::delay(600);
-    conveyor.set_desired_voltage(-12000);
+    // conveyor.set_desired_voltage(-12000);
     pros::delay(200);
-    conveyor.set_desired_voltage(12000);
+    // conveyor.set_desired_voltage(12000);
 
     auto res9 = movement::simple::swing_to(
         {-TILE * mult, TILE * 1.3},
@@ -141,7 +147,7 @@ static void part2_ring_side(void) {
     // );
 
     auto ret = movement::simple::boomerang(  
-        {-40 * mult, -50, pi},
+        {-40 * mult, -80, pi},
         0.5f,
         {.linear_exit_threshold = 5.0, .angular_exit_threshold=999, .timeout = 3000},
         swing_group
@@ -151,9 +157,9 @@ static void part2_ring_side(void) {
     pros::delay(1000);
 
     auto backagain = movement::simple::forward(
-        TILE/2,
-        {.reversed=true, .linear_exit_threshold = 0.3, .timeout = 1500},
-        in_place_pid
+        TILE,
+        {.reversed=true, .linear_exit_threshold = 1.0, .timeout = 1500},
+        linear_pid
     );
 
     auto res3 = movement::simple::turn_towards(

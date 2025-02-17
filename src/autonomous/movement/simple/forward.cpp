@@ -64,10 +64,12 @@ DEFINE_ASYNC(forward, controllers::PID&, const float cm)
 {
     Future<SimpleResult> future;
     pros::Task task([future, &params, pids, cm] () mutable {
+        robot::chassis.take_drive_mutex();
         future.set_value(forward_cancellable(
             cm, params, pids, 
             future.get_state()->cancelled
         ));
+        robot::chassis.give_drive_mutex();
     });
     return future;
 }

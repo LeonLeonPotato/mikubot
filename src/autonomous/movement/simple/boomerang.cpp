@@ -108,10 +108,12 @@ DEFINE_ASYNC(boomerang, PIDGroup,
 {
     Future<SimpleResult> future;
     pros::Task task([future, &params, pids, &pose, lead] () mutable {
+        robot::chassis.take_drive_mutex();
         future.set_value(boomerang_cancellable(
             pose, lead, params, pids, 
             future.get_state()->cancelled
         ));
+        robot::chassis.give_drive_mutex();
     });
     return future;
 }
