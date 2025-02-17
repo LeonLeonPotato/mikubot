@@ -15,16 +15,14 @@ enum class MPCScaling {
 
 struct MPCParams {
     nlopt::algorithm alg;
-    int N = 5;
     MPCScaling scaling = MPCScaling::LINEAR;
     float ftol_rel = 0.01;
     float max_time = 0.02;
+    float dt;
 };
 
 struct DiffdriveMPCParams : public MPCParams {
-    float track_width,
-            gain, tc,
-            dt;
+    float track_width, gain, tc;
 };
 
 template <typename T>
@@ -34,5 +32,9 @@ struct DiffdriveState {
 
 struct Penalty {
     float x, y, theta, vl = 0, vr = 0;
+};
+
+struct TestMotorMPCParams : public MPCParams {
+    float gain, tc;
 };
 }
