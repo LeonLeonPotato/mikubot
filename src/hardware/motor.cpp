@@ -99,9 +99,6 @@ void hardware::internal_management_func_motor_group(void *args) {
             float reading = group->get_raw_velocity_average();
             float innovation = reading - group->kf.estimate_mean;
             float measurement_cov = group->kf.measurement_cov_factor * reading * reading + group->kf.measurement_cov_offset;
-            if (group->ports.size() == 1) {
-                std::cout << group->kf.estimate_cov << std::endl;
-            }
             float innovation_cov = group->kf.estimate_cov + measurement_cov * static_cast<float>(group->gearset) / 200.0f;
             float gain = state_cov_prior / (innovation_cov);
             group->kf.estimate_mean = state_estimate_prior + gain * innovation;

@@ -316,6 +316,8 @@ static void test_motor(void) {
 			.pid_args = {.kp = 0, .ki = 0, .kd = 0}
 		},
 		0.0f);
+	pros::c::motor_set_encoder_units(test_motor.get_ports()[0], 
+		pros::E_MOTOR_ENCODER_DEGREES);
 	test_motor.acquire_mutex();
 	printf("%sMotor acquired mutex\n", CPREFIX);
 
@@ -324,7 +326,9 @@ static void test_motor(void) {
 		{
 			.x = 1.0,
 			.y = 0.0,
-			.theta = 0.0
+			.theta = 0.0,
+			.vl = 0,
+			.vr = 0
 		}
 	);
 }
@@ -334,7 +338,7 @@ void opcontrol(void) {
 	if (!config::SIM_MODE && real) autonrunner::destroy();
 	if (!config::SIM_MODE && real) autonselector::destroy();
 
-	// test_motor();
+	test_motor();
 
 	// test();
 

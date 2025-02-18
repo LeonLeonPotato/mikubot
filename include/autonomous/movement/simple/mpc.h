@@ -11,7 +11,8 @@ enum class MPCScaling {
     NONE,
     LINEAR,
     QUADRATIC,
-    EXPONENTIAL
+    EXPONENTIAL,
+    DECAYING
 };
 
 struct MPCParams {
