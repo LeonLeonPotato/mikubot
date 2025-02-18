@@ -10,7 +10,7 @@ using namespace subsystems;
 using State = WallMech::State;
 
 WallMech* WallMech::instance = nullptr;
-float WallMech::positions[3] = {0.0f, 53.0f, 170.0f};
+float WallMech::positions[3] = {0.0f, 50.0f, 170.0f};
 
 void WallMech::api_tick(void) {
     if (set_state == State::OVERRIDE) {
@@ -36,7 +36,7 @@ void WallMech::api_tick(void) {
     const auto& desired = positions[(int) set_state];
     const auto current = robot::wallmech_encoder.get_position() / 100.0f;
 
-    if (std::abs(desired - current) < 2.5f) {
+    if (std::abs(desired - current) < 1.0f) {
         robot::wallmech.brake();
     } else {
         float control = pid.get(desired - current);

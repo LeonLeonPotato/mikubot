@@ -1,5 +1,6 @@
 #include "main.h"
 #include "autodiff/reverse/var/var.hpp"
+#include "autonomous/movement/simple/mpc.h"
 #include "autonomous/movement/simple/turn.h"
 #include "autonomous/strategy/utils.h"
 #include "config.h"
@@ -39,6 +40,7 @@ void initialize(void) {
 		}
 	}
 	real = connected > 10;
+	
 	if (real) {
 		printf("%sRobot %sprobably is not%s a raw brain (connected to %d devices)\n", 
 			CPREFIX, ANSI_CYAN.c_str(), ANSI_RESET.c_str(), connected);
@@ -249,6 +251,64 @@ static void test(void) {
 }
 
 static void test_motors(void) {
+	// hardware::Motor test_motor (
+	// 	2, hardware::Gearset::GREEN, hardware::BrakeMode::BRAKE,
+	// 	{
+	// 		.kv = 48.933, .ka = 2.300, .kf = 143.6,
+	// 		.pid_args = {.kp = 0, .ki = 0, .kd = 0}
+	// 	},
+	// 	0.0f);
+	// test_motor.acquire_mutex();
+
+	// std::vector<std::pair<float, float>> data;
+	// std::vector<float> times;
+
+	// auto start = pros::micros();
+	// while (true) {
+	// 	times.push_back((pros::micros() - start) / 1e6);
+	// 	test_motor.set_desired_velocity(sin(times.back() * 5) * 200, 1000 * cos(times.back() * 5));
+	// 	data.push_back({
+	// 		test_motor.get_raw_velocity_average(),
+	// 		test_motor.get_filtered_velocity()
+	// 	});
+	// 	pros::delay(10);
+
+	// 	if (times.size() > 100) break;
+	// }
+	// test_motor.brake();
+
+	// std::cout << "X = \\left[";
+	// for (int i = 0; i < times.size(); i++) {
+	// 	std::cout << "\\left(" << times[i] << ",\\ " << data[i].first << "\\right)";
+	// 	if (i != times.size() - 1) {
+	// 		std::cout << ", ";
+	// 	}
+
+	// 	if (i % 5 == 0) {
+	// 		std::cout << "\n";
+	// 		std::cout.flush();
+	// 		pros::delay(100);
+	// 	}
+	// }
+	// std::cout << "\\right]\n";
+
+	// std::cout << "Y = \\left[";
+	// for (int i = 0; i < times.size(); i++) {
+	// 	std::cout << "\\left(" << times[i] << ",\\ " << data[i].second << "\\right)";
+	// 	if (i != times.size() - 1) {
+	// 		std::cout << ", ";
+	// 	}
+
+	// 	if (i % 5 == 0) {
+	// 		std::cout << "\n";
+	// 		std::cout.flush();
+	// 		pros::delay(100);
+	// 	}
+	// }
+	// std::cout << "\\right]\n";
+}
+
+static void test_motor(void) {
 	hardware::Motor test_motor (
 		2, hardware::Gearset::GREEN, hardware::BrakeMode::BRAKE,
 		{
@@ -257,53 +317,16 @@ static void test_motors(void) {
 		},
 		0.0f);
 	test_motor.acquire_mutex();
+	printf("%sMotor acquired mutex\n", CPREFIX);
 
-	std::vector<std::pair<float, float>> data;
-	std::vector<float> times;
-
-	auto start = pros::micros();
-	while (true) {
-		times.push_back((pros::micros() - start) / 1e6);
-		test_motor.set_desired_velocity(sin(times.back() * 5) * 200, 1000 * cos(times.back() * 5));
-		data.push_back({
-			test_motor.get_raw_velocity_average(),
-			test_motor.get_filtered_velocity()
-		});
-		pros::delay(10);
-
-		if (times.size() > 100) break;
-	}
-	test_motor.brake();
-
-	std::cout << "X = \\left[";
-	for (int i = 0; i < times.size(); i++) {
-		std::cout << "\\left(" << times[i] << ",\\ " << data[i].first << "\\right)";
-		if (i != times.size() - 1) {
-			std::cout << ", ";
+	movement::simple::test_motor<5>(
+		test_motor,
+		{
+			.x = 1.0,
+			.y = 0.0,
+			.theta = 0.0
 		}
-
-		if (i % 5 == 0) {
-			std::cout << "\n";
-			std::cout.flush();
-			pros::delay(100);
-		}
-	}
-	std::cout << "\\right]\n";
-
-	std::cout << "Y = \\left[";
-	for (int i = 0; i < times.size(); i++) {
-		std::cout << "\\left(" << times[i] << ",\\ " << data[i].second << "\\right)";
-		if (i != times.size() - 1) {
-			std::cout << ", ";
-		}
-
-		if (i % 5 == 0) {
-			std::cout << "\n";
-			std::cout.flush();
-			pros::delay(100);
-		}
-	}
-	std::cout << "\\right]\n";
+	);
 }
 
 void opcontrol(void) {
@@ -311,7 +334,7 @@ void opcontrol(void) {
 	if (!config::SIM_MODE && real) autonrunner::destroy();
 	if (!config::SIM_MODE && real) autonselector::destroy();
 
-	test_motors();
+	// test_motor();
 
 	// test();
 

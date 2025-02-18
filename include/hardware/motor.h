@@ -73,6 +73,7 @@ class MotorGroup : public AbstractDevice {
         ~MotorGroup();
 
         bool is_connected(void) const override;
+        const auto& get_velo_controller(void) const { return velo_controller; }
 
         template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
         void set_desired_voltage(T voltage) {

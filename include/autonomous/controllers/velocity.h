@@ -20,7 +20,7 @@ class VelocityController {
         VelocityController(const VelocityControllerArgs& args) 
             : args(args), pid{args.pid_args} { reset(); }
 
-        const VelocityControllerArgs& get_args(void) {
+        const VelocityControllerArgs& get_args(void) const {
             return args;
         }
 
