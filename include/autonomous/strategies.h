@@ -1,6 +1,7 @@
 #pragma once
 
 #include "autonomous/strategy/test.h"
+#include "autonomous/strategy/mpcstrat.h"
 
 #include <map>
 #include <string>
@@ -8,6 +9,7 @@
 namespace strategies {
 enum class Strategy {
     Test,
+    MPCStrat,
     None
 };
 

@@ -54,11 +54,11 @@ static void logging_task(void* args) {
     int last_dump_time = pros::millis();
     while (true) {
         char buffer[256] = {0};
-        sprintf(buffer, "%lld,%f,%f,%f,%f,%f\n",
-            pros::micros(),
+        sprintf(buffer, "%f,%f,%f,%f,%f,%f\n",
+            pros::micros() / 1e6f,
             robot::x(), robot::y(), robot::theta(),
-            robot::left_motors.get_raw_velocity_average(),
-            robot::right_motors.get_raw_velocity_average()
+            robot::left_motors.get_filtered_velocity(),
+            robot::right_motors.get_filtered_velocity()
         );
 
         if (mode & TO_STDOUT) {

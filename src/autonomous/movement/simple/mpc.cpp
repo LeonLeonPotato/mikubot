@@ -1,5 +1,7 @@
 #include "autonomous/movement/simple/mpc.h"
 
+#include "ansicodes.h"
+#include "essential.h"
 #include "nlopt/nlopt.hpp"
 #include "autodiff/reverse/var.hpp"
 #include "pros/rtos.hpp"
@@ -54,20 +56,25 @@ static T ad_diffdrive_costfunc(
     auto copy = state;
     T cost = 0.0;
     for (int i = 0; i < N; i++) {
-        copy.vl += (params.gain * x[2*i] - copy.vl) / params.tc * params.dt;
-        copy.vr += (params.gain * x[2*i+1] - copy.vr) / params.tc * params.dt;
-        T v = (copy.vl + copy.vr) / 2.0;
-        T w = (copy.vl - copy.vr) / params.track_width;
-        T half = w * params.dt / 2.0, travel = v * params.dt;
+        T vl_change = (params.gain * x[2*i] - copy.vl) / params.tc;
+        T vr_change = (params.gain * x[2*i+1] - copy.vr) / params.tc;
+        copy.vl += vl_change * params.optimization_dt;
+        copy.vr += vr_change * params.optimization_dt;
+        T v = (2*M_PI/60.0) * params.linear_mult * (copy.vl + copy.vr) / 2.0;
+        T w = (2*M_PI/60.0) * params.linear_mult * (copy.vl - copy.vr) / params.track_width;
+        T half = w * params.optimization_dt / 2.0, travel = v * params.optimization_dt;
         T s = sinc(half);
         copy.rx += travel * s * sin(copy.theta + half);
         copy.ry += travel * s * cos(copy.theta + half);
         copy.theta += half * 2.0;
 
         const auto& dstate = desired[i];
-        const auto& error = copy - dstate;
+        auto error = copy - dstate;
         cost += (error * error * penalty).sum() * get_scaling(params.scaling, i, N);
+        cost += (vl_change * vl_change + vr_change * vr_change) * penalty.u_diff_penalty;
+        cost += (x[2*i] * x[2*i] + x[2*i+1] * x[2*i+1]) * penalty.u_penalty / params.optimization_dt;
     }
+
     return cost;
 }
 
@@ -88,125 +95,248 @@ static double nlopt_diffdrive_costfunc(unsigned int n, const double* x, double* 
 	return autodiff::val(f);
 }
 
-template <typename T>
-static T ad_motor_func(const int N, 
-    const std::vector<T>& x, 
-    const std::vector<DiffdriveState<var>>& desired,
-    const DiffdriveState<T>& state,
-    const DiffdriveMPCParams& params, 
-    const DiffdrivePenalty& penalty) 
-{
-    auto copy = state;
-    T cost = 0.0;
-    for (int i = 0; i < N; i++) {
-        T change = (params.gain * x[i] - copy.vl) / params.tc;
-        copy.vl += change * params.dt / 1000.0f;
-        copy.y += copy.vl * (2 * M_PI / 60.0f) * (180 / M_PI) * params.dt / 1000.0f;
-        copy.x += copy.y * params.dt / 1000.0f;
-
-        const auto& dstate = desired[i];
-        const auto& error = copy - dstate;
-        cost += ((error * error * penalty).sum()) * get_scaling(params.scaling, i, N);
-        cost += 0.000 * change * change;
-        cost += 0.00002 * x[i] * x[i];
-    }
-    return cost;
-}
-
 template <int N>
-static double nlopt_motor_costfunc(unsigned int n, const double* x, double* grad, void* data) {
-    auto [desired, state, params, penality] = *static_cast<AggregateData*>(data);
-
-    std::vector<var> x_ad; 
-    for (int i = 0; i < n; i++) x_ad.push_back(x[i]);
-
-    var f = ad_motor_func<var>(N, x_ad, desired, state, params, penality);
-
-    if (grad) {
-        auto grad_ad = get_derivatives<N>(f, x_ad);
-        for (int i = 0; i < n; i++) grad[i] = autodiff::val(grad_ad[i]);
+void follow_recording(const std::string& path, DiffdriveMPCParams mpc_params, DiffdrivePenalty penalty) {
+    FILE* file = fopen(path.c_str(), "r");
+    if (!file) {
+        std::cerr << "Failed to open file " << path << std::endl;
+        return;
     }
 
-    return autodiff::val(f);
-}
-
-static std::vector<DiffdriveState<var>> get_desired(const hardware::Motor& motor, int N, int dt) {
-    auto time = pros::millis();
+    std::vector<float> times;
     std::vector<DiffdriveState<var>> desired;
-    for (float i = 1; i <= N; i++) {
-        desired.push_back({
-            sin((time + i * dt) / 1000.0f) * 100, i, i, i, i
-        });
+    int n_poses = 0;
+
+    char header[256];
+    fscanf(file, "%s", header);
+
+    float _ftime = -1;
+    while (!feof(file)) {
+        float time, x, y, theta, vl, vr;
+        fscanf(file, "%f,%f,%f,%f,%f,%f", &time, &x, &y, &theta, &vl, &vr);
+        desired.push_back({x, y, theta, vl, vr});
+        if (_ftime == -1) _ftime = time;
+        times.push_back(time - _ftime);
+        n_poses++;
     }
-    return desired;
-}
 
-template <int N>
-void movement::simple::test_motor(
-    hardware::Motor& motor,      
-    const DiffdrivePenalty &penalty) 
-{
-    auto abs_start = pros::millis();
-    std::vector<double> x(N, 0.0);
-    DiffdriveMPCParams params {
-        .track_width = 1,
-        .gain = 1 / motor.get_velo_controller()->get_args().ka,
-        .tc = motor.get_velo_controller()->get_args().kv / motor.get_velo_controller()->get_args().ka
-    };
-    params.dt = 25;
-    params.alg = nlopt::algorithm::LD_LBFGS;
-    params.scaling = MPCScaling::EXPONENTIAL;
-    params.ftol_rel = 0.0001;
-    params.max_time = 20;
+    bool set_optim_time = mpc_params.optimization_dt == -1;
+    int distance_parametrized_i = 0;
+    int time_parametrized_i = 0;
+    float time_integral = 0;
+    float last_time = pros::micros() / 1e6f;
+    std::vector<double> u(2 * N, 0.0);
 
-    float sum = 0;
+    pros::delay(mpc_params.dt_guess * 1000);
 
-    while (true) {
-        auto start_t = pros::millis();
-        std::vector<DiffdriveState<var>> desired = get_desired(motor, N, params.dt);
+    while (distance_parametrized_i != n_poses && time_parametrized_i != n_poses) {
+        float dt = pros::micros() / 1e6f - last_time;
+        last_time = pros::micros() / 1e6f;
+        if (set_optim_time) mpc_params.optimization_dt = dt;
+
+        if (dt > 0.05) {
+            printf("%sWarning: dt is %f seconds, this is high\n", CPREFIX, dt);
+        }
+
+        while (distance_parametrized_i < n_poses - 1) {
+            const auto& p = desired[distance_parametrized_i];
+
+            Eigen::Vector2f deriv = {
+                sinf(autodiff::val(p.theta)), 
+                cosf(autodiff::val(p.theta))
+            };
+            Eigen::Vector2f pos = {
+                autodiff::val(p.x), 
+                autodiff::val(p.y)
+            };
+            
+            if (deriv.dot(pos - robot::pos()) > 0) break;
+            distance_parametrized_i++;
+        }
+
+        int disagreement_factor = 5;
+        bool use_time_scaling = true;
+        float scale = 1.0f;
+
+        if (use_time_scaling) {
+            if (abs(time_parametrized_i - distance_parametrized_i) > disagreement_factor) { // disagreement
+                // warp time
+                float beta = (abs(time_parametrized_i - distance_parametrized_i) - disagreement_factor) / (float) disagreement_factor;
+                scale = (sqrtf(fmaxf(0, 1 - beta * beta)) + expf(-2 * beta)) / 2.0f;
+            }
+        }
+
+        time_integral += dt * scale;
+
+        time_parametrized_i = std::max(
+            std::upper_bound(times.begin(), times.end(), time_integral) - times.begin() - 1, 
+            0
+        );
+
+        if (time_parametrized_i == n_poses - 1) break;
+
         DiffdriveState<var> state {
-            sum,
-            motor.get_position_average(),
-            motor.get_position_average(),
-            motor.get_filtered_velocity(),
-            motor.get_filtered_velocity()
+            robot::x(), robot::y(), robot::theta(), 
+            robot::left_motors.get_filtered_velocity(), 
+            robot::right_motors.get_filtered_velocity()
         };
 
-        AggregateData data {desired, state, params, penalty};
+        AggregateData data {desired, state, mpc_params, penalty};
 
-        nlopt::opt opt(params.alg, N);
-        opt.set_maxtime(params.max_time);
-        opt.set_ftol_rel(params.ftol_rel);
-        std::vector<double> lb(N, -12);
-        opt.set_lower_bounds(lb);
-        std::vector<double> ub(N, 12);
-        opt.set_upper_bounds(ub);
-        opt.set_min_objective(nlopt_motor_costfunc<N>, &data);
+        nlopt::opt opt(mpc_params.alg, 2 * N);
+        opt.set_ftol_rel(mpc_params.ftol_rel);
+        std::vector<double> lb(2 * N, -12); opt.set_lower_bounds(lb);
+        std::vector<double> ub(2 * N, 12); opt.set_upper_bounds(ub);
+        opt.set_min_objective(nlopt_diffdrive_costfunc<N>, &data);
 
         double minf;
-        nlopt::result result = opt.optimize(x, minf);
+        nlopt::result result = opt.optimize(u, minf);
+
         if (result < 0) {
             std::cerr << "NLOPT failed with code " << result << std::endl;
+            break;
         }
 
-        motor.set_desired_voltage(x[0] * 500 + x[1] * 250 + x[2] * 125);
+        bool adjust_for_friction = false;
 
-        for (int i = 0; i < N-1; i++) {
-            std::swap(x[i], x[i+1]);
+        float VL = (u[0] * 0.5 + u[2] * 0.25 + u[4] * 0.125) / 12.0f;
+        float VR = (u[1] * 0.5 + u[3] * 0.25 + u[5] * 0.125) / 12.0f;
+        robot::chassis.set_voltage(
+            VL + (adjust_for_friction ? mpc_params.kf * (VL > 0 ? 1 : -1) : 0),
+            VR + (adjust_for_friction ? mpc_params.kf * (VR > 0 ? 1 : -1) : 0)
+        );
+
+        for (int i = 0; i < 2 * N - 2; i++) {
+            std::swap(u[i], u[i+2]);
         }
-        x[N-1] = 0.0;
+        u[2 * N - 2] = 0.0;
+        u[2 * N - 1] = 0.0;
 
-        // pros::Task::delay_until(&start_t, params.dt + 10);
         pros::delay(10);
-        params.dt = pros::millis() - start_t;
-        sum += motor.get_position_average() * params.dt / 1000.0f;
-        printf("%f,%f,%f,%f,%f\n", 
-            (pros::millis() - abs_start) / 1e3f, x[0], motor.get_position_average(), sum, params.dt / 1e3f);
     }
+
+    robot::chassis.brake();
 }
 
-volatile auto func_instance_3 = movement::simple::test_motor<3>;
-volatile auto func_instance_5 = movement::simple::test_motor<5>;
-volatile auto func_instance_7 = movement::simple::test_motor<7>;
-volatile auto func_instance_10 = movement::simple::test_motor<10>;
-volatile auto func_instance_15 = movement::simple::test_motor<15>;
+
+
+// template <typename T>
+// static T ad_motor_func(const int N, 
+//     const std::vector<T>& x, 
+//     const std::vector<DiffdriveState<var>>& desired,
+//     const DiffdriveState<T>& state,
+//     const DiffdriveMPCParams& params, 
+//     const DiffdrivePenalty& penalty) 
+// {
+//     auto copy = state;
+//     T cost = 0.0;
+//     for (int i = 0; i < N; i++) {
+//         T change = (params.gain * x[i] - copy.vl) / params.tc;
+//         copy.vl += change * params.dt_guess / 1000.0f;
+//         copy.y += copy.vl * (2 * M_PI / 60.0f) * (180 / M_PI) * params.dt_guess / 1000.0f;
+//         copy.x += copy.y * params.dt_guess / 1000.0f;
+
+//         const auto& dstate = desired[i];
+//         const auto& error = copy - dstate;
+//         cost += ((error * error * penalty).sum()) * get_scaling(params.scaling, i, N);
+//         cost += 0.000 * change * change;
+//         cost += 0.00002 * x[i] * x[i];
+//     }
+//     return cost;
+// }
+
+// template <int N>
+// static double nlopt_motor_costfunc(unsigned int n, const double* x, double* grad, void* data) {
+//     auto [desired, state, params, penality] = *static_cast<AggregateData*>(data);
+
+//     std::vector<var> x_ad; 
+//     for (int i = 0; i < n; i++) x_ad.push_back(x[i]);
+
+//     var f = ad_motor_func<var>(N, x_ad, desired, state, params, penality);
+
+//     if (grad) {
+//         auto grad_ad = get_derivatives<N>(f, x_ad);
+//         for (int i = 0; i < n; i++) grad[i] = autodiff::val(grad_ad[i]);
+//     }
+
+//     return autodiff::val(f);
+// }
+
+// static std::vector<DiffdriveState<var>> get_desired(const hardware::Motor& motor, int N, int dt) {
+//     auto time = pros::millis();
+//     std::vector<DiffdriveState<var>> desired;
+//     for (float i = 1; i <= N; i++) {
+//         desired.push_back({
+//             sin((time + i * dt) / 1000.0f) * 100, i, i, i, i
+//         });
+//     }
+//     return desired;
+// }
+
+// template <int N>
+// void movement::simple::test_motor(
+//     hardware::Motor& motor,      
+//     const DiffdrivePenalty &penalty) 
+// {
+//     auto abs_start = pros::millis();
+//     std::vector<double> x(N, 0.0);
+//     DiffdriveMPCParams params {
+//         .track_width = 1,
+//         .gain = 1 / motor.get_velo_controller()->get_args().ka,
+//         .tc = motor.get_velo_controller()->get_args().kv / motor.get_velo_controller()->get_args().ka
+//     };
+//     params.alg = nlopt::algorithm::LD_LBFGS;
+//     params.scaling = MPCScaling::EXPONENTIAL;
+//     params.ftol_rel = 0.0001;
+
+//     float sum = 0;
+
+//     while (true) {
+//         auto start_t = pros::millis();
+//         std::vector<DiffdriveState<var>> desired = get_desired(motor, N, params.optimization_dt);
+//         DiffdriveState<var> state {
+//             sum,
+//             motor.get_position_average(),
+//             motor.get_position_average(),
+//             motor.get_filtered_velocity(),
+//             motor.get_filtered_velocity()
+//         };
+
+//         AggregateData data {desired, state, params, penalty};
+
+//         nlopt::opt opt(params.alg, N);
+//         opt.set_ftol_rel(params.ftol_rel);
+//         std::vector<double> lb(N, -12);
+//         opt.set_lower_bounds(lb);
+//         std::vector<double> ub(N, 12);
+//         opt.set_upper_bounds(ub);
+//         opt.set
+//         opt.set_min_objective(nlopt_motor_costfunc<N>, &data);
+
+//         double minf;
+//         nlopt::result result = opt.optimize(x, minf);
+//         if (result < 0) {
+//             std::cerr << "NLOPT failed with code " << result << std::endl;
+//         }
+
+//         motor.set_desired_voltage(x[0] * 500 + x[1] * 250 + x[2] * 125);
+
+//         for (int i = 0; i < N-1; i++) {
+//             std::swap(x[i], x[i+1]);
+//         }
+//         x[N-1] = 0.0;
+
+//         // pros::Task::delay_until(&start_t, params.dt + 10);
+//         pros::delay(10);
+//         params.dt = pros::millis() - start_t;
+//         sum += motor.get_position_average() * params.dt / 1000.0f;
+//         printf("%f,%f,%f,%f,%f\n", 
+//             (pros::millis() - abs_start) / 1e3f, x[0], motor.get_position_average(), sum, params.dt / 1e3f);
+//     }
+// }
+
+// volatile auto func_instance_3 = movement::simple::test_motor<3>;
+// volatile auto func_instance_5 = movement::simple::test_motor<5>;
+// volatile auto func_instance_7 = movement::simple::test_motor<7>;
+// volatile auto func_instance_10 = movement::simple::test_motor<10>;
+// volatile auto func_instance_15 = movement::simple::test_motor<15>;

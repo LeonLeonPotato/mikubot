@@ -1,5 +1,6 @@
 #pragma once
 
+#include "autodiff/reverse/var/var.hpp"
 #include "autonomous/movement/base_movement.h"
 #include "hardware/motor.h"
 #include "pose.h"
@@ -19,16 +20,18 @@ struct MPCParams {
     nlopt::algorithm alg;
     MPCScaling scaling = MPCScaling::LINEAR;
     float ftol_rel = 0.01;
-    float max_time = 20;
-    float dt;
+    float dt_guess = 20;
+    float optimization_dt = -1;
 };
 
 struct DiffdriveMPCParams : public MPCParams {
-    float track_width, gain, tc;
+    float track_width, gain, tc, kf, linear_mult;
 };
 
 struct DiffdrivePenalty {
     float x, y, theta, vl = 0, vr = 0;
+    float u_penalty;
+    float u_diff_penalty;
 };
 
 template <typename T>
@@ -47,9 +50,6 @@ struct DiffdriveState {
         return x + y + theta + vl + vr;
     }
 
-    DiffdriveState<T> operator*(const T& scalar) const {
-        return {x * scalar, y * scalar, theta * scalar, vl * scalar, vr * scalar};
-    }
 
     DiffdriveState<T> operator*(const DiffdriveState<T>& other) const {
         return {x * other.x, y * other.y, theta * other.theta, vl * other.vl, vr * other.vr};
@@ -59,6 +59,13 @@ struct DiffdriveState {
         return {x * penality.x, y * penality.y, theta * penality.theta, vl * penality.vl, vr * penality.vr};
     }
 };
+
+template <int N>
+void follow_recording(
+    const std::string& path,
+    DiffdriveMPCParams mpc_params,
+    DiffdrivePenalty penalty
+);
 
 template <int N>
 void test_motor(
