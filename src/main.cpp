@@ -338,17 +338,7 @@ void opcontrol(void) {
 	if (!config::SIM_MODE && real) autonrunner::destroy();
 	if (!config::SIM_MODE && real) autonselector::destroy();
 
-	test_motor();
-
-	// test();
-
-	// test_motor_groups();
-
-	// robot::chassis.take_drive_mutex();
-	// pros::delay(1000);
-	// robot::chassis.give_drive_mutex();
-
-	// collect_odom_centering_data();
+	// test_motor();
 
 	for (auto& subsystem : subsystems::subsystems) {
 		subsystem->take_mutex();

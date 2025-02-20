@@ -62,23 +62,14 @@ static void part1_ring_side(void) {
     );
 
     auto res7 = movement::simple::boomerang(
-        {-125 * mult, 60, -pi/4 * mult},
-        0.5f,
+        {-125 * mult, 80, 0},
+        0.3f,
         {.linear_exit_threshold=5.0, .angular_exit_threshold=999, .timeout=3000},
         swing_group
     );
 
-    auto res71 = movement::simple::turn_towards(
-        0,
-        {.angular_exit_threshold=-1, .timeout=500},
-        in_place_pid
-    );
-
-    robot::brake();
-    pros::delay(500);
-
     auto res72 = movement::simple::forward(
-        25,
+        5,
         {.linear_exit_threshold=0.3, .timeout=3000},
         linear_pid
     );
@@ -89,7 +80,7 @@ static void part1_ring_side(void) {
     // conveyor.set_desired_voltage(12000);
 
     auto res9 = movement::simple::swing_to(
-        {-TILE * mult, TILE * 1.3},
+        {-80 * mult, 95},
         {.reversed=false, .linear_exit_threshold = 3.0, .timeout = 500},
         swing_group
     );

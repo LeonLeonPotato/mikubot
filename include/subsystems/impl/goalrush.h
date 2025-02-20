@@ -3,24 +3,24 @@
 #include "subsystems/base_system.h" // IWYU pragma: export
 
 namespace subsystems {
-class Doinker : public Subsystem {
+class Goalrush : public Subsystem {
     private:
-        static Doinker* instance;
+        static Goalrush* instance;
 
     public:
-        Doinker() {
+        Goalrush() {
             if (instance != nullptr) {
-                throw std::runtime_error("Cannot create multiple instances of Doinker");
+                throw std::runtime_error("Cannot create multiple instances of Goalrush");
             }
             instance = this;
         }
-        ~Doinker() {
+        ~Goalrush() {
             instance = nullptr;
         }
 
         void tick(void) override;
         bool has_api(void) const override { return false; }
 
-        static Doinker& get_instance(void) { return *instance; }
+        static Goalrush& get_instance(void) { return *instance; }
 };
 } // namespace controls::doinker

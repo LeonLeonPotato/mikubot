@@ -13,6 +13,8 @@ WallMech* WallMech::instance = nullptr;
 float WallMech::positions[3] = {0.0f, 50.0f, 170.0f};
 
 void WallMech::api_tick(void) {
+    auto& conveyor = Conveyor::get_instance();
+
     if (set_state == State::OVERRIDE) {
         robot::wallmech.release_mutex();
         return;
@@ -21,20 +23,24 @@ void WallMech::api_tick(void) {
     }
 
     if (special_fire_thing != -1) {
-        if (!Conveyor::get_instance().poll_mutex()) Conveyor::get_instance().take_mutex(0);
-
         if (pros::millis() < special_fire_thing) {
-            Conveyor::get_instance().set_desired_voltage(-6000);
+            conveyor.set_override_mode(true);
+            conveyor.set_override_voltage(-3000);
         } else {
             special_fire_thing = -1;
-            Conveyor::get_instance().set_desired_voltage(0);
+            conveyor.set_override_mode(false);
+            conveyor.set_override_voltage(0);
         }
-    } else if (Conveyor::get_instance().poll_mutex()) {
-        Conveyor::get_instance().give_mutex();
     }
 
     const auto& desired = positions[(int) set_state];
     const auto current = robot::wallmech_encoder.get_position() / 100.0f;
+
+    if (set_state == State::FIRING) {
+        pid.args.kp = 1.0f;
+    } else {
+        pid.args.kp = 0.0115f;
+    }
 
     if (std::abs(desired - current) < 1.0f) {
         robot::wallmech.brake();

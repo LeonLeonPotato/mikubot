@@ -1,13 +1,13 @@
-#include "subsystems/impl/doinker.h"
+#include "subsystems/impl/goalrush.h"
 #include "essential.h"
 #include "config.h"
 #include "api.h"
 
 using namespace subsystems;
 
-Doinker* Doinker::instance = nullptr;
+Goalrush* Goalrush::instance = nullptr;
 
-void Doinker::tick() {
+void Goalrush::tick() {
     if (!poll_mutex()) return;
 
     bool press = robot::master.get_digital_new_press(config::keybinds::doinker);

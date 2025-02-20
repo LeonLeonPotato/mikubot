@@ -4,7 +4,7 @@
 #include "subsystems/impl/conveyor.h" // IWYU pragma: export
 #include "subsystems/impl/wallmech.h" // IWYU pragma: export
 #include "subsystems/impl/driving.h" // IWYU pragma: export
-#include "subsystems/impl/doinker.h" // IWYU pragma: export
+#include "subsystems/impl/goalrush.h" // IWYU pragma: export
 #include "subsystems/impl/clamp.h" // IWYU pragma: export
 
 namespace subsystems {
