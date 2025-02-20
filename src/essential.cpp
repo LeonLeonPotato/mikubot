@@ -13,7 +13,6 @@ int robot::match::side = 1;
 pros::Controller robot::master(pros::E_CONTROLLER_MASTER);
 
 pros::adi::Pneumatics robot::doinker('b', false, false);
-pros::adi::Pneumatics robot::ejector('c', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
 pros::Optical robot::classifier(14);
