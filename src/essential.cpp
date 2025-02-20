@@ -16,7 +16,7 @@ pros::adi::Pneumatics robot::doinker('b', false, false);
 pros::adi::Pneumatics robot::clamp('a', false, false);
 
 pros::Optical robot::classifier(14);
-hardware::Motor robot::conveyor {8, hardware::Gearset::BLUE, hardware::BrakeMode::BRAKE};
+hardware::Motor robot::conveyor {8, hardware::Gearset::BLUE, hardware::BrakeMode::COAST};
 hardware::Motor robot::wallmech {-7, hardware::Gearset::BLUE, hardware::BrakeMode::HOLD};
 pros::Rotation robot::wallmech_encoder(-6);
 

@@ -71,63 +71,6 @@ static RamseteResult tick(
     return {ExitCode::SUCCESS, crosstrack.norm(), 0, i};
 }
 
-static RamseteResult tick_poses_recording(
-    std::vector<pathing::ProfilePoint>& profiled_points, 
-    const RamseteParams& params, 
-    int i)
-{
-    Eigen::Vector2f goal; Eigen::Vector2f deriv;
-    while (true) {
-        const pathing::ProfilePoint& p = profiled_points[i];
-        deriv = Eigen::Vector2f(sinf(p.heading), cosf(p.heading));
-
-        if (deriv.dot(p.pos - robot::pos()) > 0) {
-            break;
-        }
-
-        if (i < profiled_points.size() - 1) {
-            i++;
-        } else {
-            i = profiled_points.size() - 1;
-            break;
-        }
-    }
-
-    const pathing::ProfilePoint& p = profiled_points[i];
-
-    const float rotation_angle = robot::theta() + params.reversed * M_PI;
-    Eigen::Vector2f crosstrack = (goal - robot::pos()) / 100.0f;
-    Eigen::Vector2f crosstrack_local = Eigen::Rotation2Df(rotation_angle) * crosstrack;
-    float angle_local = robot::angular_diff(p.heading, params.reversed);
-    // printf("Deriv Theta: %f | Robot theta: %f | Angle local: %f\n", angle, robot::theta, angle_local);
-    
-    // Might not be the case, reversed ramsete has not been tested
-    const float angular = p.angular_v * (2*params.reversed - 1);
-
-    const float gain = 2 * params.zeta
-        * sqrtf(p.angular_v * p.angular_v
-             + params.beta * p.center_v * p.center_v);
-
-    float v = p.center_v * cosf(angle_local) + gain * crosstrack_local.y();
-
-    float w = angular
-        + gain * angle_local
-            + params.beta * p.center_v * sinc(angle_local) * crosstrack_local.x();
-
-    const float max_rads_per_second = robot::max_speed() * M_TWOPI / 60.0f;
-    float motor_v = (v / robot::DRIVETRAIN_LINEAR_MULT) / max_rads_per_second;
-    float motor_w = (w / robot::DRIVETRAIN_LINEAR_MULT) / max_rads_per_second;
-    if (params.reversed) motor_v *= -1;
-    motor_v = std::clamp(motor_v, -params.max_linear_speed, params.max_linear_speed);
-
-    robot::velo(
-        motor_v + motor_w,
-        motor_v - motor_w
-    );
-
-    return {ExitCode::SUCCESS, crosstrack.norm(), 0, i};
-}
-
 static std::vector<std::string> split_string(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
     std::stringstream ss(str);
@@ -206,39 +149,6 @@ RamseteResult ramsete::follow_path_cancellable(
         }
 
         last_tick = tick(path, params, last_tick.i);
-
-        if (last_tick.code != ExitCode::SUCCESS) {
-            break;
-        }
-
-        pros::delay(params.delay);
-    }
-
-    last_tick.time_taken_ms = __timediff(start);
-    return last_tick;
-}
-
-RamseteResult ramsete::follow_poses_recording_cancellable(    
-    volatile bool& cancel_ref, 
-    const std::string& filename, 
-    const RamseteParams& params)
-{
-    const int start = pros::millis();
-    std::vector<pathing::ProfilePoint> profile;
-
-    RamseteResult last_tick {.i = 1};
-    while ((profile.back().pos - robot::pos()).norm() > params.linear_exit_threshold || last_tick.i != profile.size()-1) {
-        if (cancel_ref) {
-            last_tick.code = ExitCode::CANCELLED;
-            break;
-        }
-
-        if (__timediff(start) >= params.timeout) {
-            last_tick.code = ExitCode::TIMEOUT;
-            break;
-        }
-
-        last_tick = tick_poses_recording(profile, params, last_tick.i);
 
         if (last_tick.code != ExitCode::SUCCESS) {
             break;

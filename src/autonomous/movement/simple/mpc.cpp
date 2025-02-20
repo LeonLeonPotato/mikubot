@@ -101,12 +101,14 @@ static T ad_motor_func(const int N,
     for (int i = 0; i < N; i++) {
         T change = (params.gain * x[i] - copy.vl) / params.tc;
         copy.vl += change * params.dt / 1000.0f;
-        copy.x += copy.vl * (2 * M_PI / 60.0f) * (180 / M_PI) * params.dt / 1000.0f;
+        copy.y += copy.vl * (2 * M_PI / 60.0f) * (180 / M_PI) * params.dt / 1000.0f;
+        copy.x += copy.y * params.dt / 1000.0f;
 
         const auto& dstate = desired[i];
         const auto& error = copy - dstate;
         cost += ((error * error * penalty).sum()) * get_scaling(params.scaling, i, N);
-        cost += 0.015 * change * change;
+        cost += 0.000 * change * change;
+        cost += 0.00002 * x[i] * x[i];
     }
     return cost;
 }
@@ -133,7 +135,7 @@ static std::vector<DiffdriveState<var>> get_desired(const hardware::Motor& motor
     std::vector<DiffdriveState<var>> desired;
     for (float i = 1; i <= N; i++) {
         desired.push_back({
-            sin((i * dt + time) / 1000.0f * 2) * 100, i, i, i, i
+            sin((time + i * dt) / 1000.0f) * 100, i, i, i, i
         });
     }
     return desired;
@@ -144,23 +146,26 @@ void movement::simple::test_motor(
     hardware::Motor& motor,      
     const DiffdrivePenalty &penalty) 
 {
+    auto abs_start = pros::millis();
     std::vector<double> x(N, 0.0);
-    auto start = pros::millis();
     DiffdriveMPCParams params {
         .track_width = 1,
         .gain = 1 / motor.get_velo_controller()->get_args().ka,
         .tc = motor.get_velo_controller()->get_args().kv / motor.get_velo_controller()->get_args().ka
     };
-    params.dt = 20;
+    params.dt = 25;
     params.alg = nlopt::algorithm::LD_LBFGS;
-    params.scaling = MPCScaling::QUADRATIC;
+    params.scaling = MPCScaling::EXPONENTIAL;
     params.ftol_rel = 0.0001;
     params.max_time = 20;
 
+    float sum = 0;
+
     while (true) {
+        auto start_t = pros::millis();
         std::vector<DiffdriveState<var>> desired = get_desired(motor, N, params.dt);
         DiffdriveState<var> state {
-            motor.get_position_average(),
+            sum,
             motor.get_position_average(),
             motor.get_position_average(),
             motor.get_filtered_velocity(),
@@ -169,7 +174,6 @@ void movement::simple::test_motor(
 
         AggregateData data {desired, state, params, penalty};
 
-        auto start_t = pros::millis();
         nlopt::opt opt(params.alg, N);
         opt.set_maxtime(params.max_time);
         opt.set_ftol_rel(params.ftol_rel);
@@ -184,19 +188,20 @@ void movement::simple::test_motor(
         if (result < 0) {
             std::cerr << "NLOPT failed with code " << result << std::endl;
         }
-        // printf("Optimization took %d ms\n", pros::millis() - start_t);
 
-        motor.set_desired_voltage(x[0] * 1000);
+        motor.set_desired_voltage(x[0] * 500 + x[1] * 250 + x[2] * 125);
 
         for (int i = 0; i < N-1; i++) {
             std::swap(x[i], x[i+1]);
         }
         x[N-1] = 0.0;
 
-        // pros::Task::delay_until(&start, params.dt);
+        // pros::Task::delay_until(&start_t, params.dt + 10);
         pros::delay(10);
-        printf("%f,%f,%f\n", motor.get_position_average(), autodiff::val(desired[0].x), x[0]);
-        start = pros::millis();
+        params.dt = pros::millis() - start_t;
+        sum += motor.get_position_average() * params.dt / 1000.0f;
+        printf("%f,%f,%f,%f,%f\n", 
+            (pros::millis() - abs_start) / 1e3f, x[0], motor.get_position_average(), sum, params.dt / 1e3f);
     }
 }
 

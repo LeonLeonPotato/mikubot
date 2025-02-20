@@ -46,18 +46,15 @@ class Conveyor : public Subsystem {
         }
 
         void set_desired_voltage(int voltage) {
-            if (!poll_mutex()) return;
             desired_voltage = std::clamp(voltage, -12000, 12000);
         }
         int get_desired_voltage(void) const { return desired_voltage; }
 
         void set_override_mode(bool enabled) {
-            if (!poll_mutex()) return;
             override_mode = enabled;
         }
         bool get_override_mode(void) const { return override_mode; }
         void set_override_voltage(int voltage) {
-            if (!poll_mutex()) return;
             override_voltage = std::clamp(voltage, -12000, 12000);
         }
         int get_override_voltage(void) const { return override_voltage; }
