@@ -127,8 +127,10 @@ MotorGroup::MotorGroup (
         pros::c::motor_set_encoder_units(p, pros::E_MOTOR_ENCODER_DEGREES);
     }
 
-    set_brake_mode(brake_mode);
-    set_position(0);
+    for (const auto& p : ports) {
+        pros::c::motor_set_brake_mode(p, (pros::motor_brake_mode_e_t) brake_mode);
+        pros::c::motor_set_zero_position(p, pros::c::motor_get_position(p));
+    }
 
     char name[64] = {0};
     sprintf(name, "motor_group_internal_manager%d", ports[0]);

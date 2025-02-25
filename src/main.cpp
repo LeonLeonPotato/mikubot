@@ -44,8 +44,10 @@ void initialize(void) {
 	if (real) {
 		printf("%sRobot %sprobably is not%s a raw brain (connected to %d devices)\n", 
 			CPREFIX, ANSI_CYAN.c_str(), ANSI_RESET.c_str(), connected);
+
 		robot::init();
 		driverinfo::init();
+		telemetry::start_task();
 
 		for (auto& subsystem : subsystems::subsystems) {
 			if (subsystem->has_api()) {
@@ -55,13 +57,12 @@ void initialize(void) {
 	
 		if (!pros::competition::is_connected()) {
 			std::cout << PREFIX << "Robot is not connected to the field controller, manually calling functions\n";
-			if (!config::SIM_MODE) {
+			// if (!config::SIM_MODE) {
 				// competition_initialize();
-				robot::match::team = 'R';
-				// pros::delay(100);
-				// debugscreen::init();
+				// // robot::match::team = 'R';
+				// // pros::delay(100);
 				// autonomous();
-			}
+			// }
 		}
 	} else {
 		printf("%sRobot %sprobably is%s a raw brain (connected to %d devices)\n", 
@@ -91,6 +92,7 @@ void competition_initialize(void) {
 void autonomous(void) {
 	std::cout << PREFIX << "Running autonomous\n";
 	// autonrunner::init();
+	debugscreen::init();
 
 	strategies::functions.at(strategies::chosen_strategy)();
 

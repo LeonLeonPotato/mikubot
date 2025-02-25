@@ -64,8 +64,8 @@ static T ad_diffdrive_costfunc(
         T w = (2*M_PI/60.0) * params.linear_mult * (copy.vl - copy.vr) / params.track_width;
         T half = w * params.optimization_dt / 2.0, travel = v * params.optimization_dt;
         T s = sinc(half);
-        copy.rx += travel * s * sin(copy.theta + half);
-        copy.ry += travel * s * cos(copy.theta + half);
+        copy.x += travel * s * sin(copy.theta + half);
+        copy.y += travel * s * cos(copy.theta + half);
         copy.theta += half * 2.0;
 
         const auto& dstate = desired[i];
@@ -96,7 +96,7 @@ static double nlopt_diffdrive_costfunc(unsigned int n, const double* x, double* 
 }
 
 template <int N>
-void follow_recording(const std::string& path, DiffdriveMPCParams mpc_params, DiffdrivePenalty penalty) {
+void movement::simple::follow_recording(const std::string& path, DiffdriveMPCParams mpc_params, DiffdrivePenalty penalty) {
     FILE* file = fopen(path.c_str(), "r");
     if (!file) {
         std::cerr << "Failed to open file " << path << std::endl;
@@ -114,7 +114,8 @@ void follow_recording(const std::string& path, DiffdriveMPCParams mpc_params, Di
     while (!feof(file)) {
         float time, x, y, theta, vl, vr;
         fscanf(file, "%f,%f,%f,%f,%f,%f", &time, &x, &y, &theta, &vl, &vr);
-        desired.push_back({x, y, theta, vl, vr});
+        printf("%f, %f, %f, %f, %f\n", x, y, theta, vl, vr);
+        desired.push_back({(double)x, (double)y, (double)theta, (double)vl, (double)vr});
         if (_ftime == -1) _ftime = time;
         times.push_back(time - _ftime);
         n_poses++;
@@ -141,9 +142,10 @@ void follow_recording(const std::string& path, DiffdriveMPCParams mpc_params, Di
         while (distance_parametrized_i < n_poses - 1) {
             const auto& p = desired[distance_parametrized_i];
 
+            float average_speed = autodiff::val((p.vl + p.vr) / 2.0);
             Eigen::Vector2f deriv = {
-                sinf(autodiff::val(p.theta)), 
-                cosf(autodiff::val(p.theta))
+                sinf(autodiff::val(p.theta)) * average_speed, 
+                cosf(autodiff::val(p.theta)) * average_speed
             };
             Eigen::Vector2f pos = {
                 autodiff::val(p.x), 
@@ -155,7 +157,7 @@ void follow_recording(const std::string& path, DiffdriveMPCParams mpc_params, Di
         }
 
         int disagreement_factor = 5;
-        bool use_time_scaling = true;
+        bool use_time_scaling = false;
         float scale = 1.0f;
 
         if (use_time_scaling) {
@@ -181,10 +183,18 @@ void follow_recording(const std::string& path, DiffdriveMPCParams mpc_params, Di
             robot::right_motors.get_filtered_velocity()
         };
 
-        AggregateData data {desired, state, mpc_params, penalty};
+        std::vector<DiffdriveState<var>> desired_local;
+        for (int i = time_parametrized_i; i < time_parametrized_i + N; i++) {
+            if (i >= desired.size()) break;
+            desired_local.push_back(desired[i]);
+        }
+        while (desired_local.size() < N) {
+            desired_local.push_back(desired_local.back());
+        }
+        AggregateData data {desired_local, state, mpc_params, penalty};
 
         nlopt::opt opt(mpc_params.alg, 2 * N);
-        opt.set_ftol_rel(mpc_params.ftol_rel);
+        opt.set_ftol_rel(0.01);
         std::vector<double> lb(2 * N, -12); opt.set_lower_bounds(lb);
         std::vector<double> ub(2 * N, 12); opt.set_upper_bounds(ub);
         opt.set_min_objective(nlopt_diffdrive_costfunc<N>, &data);
@@ -201,10 +211,16 @@ void follow_recording(const std::string& path, DiffdriveMPCParams mpc_params, Di
 
         float VL = (u[0] * 0.5 + u[2] * 0.25 + u[4] * 0.125) / 12.0f;
         float VR = (u[1] * 0.5 + u[3] * 0.25 + u[5] * 0.125) / 12.0f;
+        printf("Time parametrized i: %d, Distance parametrized i: %d\n", time_parametrized_i, distance_parametrized_i);
         robot::chassis.set_voltage(
             VL + (adjust_for_friction ? mpc_params.kf * (VL > 0 ? 1 : -1) : 0),
             VR + (adjust_for_friction ? mpc_params.kf * (VR > 0 ? 1 : -1) : 0)
         );
+
+        // robot::chassis.set_velocity(
+        //     autodiff::val(desired[time_parametrized_i].vl) / 600,
+        //     autodiff::val(desired[time_parametrized_i].vr) / 600
+        // );
 
         for (int i = 0; i < 2 * N - 2; i++) {
             std::swap(u[i], u[i+2]);
@@ -340,3 +356,10 @@ void follow_recording(const std::string& path, DiffdriveMPCParams mpc_params, Di
 // volatile auto func_instance_7 = movement::simple::test_motor<7>;
 // volatile auto func_instance_10 = movement::simple::test_motor<10>;
 // volatile auto func_instance_15 = movement::simple::test_motor<15>;
+
+volatile auto func_instance_3 = movement::simple::follow_recording<3>;
+volatile auto func_instance_4 = movement::simple::follow_recording<4>;
+volatile auto func_instance_5 = movement::simple::follow_recording<5>;
+volatile auto func_instance_7 = movement::simple::follow_recording<7>;
+volatile auto func_instance_10 = movement::simple::follow_recording<10>;
+volatile auto func_instance_15 = movement::simple::follow_recording<15>;

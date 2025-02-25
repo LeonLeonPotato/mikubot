@@ -20,7 +20,7 @@ struct MPCParams {
     nlopt::algorithm alg;
     MPCScaling scaling = MPCScaling::LINEAR;
     float ftol_rel = 0.01;
-    float dt_guess = 20;
+    float dt_guess = 0.02;
     float optimization_dt = -1;
 };
 

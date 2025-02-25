@@ -8,7 +8,7 @@ class Conveyor : public Subsystem {
         static Conveyor* instance;
         pros::mutex_t override_mutex = pros::c::mutex_create();
 
-        int disable_length = 200;
+        int disable_length = 150;
         bool color_sort_enabled = true;
         int desired_voltage = 0;
         

@@ -12,12 +12,15 @@ Conveyor* Conveyor::instance = nullptr;
 static int disable_time = -1;
 
 void Conveyor::api_tick(void) {
+    static int cnt = 0;
+    static int unstuck_time = -1;
+
     while (true) {
         if (!robot::conveyor.poll_mutex()) robot::conveyor.acquire_mutex();
 
         if (override_mode) {
             robot::conveyor.set_desired_voltage(override_voltage);
-            pros::delay(20);
+            pros::delay(10);
             continue;
         }
         
@@ -32,7 +35,7 @@ void Conveyor::api_tick(void) {
                 team = 'R';
             }
             if (team != 'N' && team != robot::match::team) {
-                disable_time = pros::millis() + 80;
+                disable_time = pros::millis() + 5;
             }
         }
 
@@ -40,17 +43,32 @@ void Conveyor::api_tick(void) {
             bool under = pros::millis() >= disable_time;
             bool over = pros::millis() <= disable_time + disable_length;
             if (under && over && color_sort_enabled) {
-                robot::conveyor.set_desired_voltage(0);
-                pros::delay(20);
+                robot::conveyor.set_desired_voltage(-12000);
+                pros::delay(5);
                 continue;
             } else if (!over) {
                 disable_time = -1;
             }
         }
 
-        robot::conveyor.set_desired_voltage(desired_voltage);
+        // if (robot::conveyor.get_efficiency_average() < 10 && abs(desired_voltage) > 6000) {
+        //     cnt++;
+        // } else cnt = 0;
 
-        pros::delay(20);
+        // if (cnt > 100) {
+        //     unstuck_time = pros::millis();
+        //     cnt = 0;
+        // }
+
+        // if (unstuck_time != -1) {
+        //     if (pros::millis() - unstuck_time < 100)
+        //         robot::conveyor.set_desired_voltage(-6000);
+        //     else
+        // } else {
+            robot::conveyor.set_desired_voltage(desired_voltage);
+        // }
+
+        pros::delay(10);
     }
 }
 

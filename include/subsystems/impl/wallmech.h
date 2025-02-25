@@ -39,7 +39,7 @@ class WallMech : public Subsystem {
 
         int special_fire_thing = -1;
         State set_state = State::RESTING;
-        controllers::PID pid {0.0115f, 0.000f, 0.0004f};
+        controllers::PID pid {0.015f, 0.000f, 0.0004f};
 
     public:
         WallMech() {

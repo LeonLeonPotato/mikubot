@@ -10,7 +10,8 @@ using namespace subsystems;
 using State = WallMech::State;
 
 WallMech* WallMech::instance = nullptr;
-float WallMech::positions[3] = {0.0f, 50.0f, 170.0f};
+float WallMech::positions[3] = {0.0f, 49.0f, 170.0f};
+// float WallMech::positions[3] = {0.0f, 50.0f, 130.0f};
 
 void WallMech::api_tick(void) {
     auto& conveyor = Conveyor::get_instance();
@@ -39,10 +40,10 @@ void WallMech::api_tick(void) {
     if (set_state == State::FIRING) {
         pid.args.kp = 1.0f;
     } else {
-        pid.args.kp = 0.0115f;
+        pid.args.kp = 0.015f;
     }
 
-    if (std::abs(desired - current) < 1.0f) {
+    if (std::abs(desired - current) < 0.5f) {
         robot::wallmech.brake();
     } else {
         float control = pid.get(desired - current);
